@@ -11,18 +11,23 @@ $(document).ready(function(){
 		var context = new blah.RenderContext();
 		context.init('gameFixture');	
 		
-		var model = new blah.Model(
-			[
-			0.0, 0.0, 0, 
-			1.0, 0.0, 0, 
-			1.0, 1.0, 0, 
-			0.0, 1.0, 0
-			],
-			[0, 1, 2, 0, 2, 3]
-		);
+		var model = blah.Model.Quad();
 
 		model.createBuffers(context);		
 		model.destroyBuffers(context);
+	});
+
+
+	test("Model can upload buffers to the gpu", function() {
+		var context = new blah.RenderContext();
+		context.init('gameFixture');	
+		
+		var model = blah.Model.Quad();
+
+		model.createBuffers(context);	
+		model.uploadBuffers(context);	
+		model.destroyBuffers(context);		
+
 	});
 
 	
