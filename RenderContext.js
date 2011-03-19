@@ -5,8 +5,10 @@ blah.RenderContext = function(){
 };
 
 blah.RenderContext.prototype.init = function(selector) {
-	var canvas = $(selector).eq(0).get();
+	var canvas =  document.getElementById(selector);
    this._gl = canvas.getContext("experimental-webgl");
    this._gl.viewportWidth = canvas.width;
    this._gl.viewportHeight = canvas.height;    
 };
+
+

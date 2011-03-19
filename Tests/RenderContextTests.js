@@ -4,8 +4,10 @@ $(document).ready(function(){
 	
 	test("Initializing a render context results in no errors", function() {
 		var context = new blah.RenderContext();
-		context.init('#gameFixture');		
+		context.init('gameFixture');		
 	});
+
+	
 	
 
 });
