@@ -6,8 +6,6 @@ $(document).ready(function(){
 		var context = new blah.RenderContext();
 		context.init('gameFixture');		
 	});
-
-	
 	
 
 });

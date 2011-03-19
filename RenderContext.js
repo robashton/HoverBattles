@@ -1,14 +1,12 @@
 var blah = blah || {};
 
 blah.RenderContext = function(){
-	this._gl = null;
+	this.gl = null;
 };
 
 blah.RenderContext.prototype.init = function(selector) {
 	var canvas =  document.getElementById(selector);
-   this._gl = canvas.getContext("experimental-webgl");
-   this._gl.viewportWidth = canvas.width;
-   this._gl.viewportHeight = canvas.height;    
+   this.gl = canvas.getContext("experimental-webgl");
+   this.gl.viewportWidth = canvas.width;
+   this.gl.viewportHeight = canvas.height;    
 };
-
-
