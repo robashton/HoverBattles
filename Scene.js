@@ -15,6 +15,7 @@ blah.Scene.prototype.getEntity = function(id){
 
 blah.Scene.prototype.renderScene = function(context){
 	var gl = context.gl;
+	var program = context.program;
 
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
  	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -34,33 +35,10 @@ blah.Scene.prototype.renderScene = function(context){
 
 		var model = entity.getModel();
 		model.uploadBuffers(context);
-		
-		gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, projectionMatrix);
-		gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, viewMatrix);
+	
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uPMatrix"), false, projectionMatrix);
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uMVMatrix"), false, viewMatrix);
 
 		model.render(context);
 	}
 };
-
-blah.Scene.DefaultFragment = "					\
-  #ifdef GL_ES											\
-  precision highp float;							\
-  #endif													\
-															\
-  void main(void) {									\
-    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);	\
-  }														\
-";
-
-blah.Scene.DefaultShader = "														\
-	attribute vec3 aVertexPosition;												\
-																							\
-  uniform mat4 uMVMatrix;															\
-  uniform mat4 uPMatrix;															\
-																							\
-  void main(void) {																	\
-    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);	\
-  }																						\
-																							\	";
-
-

@@ -5,6 +5,9 @@ blah.Model = function(vertices, indices){
 	this._indices = indices;
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
+	this._program = null;
+	this._vertexShader = null;
+	this._fragmentShader = null;
 };
 
 blah.Model.prototype.createBuffers = function(context) {
@@ -28,10 +31,11 @@ blah.Model.prototype.destroyBuffers = function(context) {
 
 blah.Model.prototype.uploadBuffers = function(context) {
 	var gl = context.gl;
+	var program = context.program;
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-	gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
-
+	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
 };
 
@@ -41,7 +45,6 @@ blah.Model.prototype.render = function(context) {
 };
 
 
-// Utils
 blah.Model.Quad = function()
 {
 	return new blah.Model(
@@ -54,3 +57,5 @@ blah.Model.Quad = function()
 			[0, 1, 2, 0, 2, 3]
 		);
 };
+
+

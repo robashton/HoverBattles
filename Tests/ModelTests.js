@@ -29,8 +29,5 @@ $(document).ready(function(){
 		model.destroyBuffers(context);		
 
 	});
-
-	
-
 	
 });

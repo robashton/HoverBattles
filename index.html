@@ -2,6 +2,36 @@
 	<head>
 		<script src="jquery-1.5.1.min.js"></script>
 		<link rel="stylesheet" type="text/css" href="style.css"/>
+
+		<!-- Library Includes -->
+		<script src="glMatrix-0.9.5.min.js"></script>
+				
+		<!-- Game Includes -->		
+		<script src="Model.js"></script>
+		<script src="Entity.js"></script>
+		<script src="Scene.js"></script>
+		<script src="RenderContext.js"></script>
+
+		<script type="text/javascript">
+			
+			$(document).ready(function(){
+				var scene = new blah.Scene();
+				var model = blah.Model.Quad();
+				var entity = new blah.Entity("test", model);
+
+				scene.addEntity(entity);
+
+				entity.position = vec3.create([0,0,-7]);
+
+				var context = new blah.RenderContext();
+				context.init('game');	
+
+				model.createBuffers(context);
+
+				scene.renderScene(context);
+			});
+
+		</script>
 	</head>
 	<body>		
 		<h1>GL RPG</h1>
