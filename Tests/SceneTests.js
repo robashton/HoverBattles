@@ -4,7 +4,7 @@ $(document).ready(function(){
 	test("Creating a scene results in a new scene", function(){
 		var scene = new blah.Scene();
 		notEqual(null, scene);
-	});	
+	});
 
 	test("Adding an entity to a scene results in that entity being present in that scene", function(){
 		var scene = new blah.Scene();
