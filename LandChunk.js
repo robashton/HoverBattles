@@ -1,7 +1,8 @@
 var blah = blah || {};
 
-blah.LandChunk = function(heightMap, width, height, scale){
-	this._heightMap = heightMap;	
+blah.LandChunk = function(heightMap, width, height, maxHeight, scale){
+	this._heightMap = heightMap;
+	this._maxHeight = maxHeight;
 	this._width = width;
 	this._height = height;
 	this._scale = scale;
@@ -13,7 +14,7 @@ blah.LandChunk = function(heightMap, width, height, scale){
 };
 
 blah.LandChunk.prototype.getProgram = function(){
-	return "default";
+	return "colour";
 };
 
 blah.LandChunk.prototype.createBuffers = function(context) {
@@ -26,12 +27,10 @@ blah.LandChunk.prototype.createBuffers = function(context) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.vertices), gl.STATIC_DRAW)
 
-/*	if(this._colours) {
-		this._colourBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.colours), gl.STATIC_DRAW)
-	}
-*/
+	this._colourBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.colours), gl.STATIC_DRAW)
+	
 	this._indexBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(data.indices), gl.STATIC_DRAW);
@@ -40,14 +39,30 @@ blah.LandChunk.prototype.createBuffers = function(context) {
 
 blah.LandChunk.prototype.createBufferData = function() {
 	var vertices = new Float32Array(this._width * this._height * 3);
+	var colours = new Float32Array(this._width * this._height * 4);
+
 	var indices = new Uint16Array(this._indexCount);
 
 	for(var x = 0 ; x < this._width ; x++ ) {
 		for(var y = 0 ; y < this._height ; y++ ) {
-			var index = (x + y * this._width) * 3;
-			vertices[index] = x;
-			vertices[index+1] = this._heightMap[x + y * this._width];
-			vertices[index+2] = y;
+			var index = (x + y * this._width);
+
+			var vertexIndex = index * 3;
+			var colourIndex = index * 4;
+		
+			vertices[vertexIndex] = x;
+			vertices[vertexIndex+1] = this._heightMap[index] * this._maxHeight;
+			vertices[vertexIndex+2] = y;
+
+			var brightness = this._heightMap[index];
+			if(brightness < 0.5) { brightness = 0.5; }
+
+			colours[colourIndex++] = 0.0;
+			colours[colourIndex++] = brightness;
+			
+
+			colours[colourIndex++] = 0.0;
+			colours[colourIndex] = 1.0;
 		}
 	}
 
@@ -87,7 +102,7 @@ blah.LandChunk.prototype.createBufferData = function() {
 	return {
 		vertices: vertices,
 		indices: indices,
-		colours: []	
+		colours: colours
 	};
 
 };
@@ -96,6 +111,7 @@ blah.LandChunk.prototype.destroyBuffers = function(context) {
 	var gl = context.gl;
 	gl.deleteBuffer(this._vertexBuffer);
 	gl.deleteBuffer(this._indexBuffer);
+	gl.deleteBuffer(this._colourBuffer);
 };
 
 blah.LandChunk.prototype.uploadBuffers = function(context) {
@@ -105,6 +121,10 @@ blah.LandChunk.prototype.uploadBuffers = function(context) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
 	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
+	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexColour'), 4, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexColour'));
 
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
 };

@@ -13,7 +13,7 @@ $(document).ready(function(){
 			}
 		}
 
-		var model = new blah.LandChunk(heightMap, 256, 256, 1);		
+		var model = new blah.LandChunk(heightMap, 256, 256, 32, 1);		
 
 		var entity = new blah.Entity("test", model);
 
