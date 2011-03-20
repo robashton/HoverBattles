@@ -8,15 +8,20 @@
 
 - Add a 'game loop'																						[x]																					
 
-- Write a shader that can do colouring based on a list of colours							
+- Write a shader that can do colouring based on a list of colours							[x]
 
-- Write a VERY basic grid terrain renderer with colour based on height					
+- Give entities a 'type' or 'category' and methods to request entities via these
+- Allow entities to have logic and receive messages from the controller
+- Allow entities to take control over the camera
+- Allow entities to talk to each other (directly, whatever)
+
+- Write a VERY basic grid terrain renderer with colour based on height					[x]
 - Write some code to hug the terrain (camera)													
-- Write some code to allow moving around the terrain (WASD)									
+- Write some code to allow moving around the terrain (WASD)									[x]
+
 - Add some texture to the terrain (just so we have some scale when moving around)	
 - Create procedural terrain definition generator												
 - Put the generator server-side																		
-
 
 - Add some light blue fog (easier than adding a skybox)										
 

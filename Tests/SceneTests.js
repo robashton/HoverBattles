@@ -12,7 +12,17 @@ $(document).ready(function(){
 		scene.addEntity(entity);
 		var retrievedEntity = scene.getEntity("id");
 
-		equal(entity, retrievedEntity);		
+		ok(entity === retrievedEntity);		
+	});
+
+	test("Adding an entity to a scene reuslts in that entity being given a reference to that scene", function() {
+		var scene = new blah.Scene();
+		var entity = new blah.Entity("id");
+
+		scene.addEntity(entity);
+
+	 	ok(entity._scene === scene);
+
 	});
 	
 });

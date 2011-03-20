@@ -7,6 +7,7 @@ blah.Scene = function(){
 
 blah.Scene.prototype.addEntity = function(entity){
 	this._entities[entity.getId()] = entity;
+	entity.setScene(this);
 };
 
 blah.Scene.prototype.getEntity = function(id){
@@ -33,7 +34,9 @@ blah.Scene.prototype.msg = function(msg) {
 
 
 blah.Scene.prototype.doLogic = function() {
+
 	// Screw the entities for now
+
 };
 
 
