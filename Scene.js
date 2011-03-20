@@ -15,7 +15,6 @@ blah.Scene.prototype.getEntity = function(id){
 
 blah.Scene.prototype.renderScene = function(context){
 	var gl = context.gl;
-	var program = context.program;
 
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
  	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -35,6 +34,8 @@ blah.Scene.prototype.renderScene = function(context){
 
 		var model = entity.getModel();
 		model.uploadBuffers(context);
+
+		var program = context.program;
 	
 		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uPMatrix"), false, projectionMatrix);
 		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uMVMatrix"), false, viewMatrix);

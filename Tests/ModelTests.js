@@ -17,7 +17,6 @@ $(document).ready(function(){
 		model.destroyBuffers(context);
 	});
 
-
 	test("Model can upload buffers to the gpu", function() {
 		var context = new blah.RenderContext();
 		context.init('gameFixture');	
@@ -26,8 +25,7 @@ $(document).ready(function(){
 
 		model.createBuffers(context);	
 		model.uploadBuffers(context);	
-		model.destroyBuffers(context);		
-
+		model.destroyBuffers(context);
 	});
 	
 });

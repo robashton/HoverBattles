@@ -1,13 +1,11 @@
 var blah = blah || {};
 
-blah.Model = function(vertices, indices){
+blah.Model = function(vertices, indices, programName){
 	this._vertices = vertices;
 	this._indices = indices;
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
-	this._program = null;
-	this._vertexShader = null;
-	this._fragmentShader = null;
+	this._programName = programName || "Default";
 };
 
 blah.Model.prototype.createBuffers = function(context) {
@@ -28,11 +26,14 @@ blah.Model.prototype.destroyBuffers = function(context) {
 	gl.deleteBuffer(this._indexBuffer);
 };
 
+blah.Model.prototype.getProgram = function() {
+	return this._programName;
+};
 
 blah.Model.prototype.uploadBuffers = function(context) {
 	var gl = context.gl;
-	var program = context.program;
-
+	var program = context.setActiveProgram(this._programName);
+	
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
 	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
@@ -54,7 +55,8 @@ blah.Model.Quad = function()
 			1.0, 1.0, 0, 
 			0.0, 1.0, 0
 			],
-			[0, 1, 2, 0, 2, 3]
+			[0, 1, 2, 0, 2, 3],
+			"Default"
 		);
 };
 
