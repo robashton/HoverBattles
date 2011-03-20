@@ -8,6 +8,10 @@ blah.Model = function(vertices, indices, programName){
 	this._programName = programName || "default";
 };
 
+blah.Model.prototype.getProgram = function() {
+	return this._programName;
+};
+
 blah.Model.prototype.createBuffers = function(context) {
 	var gl = context.gl;
 
@@ -32,7 +36,7 @@ blah.Model.prototype.getProgram = function() {
 
 blah.Model.prototype.uploadBuffers = function(context) {
 	var gl = context.gl;
-	var program = context.setActiveProgram(this._programName);
+	var program = context.program;
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
 	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);

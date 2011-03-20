@@ -27,7 +27,7 @@
 
 				var context = new blah.RenderContext();
 				context.init('game');	
-
+				context.setActiveProgram(model.getProgram());
 				model.createBuffers(context);
 
 				scene.renderScene(context);

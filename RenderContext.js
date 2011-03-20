@@ -13,7 +13,7 @@ blah.RenderContext.prototype.init = function(selector) {
    this.gl.viewportWidth = canvas.width;
    this.gl.viewportHeight = canvas.height;  
 
-	this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	this.gl.clearColor(0.0, 0.5, 0.5, 1.0);
    this.gl.enable(this.gl.DEPTH_TEST);  
 
 };
@@ -38,7 +38,7 @@ blah.RenderContext.prototype.createProgram = function(programName) {
 
    var program = this.gl.createProgram();
 	this.gl.attachShader(program, vertexShader);
-   this.gl.attachShader(program, fragmentShader );
+   this.gl.attachShader(program, fragmentShader);
    this.gl.linkProgram(program);	
 
 	if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {

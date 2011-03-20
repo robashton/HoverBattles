@@ -41,9 +41,6 @@ server = http.createServer(function(req, res){
 						fs.readFile(shaderFile, "utf8", function(err, data) {
 							shaders[shaderName][type] = data;
 							workRemaining--;
-					
-							console.log(type);
-
 
 							if(workRemaining == 0){
 
@@ -52,7 +49,7 @@ server = http.createServer(function(req, res){
 								shaderData += JSON.stringify(shaders);
 								shaderData += ";";
 
-								res.writeHead(200, "Content-Type: text/plain");
+								res.writeHead(200, "Content-Type: application/javascript");
 								res.write(shaderData);
 								res.end();
 							}

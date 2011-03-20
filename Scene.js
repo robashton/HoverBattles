@@ -2,7 +2,6 @@ var blah = blah || {};
 
 blah.Scene = function(){
 	this._entities = {};
-	this.camera = new blah.Camera();
 };
 
 blah.Scene.prototype.addEntity = function(entity){
@@ -34,12 +33,12 @@ blah.Scene.prototype.renderScene = function(context){
 		mat4.translate(viewMatrix, entity.position);
 
 		var model = entity.getModel();
-		model.uploadBuffers(context);
+		var program = context.setActiveProgram(model.getProgram());
 
-		var program = context.program;
+		model.uploadBuffers(context);
 	
-		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uPMatrix"), false, projectionMatrix);
-		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uMVMatrix"), false, viewMatrix);
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
 
 		model.render(context);
 	}
