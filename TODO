@@ -1,26 +1,25 @@
 - Add a camera class that has the ability to 
-	- Be positioned
-	- Rotate
+	- Be positioned																						[x]
+	- Rotate																									
 
-- Add the camera class to the single square test so it still works
-- Write a server to serve the shader files in a nice format
-- Write a shader that can do colouring based on a list of colours
+- Add the camera class to the single square test so it still works						
+- Write a server to serve the shader files in a nice format									[x]						
+- Write a shader that can do colouring based on a list of colours							
 
-- Write a VERY basic grid terrain renderer with colour based on height
-- Write some code to hug the terrain (camera)
-- Write some code to allow moving around the terrain (WASD)
-- Add some texture to the terrain (just so we have some scale when moving around)
-- Create procedural terrain definition generator
-- Put the generator server-side
-
-
-- Add some light blue fog (easier than adding a skybox)
+- Write a VERY basic grid terrain renderer with colour based on height					
+- Write some code to hug the terrain (camera)													
+- Write some code to allow moving around the terrain (WASD)									
+- Add some texture to the terrain (just so we have some scale when moving around)	
+- Create procedural terrain definition generator												
+- Put the generator server-side																		
 
 
-- Add models to the landscape
-- Add player model
+- Add some light blue fog (easier than adding a skybox)										
 
 
+- Add models to the landscape																			
+- Add player model																						
 
-- Add multiplayer code so we can move a few players around in the world
+
+- Add multiplayer code so we can move a few players around in the world					
 

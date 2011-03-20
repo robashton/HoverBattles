@@ -5,7 +5,7 @@ blah.Model = function(vertices, indices, programName){
 	this._indices = indices;
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
-	this._programName = programName || "Default";
+	this._programName = programName || "default";
 };
 
 blah.Model.prototype.createBuffers = function(context) {
@@ -56,7 +56,7 @@ blah.Model.Quad = function()
 			0.0, 1.0, 0
 			],
 			[0, 1, 2, 0, 2, 3],
-			"Default"
+			"default"
 		);
 };
 
