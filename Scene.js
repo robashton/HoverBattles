@@ -2,6 +2,7 @@ var blah = blah || {};
 
 blah.Scene = function(){
 	this._entities = {};
+	this.camera = new blah.Camera([0,0,0]);
 };
 
 blah.Scene.prototype.addEntity = function(entity){
@@ -18,19 +19,18 @@ blah.Scene.prototype.renderScene = function(context){
 
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
  	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	
-	// Obviously this give us a camera concern
-	var projectionMatrix = mat4.create();
-	var viewMatrix = mat4.create();
 
+	var projectionMatrix = mat4.create();
 	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, projectionMatrix);
 
 	for(var i in this._entities) {
 		var entity = this._entities[i];
-		mat4.identity(viewMatrix);
 
-		// For now we'll do this, but we'll need world, view and projection later
-		mat4.translate(viewMatrix, entity.position);
+		var viewMatrix = this.camera.getViewMatrix();
+
+		var worldMatrix = mat4.create();
+		mat4.identity(worldMatrix);
+		mat4.translate(worldMatrix, entity.position);
 
 		var model = entity.getModel();
 		var program = context.setActiveProgram(model.getProgram());
@@ -39,6 +39,7 @@ blah.Scene.prototype.renderScene = function(context){
 	
 		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
 		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
 
 		model.render(context);
 	}

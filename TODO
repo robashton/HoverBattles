@@ -2,8 +2,9 @@
 	- Be positioned																						[x]
 	- Rotate																									
 
-- Add the camera class to the single square test so it still works						
-- Write a server to serve the shader files in a nice format									[x]						
+- Add the camera class to the single square test so it still works						[x]					
+- Write a server to serve the shader files in a nice format									[x]
+- Add the world matrix into the equation															[x]
 - Write a shader that can do colouring based on a list of colours							
 
 - Write a VERY basic grid terrain renderer with colour based on height					
