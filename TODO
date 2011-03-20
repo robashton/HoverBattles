@@ -6,7 +6,7 @@
 - Write a server to serve the shader files in a nice format									[x]
 - Add the world matrix into the equation															[x]
 
-- Add a 'game loop'
+- Add a 'game loop'																						[x]																					
 
 - Write a shader that can do colouring based on a list of colours							
 

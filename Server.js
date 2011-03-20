@@ -37,7 +37,7 @@ server = http.createServer(function(req, res){
 					}			
 
 					var shaderFile = path.join(SHADERDIR, file);
-					var readFile = function(type) {
+					var readFile = function(shaderName, type) {
 						fs.readFile(shaderFile, "utf8", function(err, data) {
 							shaders[shaderName][type] = data;
 							workRemaining--;
@@ -55,7 +55,7 @@ server = http.createServer(function(req, res){
 							}
 						});								
 					}		
-					readFile(type);		
+					readFile(shaderName, type);		
 					
 				};
 					

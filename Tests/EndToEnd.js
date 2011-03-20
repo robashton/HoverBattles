@@ -10,9 +10,12 @@ $(document).ready(function(){
 		scene.addEntity(entity);
 
 		var context = new blah.RenderContext();
+
 		context.init('gameFixture');	
 
-		model.createBuffers(context);	// TODO: Work out where this responsibility lies
+		// TODO: Work out where this responsibility lies
+		context.setActiveProgram(model.getProgram());
+		model.createBuffers(context);
 
 		scene.renderScene(context);
 
