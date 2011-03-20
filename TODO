@@ -5,6 +5,9 @@
 - Add the camera class to the single square test so it still works						[x]					
 - Write a server to serve the shader files in a nice format									[x]
 - Add the world matrix into the equation															[x]
+
+- Add a 'game loop'
+
 - Write a shader that can do colouring based on a list of colours							
 
 - Write a VERY basic grid terrain renderer with colour based on height					
@@ -17,10 +20,8 @@
 
 - Add some light blue fog (easier than adding a skybox)										
 
-
 - Add models to the landscape																			
 - Add player model																						
-
 
 - Add multiplayer code so we can move a few players around in the world					
 

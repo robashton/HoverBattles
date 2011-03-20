@@ -12,6 +12,8 @@
 		<script src="../Camera.js"></script>
 		<script src="../Scene.js"></script>
 		<script src="../RenderContext.js"></script>
+		<script src="../Controller.js"></script>
+		<script src="../Coordinator.js"></script>
 		<script src="../Shaders.js"></script>
 
 		<script type="text/javascript">
@@ -31,14 +33,19 @@
 				context.setActiveProgram(model.getProgram());
 				model.createBuffers(context);
 
-				scene.renderScene(context);
+				// Outside forces on the scene
+				var controller = new blah.Controller(scene);
+				var coordinator = new blah.Coordinator(scene, controller, context);
+
+				setInterval(function() {  coordinator.tick(); }, 1000 / 30);
+
 			});
 
 		</script>
 	</head>
 	<body>		
 		<h1>GL RPG</h1>
-		<p>There should be a white square, in the middle of the screen but with the bottom left corner on origin</p>
+		<p>There should be a basic white square in the middle, and using the WASD keys should result in the camera moving</p>
 		<canvas id="game" style="border: none;" width="750" height="500">
 
 		</canvas>		

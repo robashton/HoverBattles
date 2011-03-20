@@ -13,6 +13,29 @@ blah.Scene.prototype.getEntity = function(id){
 	return this._entities[id];
 };
 
+blah.Scene.prototype.msg = function(msg) {
+		
+	switch(msg) {
+		case 'cameraback':
+			this.camera.backwards(0.1);
+		break;
+		case 'cameraforward':
+			this.camera.forwards(0.1);
+		case 'cameraleft':
+			this.camera.left(0.1);
+		break;
+		case 'cameraright':
+			this.camera.right(0.1);
+		break;
+		break;
+	}
+};
+
+
+blah.Scene.prototype.doLogic = function() {
+	// Screw the entities for now
+};
+
 
 blah.Scene.prototype.renderScene = function(context){
 	var gl = context.gl;
