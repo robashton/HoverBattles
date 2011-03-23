@@ -21,17 +21,9 @@
 			
 			$(document).ready(function(){
 				var scene = new blah.Scene();
-			
-				var heightMap = new Array(256 * 256);
-	
-				for(var x = 0; x < 256 ; x++){
-					for(var y = 0; y < 256; y++) {
-						var height = (Math.sin(x / 32) + Math.sin(y / 32));
-						heightMap[x + (y * 256)] = (height + 1.0 / 2;			
-					}
-				}
+		
 
-				var model = new blah.LandChunk(heightMap, 256, 256, 1.4, 1);
+				var model = new blah.LandChunk(256, 256, 1.4, 1);
 				var entity = new blah.Entity("test", model);
 
 				scene.addEntity(entity);
