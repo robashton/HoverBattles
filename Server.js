@@ -17,7 +17,9 @@ server = http.createServer(function(req, res){
 	.addHeader('Cache-Control', 'no-cache')
 	.otherwise(function(){
 
-		if(req.url.indexOf("/Landscape") == 0) {
+		console.log(req.url);
+
+		if(req.url.indexOf("/Landscape&") == 0) {
 			landscape.handle(req, res);
 		}
 		else if(req.url.indexOf("/Shaders.js") == 0) {

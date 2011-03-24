@@ -5,9 +5,8 @@ blah.keyCodes = {S:83,X:88, W: 87, D: 68, A: 65, Space: 32};
 blah.Controller = function(scene) {
 	this._scene = scene;
 	this._keyStates = {};
-
 	var controller = this;
-	
+
 	document.onkeydown = function(event) { 
 		controller.onKeyDown.call(controller, event);
 	};

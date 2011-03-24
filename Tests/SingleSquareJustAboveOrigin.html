@@ -27,11 +27,10 @@
 				scene.camera.setLocation([0,0,7]);
 
 				var context = new blah.RenderContext();
-				context.init('game');	
-				context.setActiveProgram(model.getProgram());
-				model.createBuffers(context);
-
+				context.init('game');
+				scene.activate(context);
 				scene.renderScene(context);
+				scene.deactivate();
 			});
 
 		</script>

@@ -15,6 +15,26 @@ $(document).ready(function(){
 		ok(entity === retrievedEntity);		
 	});
 
+	test("Removing an entity from the scene results in the entity not being there any more", function(){
+		var scene = new blah.Scene();
+		var entity = new blah.Entity("id");
+		scene.addEntity(entity);
+		scene.removeEntity(entity);
+
+		var entity = scene.getEntity("id");
+		ok(entity === undefined);
+		
+	});
+
+	test("Removing an entity from the scene results in the entity being notified", function(){
+		var scene = new blah.Scene();
+		var entity = new blah.Entity("id");
+		scene.addEntity(entity);
+		scene.removeEntity(entity);
+
+		ok(entity._scene === undefined);
+	});
+
 	test("Adding an entity to a scene reuslts in that entity being given a reference to that scene", function() {
 		var scene = new blah.Scene();
 		var entity = new blah.Entity("id");

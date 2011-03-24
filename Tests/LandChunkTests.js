@@ -20,14 +20,11 @@ $(document).ready(function(){
 		scene.addEntity(entity);
 
 		var context = new blah.RenderContext();
-
 		context.init('gameFixture');	
+		
+		scene.activate(context);
+		scene.renderScene();
+		scene.deactivate();
 
-		context.setActiveProgram(model.getProgram());
-		model.createBuffers(context);
-
-		scene.renderScene(context);
-
-		model.destroyBuffers(context);
 	});	
 });

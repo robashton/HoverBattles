@@ -11,14 +11,10 @@ $(document).ready(function(){
 
 		var context = new blah.RenderContext();
 
-		context.init('gameFixture');	
-
-		// TODO: Work out where this responsibility lies
-		context.setActiveProgram(model.getProgram());
-		model.createBuffers(context);
-
-		scene.renderScene(context);
-
-		model.destroyBuffers(context);
+		context.init('gameFixture');
+	
+		scene.activate(context);
+		scene.renderScene();
+		scene.deactivate();
 	});	
 });

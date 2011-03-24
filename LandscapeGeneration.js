@@ -18,16 +18,18 @@ generateData = function(req, res, callback)
 	var chunk = {};
 	var query = querystring.parse(req.url);
 
-	var width = parseInt(query.width);
+ 	var width = parseInt(query.width);
 	var height = parseInt(query.height);
 	var maxHeight = parseInt(query.maxHeight);
 	var scale = parseFloat(query.scale);	
+	var startX = parseInt(query.startx);
+	var startY = parseInt(query.starty);
 
 	var heightMap = new Array(width * height);
 
 	for(var x = 0; x < width ; x++){
 		for(var y = 0; y < height; y++) {
-			var terrainHeight = (Math.sin(x / 32) + Math.sin(y / 32));
+			var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
 			heightMap[x + (y * width)] = (terrainHeight + 1.0 / 2);			
 		}
 	}
@@ -44,9 +46,9 @@ generateData = function(req, res, callback)
 			var vertexIndex = index * 3;
 			var colourIndex = index * 4;
 		
-			vertices[vertexIndex] = x;
+			vertices[vertexIndex] = startX + x;
 			vertices[vertexIndex+1] = heightMap[index] * maxHeight;
-			vertices[vertexIndex+2] = y;
+			vertices[vertexIndex+2] = startY + y;
 
 			var brightness = heightMap[index];
 			if(brightness < 0.5) { brightness = 0.5; }

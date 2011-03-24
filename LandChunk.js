@@ -1,10 +1,12 @@
 var blah = blah || {};
 
-blah.LandChunk = function(width, height, maxHeight, scale){
+blah.LandChunk = function(width, height, maxHeight, scale,x,y){
 	this._maxHeight = maxHeight;
 	this._width = width;
 	this._height = height;
 	this._scale = scale;
+	this._x = x;
+	this._y = y;
 
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
@@ -24,10 +26,12 @@ blah.LandChunk.prototype.createBuffers = function(context) {
 	var chunk = this;
 
 	$.get('/Landscape' + 
-					'&height=' + this._height +
-					'&width=' + this._width + 
+					'&height=' + (this._height + 1) +
+					'&width=' + (this._width + 1) + 
 					'&scale=' + this._scale + 
-					'&maxHeight=' + this._maxHeight,
+					'&maxHeight=' + this._maxHeight +
+					'&startx=' + this._x + 
+					'&starty=' + this._y,
 		function(json) {
   			var data = JSON.parse(json);
 
@@ -77,6 +81,6 @@ blah.LandChunk.prototype.render = function(context) {
 	if(this._vertexBuffer != null) 
 	{
 		var gl = context.gl;
-		gl.drawElements(gl.LINES, this._indexCount, gl.UNSIGNED_SHORT, 0);
+		gl.drawElements(gl.TRIANGLE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
 	}
 };

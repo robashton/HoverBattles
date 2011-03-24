@@ -16,29 +16,24 @@
 		<script src="../Coordinator.js"></script>
 		<script src="../Shaders.js"></script>
 		<script src="../LandChunk.js"></script>
+		<script src="../LandscapeController.js"></script>
 
 		<script type="text/javascript">
 			
 			$(document).ready(function(){
 				var scene = new blah.Scene();
-		
-
-				var model = new blah.LandChunk(256, 256, 1.4, 1);
-				var entity = new blah.Entity("test", model);
-
-				scene.addEntity(entity);
-
-				entity.position = vec3.create([0,0, 0]);
-				scene.camera.setLocation([125,10,280]);
+				scene.camera.setLocation([0,10,0]);
 
 				var context = new blah.RenderContext();
 				context.init('game');
 
 				// Outside forces on the scene
 				var keyboardController = new blah.Controller(scene);
+				var landscapeController = new blah.LandscapeController(scene);
+
 				var coordinator = new blah.Coordinator(
 						scene, 
-						[keyboardController], 
+						[keyboardController, landscapeController], 
 						context);
 
 				setInterval(function() {  coordinator.tick(); }, 1000 / 30);
