@@ -2,10 +2,7 @@ path = require('path');
 fs = require('fs');
 querystring = require('querystring');
 
-
-
 exports.handle = function(req, res) {
-
 	generateData(req, res, function(model) {
 		res.writeHead(200, "Content-Type: application/javascript");
 		res.write(JSON.stringify(model));
@@ -30,7 +27,7 @@ generateData = function(req, res, callback)
 	for(var x = 0; x < width ; x++){
 		for(var y = 0; y < height; y++) {
 			var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
-			heightMap[x + (y * width)] = (terrainHeight + 1.0 / 2);			
+			heightMap[x + (y * width)] = Math.min(1.0, (terrainHeight + 1.0) / 2);			
 		}
 	}
 

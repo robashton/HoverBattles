@@ -36,7 +36,7 @@ blah.LandscapeController.prototype.doLogic = function() {
 			var key = x + '_' + z;
 			if(this._chunks[key]) { continue; }
 
-			var newChunkModel = new blah.LandChunk(chunkWidth, chunkWidth, 1.4, 1, x, z);
+			var newChunkModel = new blah.LandChunk(chunkWidth, chunkWidth, 5, 1, x, z);
 			var newChunk = new blah.Entity('Chunk_' + key, newChunkModel);
 
 			newChunk.x = x;
