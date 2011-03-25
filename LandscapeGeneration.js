@@ -54,9 +54,9 @@ generateData = function(req, res, callback)
 
 			var brightness = heightMap[index];
 			if(brightness < 0.5) { brightness = 0.5; }
-			colours[colourIndex++] = 0.0;
+			colours[colourIndex++] = brightness;
 			colours[colourIndex++] = brightness;		
-			colours[colourIndex++] = 0.0;
+			colours[colourIndex++] = brightness;
 			colours[colourIndex] = 1.0;
 		}
 	}

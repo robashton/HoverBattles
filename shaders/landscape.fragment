@@ -8,5 +8,5 @@ varying vec2 vTextureCoords;
 uniform sampler2D uSampler;
 
 void main(void) {
-  gl_FragColor = texture2D(uSampler, vec2(vTextureCoords.s, vTextureCoords.t));
+  gl_FragColor = vColour * texture2D(uSampler, vec2(vTextureCoords.s, vTextureCoords.t));
 }
