@@ -4,16 +4,7 @@ $(document).ready(function(){
 	test("Attaching a land chunk to an entity and rendering it results in no errors", function(){
 		var scene = new blah.Scene();
 
-		var heightMap = [256 * 256];
-	
-		for(var x = 0; x < 256 ; x++){
-			for(var y = 0; y < 256; y++) {
-				var height = (Math.sin(x) + Math.sin(y)) * 20;
-				heightMap[x + (y * 256)] = height;			
-			}
-		}
-
-		var model = new blah.LandChunk(256, 256, 1.4, 1);
+		var model = new blah.LandChunk(256, 256, 1.4, 1, 0, 0);
 		var entity = new blah.Entity("test", model);
 
 		scene.addEntity(entity);
