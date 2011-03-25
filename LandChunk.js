@@ -12,11 +12,14 @@ blah.LandChunk = function(width, height, maxHeight, scale,x,y){
 	this._indexBuffer = null;
 	this._indexCount = 0;
 	this._colourBuffer = null;
+	this._texturecoordsBuffer = null;
 	this._context = null;
+	
+	this._texture = null;
 };
 
 blah.LandChunk.prototype.getProgram = function(){
-	return "colour";
+	return "landscape";
 };
 
 blah.LandChunk.prototype.createBuffers = function(context) {
@@ -42,13 +45,27 @@ blah.LandChunk.prototype.createBuffers = function(context) {
 			chunk._colourBuffer = gl.createBuffer();
 			gl.bindBuffer(gl.ARRAY_BUFFER, chunk._colourBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.colours), gl.STATIC_DRAW)
+			
+			chunk._texturecoordsBuffer = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, chunk._texturecoordsBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.texturecoords), gl.STATIC_DRAW)
 
 			chunk._indexBuffer = gl.createBuffer();
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, chunk._indexBuffer);
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(data.indices), gl.STATIC_DRAW);
 
 			chunk._indexCount = data.indices.length;
-
+			
+			chunk._texture = gl.createTexture();
+			chunk._texture.image = new Image();
+			chunk._texture.image.onload = function() {
+			 	gl.bindTexture(gl.TEXTURE_2D, chunk._texture);
+			 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, chunk._texture.image);
+			 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+			 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+			 	gl.bindTexture(gl.TEXTURE_2D, null);
+			}			
+			chunk._texture.image.src = "/textures/grass.jpg";
 	});
 };
 
@@ -57,6 +74,7 @@ blah.LandChunk.prototype.destroyBuffers = function(context) {
 	gl.deleteBuffer(this._vertexBuffer);
 	gl.deleteBuffer(this._indexBuffer);
 	gl.deleteBuffer(this._colourBuffer);
+	gl.deleteTexture(this._texture);
 };
 
 blah.LandChunk.prototype.uploadBuffers = function(context) {
@@ -71,9 +89,16 @@ blah.LandChunk.prototype.uploadBuffers = function(context) {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
 		gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexColour'), 4, gl.FLOAT, false, 0, 0);
 		gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexColour'));
-
+				
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
+		gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoords'), 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
+	
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-
+		
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		gl.uniform1i(program.samplerUniform, 0); 
 	}
 };
 
@@ -81,6 +106,6 @@ blah.LandChunk.prototype.render = function(context) {
 	if(this._vertexBuffer != null) 
 	{
 		var gl = context.gl;
-		gl.drawElements(gl.LINES, this._indexCount, gl.UNSIGNED_SHORT, 0);
+		gl.drawElements(gl.TRIANGLE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
 	}
 };

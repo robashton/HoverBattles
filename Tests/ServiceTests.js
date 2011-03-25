@@ -3,7 +3,11 @@ $(document).ready(function(){
 
 	asyncTest("Requesting a chunk of land results in some data being returned", function(){
 		blah.Services.getLandChunk(128, 128, 1, 5, 0, 0, function(data) {
-			ok(data != null);			
+			ok(data, "Checking any data at all was returned");
+			ok(data.vertices, "Checking vertices were returned");	
+			ok(data.indices, "Checking indices were returned");	
+			ok(data.colours, "Checking colours were returned");
+			ok(data.texturecoords, "Checking texture coordinates were returned");	
 			start();
 		});		
 	});

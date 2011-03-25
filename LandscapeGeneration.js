@@ -33,6 +33,7 @@ generateData = function(req, res, callback)
 
 	var indexCount = (height - 1) * width * 2;
 	var vertices = new Array(width* height * 3);
+	var texturecoords = new Array(width * height * 2);
 	var colours = new Array(width * height * 4);
 	var indices = new Array(indexCount);
 
@@ -42,18 +43,19 @@ generateData = function(req, res, callback)
 
 			var vertexIndex = index * 3;
 			var colourIndex = index * 4;
+			var texcoordsIndex = index * 2;
 		
 			vertices[vertexIndex] = startX + x;
 			vertices[vertexIndex+1] = heightMap[index] * maxHeight;
 			vertices[vertexIndex+2] = startY + y;
 
+			texturecoords[texcoordsIndex] = x / width;
+			texturecoords[texcoordsIndex+1] = y / height;
+
 			var brightness = heightMap[index];
 			if(brightness < 0.5) { brightness = 0.5; }
-
 			colours[colourIndex++] = 0.0;
-			colours[colourIndex++] = brightness;
-			
-
+			colours[colourIndex++] = brightness;		
 			colours[colourIndex++] = 0.0;
 			colours[colourIndex] = 1.0;
 		}
@@ -95,6 +97,7 @@ generateData = function(req, res, callback)
 	callback({
 		vertices: vertices,
 		colours: colours,
-		indices: indices
+		indices: indices,
+		texturecoords: texturecoords
 	});
 };
