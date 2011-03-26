@@ -6,6 +6,7 @@ blah.LandChunk = function(width, height, maxHeight, scale,x,y){
 	this._height = height;
 	this._x = x;
 	this._y = y;
+    this._scale = scale;
 
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
@@ -25,6 +26,7 @@ blah.LandChunk.prototype.getData = function(callback) {
     			'&height=' + (this._height) +
     			'&width=' + (this._width) + 
     			'&maxheight=' + this._maxHeight + 
+        		'&scale=' + this._scale,
     			'&startx=' + this._x + 
     			'&starty=' + this._y,
     function(json) {

@@ -17,6 +17,9 @@ blah.LandscapeController = function(scene) {
     var currentChunk = null;
     entity.getHeightAt = function(x, z)
     {
+        x /= blah.LandscapeController.Scale;
+        z /= blah.LandscapeController.Scale;        
+        
         var chunkWidth = blah.LandscapeController.ChunkWidth;
         var currentChunkX = parseInt(x / chunkWidth) * chunkWidth;
         var currentChunkZ = parseInt(z / chunkWidth) * chunkWidth;
@@ -44,24 +47,26 @@ blah.LandscapeController = function(scene) {
     this._scene.addEntity(entity);
     
 };
+
 blah.LandscapeController.ChunkWidth = 128;
+blah.LandscapeController.Scale = 5;
 
 blah.LandscapeController.prototype.doLogic = function() {
     if(this._counter++ % 10 != 0) { return ; }
     
 	var chunkWidth = blah.LandscapeController.ChunkWidth;
 
-	var currentx = this._scene.camera._location[0];
-	var currentz = this._scene.camera._location[2];
+	var currentx = this._scene.camera._location[0] / blah.LandscapeController.Scale;
+	var currentz = this._scene.camera._location[2] / blah.LandscapeController.Scale;
 
 	var currentChunkX = Math.floor(currentx / chunkWidth) * chunkWidth;
 	var currentChunkZ = Math.floor(currentz / chunkWidth) * chunkWidth;
 
 	// Remove dead chunks
-	var minX = currentChunkX - (chunkWidth * 3);
-	var minZ = currentChunkZ - (chunkWidth * 3);
-	var maxX = currentChunkX + (chunkWidth * 2);
-	var maxZ = currentChunkZ + (chunkWidth * 2);
+	var minX = currentChunkX - (chunkWidth);
+	var minZ = currentChunkZ - (chunkWidth);
+	var maxX = currentChunkX + (chunkWidth);
+	var maxZ = currentChunkZ + (chunkWidth);
 
 	for(i in this._chunks){
 		var chunk = this._chunks[i];
@@ -79,7 +84,7 @@ blah.LandscapeController.prototype.doLogic = function() {
 			if(this._chunks[key]) { continue; }
             console.log("Creating chunk " + key);
 
-			var newChunkModel = new blah.LandChunk(chunkWidth + 1, chunkWidth + 1, 10, 1, x, z);
+			var newChunkModel = new blah.LandChunk(chunkWidth + 1, chunkWidth + 1, 100, blah.LandscapeController.Scale, x, z);
 			var newChunk = new blah.Entity('Chunk_' + key, newChunkModel);
 
 			newChunk.x = x;

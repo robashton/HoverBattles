@@ -22,7 +22,8 @@ generateData = function(req, res, callback)
 	var height = parseInt(query.height);
 	var startX = parseInt(query.startx);
 	var startY = parseInt(query.starty);
-
+    var scale = parseInt(query.scale);
+    
 	var heightMap = new Array(width * height);
 
 	for(var x = 0; x < width ; x++){
@@ -32,7 +33,7 @@ generateData = function(req, res, callback)
 		}
 	}
     
-    var data = blah.generateTerrainData(width, height, maxHeight, startX, startY, heightMap);
+    var data = blah.generateTerrainData(width, height, maxHeight, scale, startX, startY, heightMap);
 
 	callback({
 		heights: heightMap,
@@ -44,7 +45,7 @@ generateData = function(req, res, callback)
 };
 
 var blah = blah || {};
-blah.generateTerrainData = function(width, height, maxHeight, startX, startY, heightMap) {
+blah.generateTerrainData = function(width, height, maxHeight, scale, startX, startY, heightMap) {
     
     var indexCount = (height - 1) * width * 2;
     var vertices = new Array(width* height * 3);
@@ -62,9 +63,9 @@ blah.generateTerrainData = function(width, height, maxHeight, startX, startY, he
     		var colourIndex = index * 4;
     		var texcoordsIndex = index * 2;    
         	    		
-    		vertices[vertexIndex] = startX + x;
+    		vertices[vertexIndex] = (startX + x) * scale;
     		vertices[vertexIndex+1] = heightMap[index];
-    		vertices[vertexIndex+2] = startY + y;
+    		vertices[vertexIndex+2] = (startY + y) * scale;
     
     		texturecoords[texcoordsIndex] = x / width;
     		texturecoords[texcoordsIndex+1] = y / height;
