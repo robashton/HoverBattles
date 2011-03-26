@@ -14,6 +14,7 @@ blah.LandChunk = function(width, height, maxHeight, scale,x,y){
 	this._colourBuffer = null;
 	this._texturecoordsBuffer = null;
 	this._context = null;
+    this._vertices
 	
 	this._texture = null;
 };
@@ -31,13 +32,13 @@ blah.LandChunk.prototype.createBuffers = function(context) {
 	$.get('/Landscape' + 
 					'&height=' + (this._height + 1) +
 					'&width=' + (this._width + 1) + 
-					'&scale=' + this._scale + 
-					'&maxHeight=' + this._maxHeight +
+    				'&maxheight=' + this._maxHeight + 
+        			'&scale' + this._scale +
 					'&startx=' + this._x + 
 					'&starty=' + this._y,
 		function(json) {
-  			var data = JSON.parse(json);
-
+  		 var data = JSON.parse(json);      	 
+       
 			chunk._vertexBuffer = gl.createBuffer();
 			gl.bindBuffer(gl.ARRAY_BUFFER, chunk._vertexBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.vertices), gl.STATIC_DRAW)

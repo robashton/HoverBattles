@@ -1,8 +1,11 @@
 var blah = blah || {};
 
+// Probably end up turning everything into entities and limiting the number of methods
+// That entities need to actually implement in order to be added to a scene
 blah.LandscapeController = function(scene) {
 	this._scene = scene;
 	this._chunks = {};
+    this._counter = 0;
     
     var entity = new blah.Entity("terrain");
     var controller = this;
@@ -11,12 +14,19 @@ blah.LandscapeController = function(scene) {
         controller.doLogic();
     });
     
+    entity.getHeightAt = function(x, z)
+    {
+        return 8;  
+    };
+    
     this._scene.addEntity(entity);
     
 };
 blah.LandscapeController.ChunkWidth = 128;
 
 blah.LandscapeController.prototype.doLogic = function() {
+    if(this._counter++ % 10 != 0) { return ; }
+    
 	var chunkWidth = blah.LandscapeController.ChunkWidth;
 
 	var currentx = this._scene.camera._location[0];
