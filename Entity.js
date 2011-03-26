@@ -15,19 +15,34 @@ blah.Entity.prototype.getModel = function(){
 	return this._model;
 };
 
+blah.Entity.prototype.attach = function(logic) {
+    var oldLogic = this.doLogic;
+    this.doLogic = function(){
+      oldLogic.call(this);
+      logic.call(this);
+    };
+};
+
+blah.Entity.prototype.doLogic = function() {
+    
+};
+
 blah.Entity.prototype.setScene = function(scene) {
 	this._scene = scene;
 };
 
 blah.Entity.prototype.activate = function(context) {
+    if(!this._model) { return; }
 	this._model.createBuffers(context);
 };
 
 blah.Entity.prototype.deactivate = function(context) {
+    if(!this._model) { return; }
 	this._model.destroyBuffers(context);
 };
 
 blah.Entity.prototype.render = function(context){
+    if(!this._model) { return; }
 	var gl = context.gl;
 
 	var viewMatrix = this._scene.camera.getViewMatrix();

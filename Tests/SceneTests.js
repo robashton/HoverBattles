@@ -41,8 +41,29 @@ $(document).ready(function(){
 
 		scene.addEntity(entity);
 
-	 	ok(entity._scene === scene);
+	    ok(entity._scene === scene);
 
 	});
+    
+    test("Running logic in the scene", function(){
+       var scene = new blah.Scene();
+       var logicRan = false;
+
+       var entity = {
+         getId: function() { return "id"; },
+         doLogic: function() {
+             logicRan = true;
+         },
+         setScene: function(scene) {}
+       };
+       scene.addEntity(entity);
+       
+       scene.doLogic();
+       
+       ok(logicRan, "Logic is executed in entities");
+       
+    });
+    
+    
 	
 });

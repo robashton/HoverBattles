@@ -19,6 +19,26 @@ $(document).ready(function(){
 		var returnedId = entity.getId();
 		equal("id", returnedId);	
 	});
+    
+    test("Adding additional logic to the entity", function() {
+       
+       var entity = new blah.Entity("id");
+       var one = false;
+       var two = false;
+       
+       entity.attach(function(){
+        one = true;    
+       });
+        
+       entity.attach(function(){
+        two = true;    
+       });
+       
+       entity.doLogic();
+       
+       ok(one && two, "Additional logic is executed on doLogic();");       
+       
+    });
 	
 	
 });

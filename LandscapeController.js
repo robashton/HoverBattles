@@ -3,6 +3,16 @@ var blah = blah || {};
 blah.LandscapeController = function(scene) {
 	this._scene = scene;
 	this._chunks = {};
+    
+    var entity = new blah.Entity("terrain");
+    var controller = this;
+    
+    entity.attach(function(){
+        controller.doLogic();
+    });
+    
+    this._scene.addEntity(entity);
+    
 };
 blah.LandscapeController.ChunkWidth = 128;
 

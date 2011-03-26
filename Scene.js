@@ -61,9 +61,9 @@ blah.Scene.prototype.msg = function(msg) {
 
 
 blah.Scene.prototype.doLogic = function() {
-
-	// Screw the entities for now
-
+    for(i in this._entities){
+        this._entities[i].doLogic();
+    }
 };
 
 

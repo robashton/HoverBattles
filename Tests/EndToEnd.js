@@ -16,5 +16,21 @@ $(document).ready(function(){
 		scene.activate(context);
 		scene.renderScene();
 		scene.deactivate();
-	});	
+	});
+    
+    // NOTE: Check for colour in the canvas? This possible? :-)
+    test("Rendering a scene with an entity without a model results in no errors", function(){
+    	var scene = new blah.Scene();
+    	var entity = new blah.Entity("test");
+    
+    	scene.addEntity(entity);
+    
+    	var context = new blah.RenderContext();
+    
+    	context.init('gameFixture');
+    
+    	scene.activate(context);
+    	scene.renderScene();
+    	scene.deactivate();
+    });	
 });
