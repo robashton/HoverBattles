@@ -24,17 +24,32 @@ blah.Controller.prototype.onKeyUp = function(event) {
 };
 
 blah.Controller.prototype.doLogic = function() {
+    var hovercraft = this._scene.getEntity("player");
+    var terrain = this._scene.getEntity("terrain");
+    
+    
+    
+    
 	if(this._keyStates[blah.keyCodes.W]) {
-		this._scene.msg('cameraforward');
+//		hovercraft.position[2] -= 0.5;
+    	this._scene.camera._location[2] -= 0.5;
 	} else if(this._keyStates[blah.keyCodes.S])
 	{
-		this._scene.msg('cameraback');
+//		hovercraft.position[2] += 0.5;
+    	this._scene.camera._location[2] += 0.5;
 	}
 
 	if(this._keyStates[blah.keyCodes.D]){
-		this._scene.msg('cameraright');
+  //  	hovercraft.position[0] += 0.5;
+        this._scene.camera._location[0] += 0.5;
 	}	else if(this._keyStates[blah.keyCodes.A])
 	{
-		this._scene.msg('cameraleft');
+    //    hovercraft.position[0] -= 0.5;
+        this._scene.camera._location[0] -= 0.5;
 	}
+
+    this._scene.camera._location[1] = terrain.getHeightAt(
+             this._scene.camera._location[0],
+             this._scene.camera._location[2]
+              ) + 1;
 };

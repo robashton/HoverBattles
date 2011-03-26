@@ -28,7 +28,7 @@ generateData = function(req, res, callback)
 	for(var x = 0; x < width ; x++){
 		for(var y = 0; y < height; y++) {
 			var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
-			heightMap[x + (y * width)] = Math.min(1.0, (terrainHeight + 1.0) / 2);			
+			heightMap[x + (y * width)] = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;			
 		}
 	}
     
@@ -63,7 +63,7 @@ blah.generateTerrainData = function(width, height, maxHeight, startX, startY, he
     		var texcoordsIndex = index * 2;    
         	    		
     		vertices[vertexIndex] = startX + x;
-    		vertices[vertexIndex+1] = heightMap[index] * maxHeight;
+    		vertices[vertexIndex+1] = heightMap[index];
     		vertices[vertexIndex+2] = startY + y;
     
     		texturecoords[texcoordsIndex] = x / width;
