@@ -1,32 +1,35 @@
 - Add a camera class that has the ability to 
-	- Be positioned																						[x]
-	- Rotate																									
+	- Be positioned																	     [x]
+	- Look at stuff																		 
 
-- Add the camera class to the single square test so it still works						[x]					
-- Write a server to serve the shader files in a nice format									[x]
-- Add the world matrix into the equation															[x]
+- Add the camera class to the single square test so it still works						  [x]					
+- Write a server to serve the shader files in a nice format								 [x]
+- Add the world matrix into the equation													[x]
 
-- Add a 'game loop'																						[x]
+- Add a 'game loop'																		 [x]
 
-- Write a shader that can do colouring based on a list of colours							[x]
+- Write a shader that can do colouring based on a list of colours						   [x]
 
 - Give entities a 'type' or 'category' and methods to request entities via these
 - Allow entities to have logic and receive messages from the controller
 - Allow entities to take control over the camera
 - Allow entities to talk to each other (directly, whatever)
 
-- Write a VERY basic grid terrain renderer with colour based on height					[x]
+- Write a VERY basic grid terrain renderer with colour based on height					  [x]
 - Write some code to hug the terrain (camera)													
-- Write some code to allow moving around the terrain (WASD)									[x]
+- Write some code to allow moving around the terrain (WASD)								 [x]
 
-- Add some texture to the terrain (just so we have some scale when moving around)	
-- Create procedural terrain definition generator												
-- Put the generator server-side																		
+- Add some texture to the terrain (just so we have some scale when moving around)	       [x]
+- Create procedural terrain definition generator											[x]
+- Put the generator server-side															 [x]		
 
 - Add some light blue fog (easier than adding a skybox)										
-
-- Add models to the landscape																			
-- Add player model																						
+- Add models to the landscape (trees, houses)
+- Add player model
+- Add controls and basic physics to move player model
+- Write code for camera to follow player model about cleanly
 
 - Add multiplayer code so we can move a few players around in the world					
-
+- Add firing code (somehow)
+- Add collision detection between entities (players and landscape models)
+- Add collision detection between firing
