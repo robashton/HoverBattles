@@ -14,7 +14,6 @@ blah.LandscapeController = function(scene) {
         controller.doLogic();
     });
     
-    var currentChunk = null;
     entity.getHeightAt = function(x, z)
     {
         x /= blah.LandscapeController.Scale;
@@ -31,9 +30,6 @@ blah.LandscapeController = function(scene) {
         
         var chunk = controller._chunks[key];
         if(chunk){
-            if(key != currentChunk)
-                console.log("Using chunk " + key); 
-            currentChunk = key;
             return chunk._model.getHeightAt(x, z);
         }
         else

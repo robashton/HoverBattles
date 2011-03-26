@@ -10,13 +10,13 @@
 
 - Write a shader that can do colouring based on a list of colours						   [x]
 
-- Give entities a 'type' or 'category' and methods to request entities via these
-- Allow entities to have logic and receive messages from the controller
-- Allow entities to take control over the camera
-- Allow entities to talk to each other (directly, whatever)
+- Give entities a 'type' or 'category' and methods to request entities via these            [x] // not relevant, doing it by id
+- Allow entities to have logic and receive messages from the controller                     [x] // not relevant
+- Allow entities to take control over the camera                                            [x] // Entities get given the scene
+- Allow entities to talk to each other (directly, whatever)                                 [x]
 
 - Write a VERY basic grid terrain renderer with colour based on height					  [x]
-- Write some code to hug the terrain (camera)													
+- Write some code to hug the terrain (camera)			                                   [x]										
 - Write some code to allow moving around the terrain (WASD)								 [x]
 
 - Add some texture to the terrain (just so we have some scale when moving around)	       [x]

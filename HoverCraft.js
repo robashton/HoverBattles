@@ -18,8 +18,8 @@ blah.Hovercraft.prototype.doLogic = function(){
     var terrain = this._scene.getEntity("terrain");
     
     // So we'll get the height at the current entity point
-  //  var height =  terrain.getHeightAt(this._entity.position[0], this._entity.position[2]);
+    var height =  terrain.getHeightAt(this._entity.position[0], this._entity.position[2]);
     
     // And we'll set the entity at that height
-//    this._entity.position[1] = height + 0.5;    
+     this._entity.position[1] = height + 0.5;    
 };

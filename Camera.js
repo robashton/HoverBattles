@@ -2,28 +2,14 @@ var blah = blah || {};
 
 blah.Camera = function(location){
 	this._location = location;
+    this._lookAt = vec3.create();
+    this._up = vec3.create([0,1,0]);
 	this._rotation = vec3.create();
 };
 
 
 blah.Camera.prototype.setLocation = function(location){
 	this._location = location;
-};
-
-blah.Camera.prototype.forwards = function(amount) {
-	this._location[2] -= amount;
-};
-
-blah.Camera.prototype.backwards = function(amount) {
-	this._location[2] += amount;
-};
-
-blah.Camera.prototype.left = function(amount) {
-	this._location[0] -= amount;
-};
-
-blah.Camera.prototype.right = function(amount) {
-	this._location[0] += amount;
 };
 
 blah.Camera.prototype.getProjectionMatrix = function(gl) {
@@ -33,15 +19,7 @@ blah.Camera.prototype.getProjectionMatrix = function(gl) {
 };
 
 blah.Camera.prototype.getViewMatrix = function(){ 	
-	var viewMatrix = mat4.create();
-	mat4.identity(viewMatrix);
-
-	mat4.translate(viewMatrix,
-		[
-			-this._location[0],
-			-this._location[1],
-			-this._location[2]
-		]);
-
+    var viewMatrix = mat4.create();
+    mat4.lookAt(this._location, this._lookAt, this._up, viewMatrix);
 	return viewMatrix;	
 };

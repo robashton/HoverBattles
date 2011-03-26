@@ -57,32 +57,4 @@ $(document).ready(function(){
         equal(somewhere, 0.75, "somewhere");
         
     });
-    
-     test("Height checking with negative chunk", function() {
-       var model = new blah.LandChunk(2, 2, 1.4, 1, -100, -100);
-       model.getData = function(callback){
-            callback(
-                {
-                   vertices: [],
-                   indices: [],
-                   colours: [],
-                   texturecoords: [],
-                   heights: [
-                            0, 0,
-                            1, 1
-                       ]
-                });
-       };
-       
-        var context = new blah.RenderContext();
-        context.init('gameFixture');
-        
-        model.createBuffers(context);
-        
-        var topLeft = model.getHeightAt(-100,-100);
-        var bottomRight = model.getHeightAt(-99.001,-99.001);
-        
-        equal(topLeft, 0, "Top left");
-        equal(bottomRight, 0.99, "bottomRight");
-    });
 });

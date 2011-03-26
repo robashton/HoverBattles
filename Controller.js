@@ -26,30 +26,25 @@ blah.Controller.prototype.onKeyUp = function(event) {
 blah.Controller.prototype.doLogic = function() {
     var hovercraft = this._scene.getEntity("player");
     var terrain = this._scene.getEntity("terrain");
-    
-    
-    
-    
+        
 	if(this._keyStates[blah.keyCodes.W]) {
-//		hovercraft.position[2] -= 0.5;
-    	this._scene.camera._location[2] -= 0.5;
+		hovercraft.position[2] -= 0.5;
 	} else if(this._keyStates[blah.keyCodes.S])
 	{
-//		hovercraft.position[2] += 0.5;
-    	this._scene.camera._location[2] += 0.5;
+		hovercraft.position[2] += 0.5;
 	}
 
 	if(this._keyStates[blah.keyCodes.D]){
-  //  	hovercraft.position[0] += 0.5;
-        this._scene.camera._location[0] += 0.5;
+    	hovercraft.position[0] += 0.5;
 	}	else if(this._keyStates[blah.keyCodes.A])
 	{
-    //    hovercraft.position[0] -= 0.5;
-        this._scene.camera._location[0] -= 0.5;
+        hovercraft.position[0] -= 0.5;
 	}
-
+    
+    // This much is obvious
+    this._scene.camera._lookAt = hovercraft.position;
     this._scene.camera._location[1] = terrain.getHeightAt(
              this._scene.camera._location[0],
              this._scene.camera._location[2]
-              ) + 1;
+              ) + 10;
 };
