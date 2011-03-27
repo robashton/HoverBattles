@@ -28,23 +28,17 @@ blah.Controller.prototype.doLogic = function() {
     var terrain = this._scene.getEntity("terrain");
         
 	if(this._keyStates[blah.keyCodes.W]) {
-		hovercraft.position[2] -= 0.5;
+		hovercraft.impulseForward(0.2);
 	} else if(this._keyStates[blah.keyCodes.S])
 	{
-		hovercraft.position[2] += 0.5;
+    	hovercraft.impulseBackward(0.2);
 	}
 
 	if(this._keyStates[blah.keyCodes.D]){
-    	hovercraft.position[0] += 0.5;
-	}	else if(this._keyStates[blah.keyCodes.A])
-	{
-        hovercraft.position[0] -= 0.5;
+    	hovercraft.impulseRight(0.05);
 	}
-    
-    // This much is obvious
-    this._scene.camera._lookAt = hovercraft.position;
-    this._scene.camera._location[1] = terrain.getHeightAt(
-             this._scene.camera._location[0],
-             this._scene.camera._location[2]
-              ) + 10;
+    else if(this._keyStates[blah.keyCodes.A])
+	{
+        hovercraft.impulseLeft(0.05);
+	}
 };

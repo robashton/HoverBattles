@@ -4,6 +4,7 @@ blah.Entity = function(id, model){
 	this._model = model;
 	this._id = id;
 	this.position = vec3.create();
+    this.rotationY = 0;
 	this._scene = null;
 };
 
@@ -49,9 +50,10 @@ blah.Entity.prototype.render = function(context){
 	var projectionMatrix = this._scene.camera.getProjectionMatrix(gl);
 
 	var worldMatrix = mat4.create();
+    mat4.identity(worldMatrix);
+    mat4.translate(worldMatrix, this.position);
+    mat4.rotateY(worldMatrix, this.rotationY);
 
-	mat4.identity(worldMatrix);
-	mat4.translate(worldMatrix, this.position);
 
 	var program = context.setActiveProgram(this._model.getProgram());
 	this._model.uploadBuffers(context);

@@ -4,7 +4,6 @@ blah.Camera = function(location){
 	this._location = location;
     this._lookAt = vec3.create();
     this._up = vec3.create([0,1,0]);
-	this._rotation = vec3.create();
 };
 
 
