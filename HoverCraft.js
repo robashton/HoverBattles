@@ -3,9 +3,14 @@ var blah = blah || {};
 blah.Hovercraft = function(id, scene) {
      this._model = new blah.Model({
          vertices: BlenderExport.Hovercraft.vertices,
-         indices: BlenderExport.Hovercraft.indices
+         indices: BlenderExport.Hovercraft.indices,
+         texCoords: BlenderExport.Hovercraft.texCoords
      },
-     "default");
+     "texture");
+
+    this._model._textureName = "/textures/hovercraft.jpg";
+
+     
     this._entity = new blah.Entity(id, this._model);
     this._scene = scene;
     
