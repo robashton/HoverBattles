@@ -98,18 +98,20 @@ blah.Model.prototype.uploadBuffers = function(context) {
 	}
     
     if(this._textureBuffer) {
-    	gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
-    	gl.vertexAttribPointer(gl.getAttribLocation(program, 'vTextureCoords'), 2, gl.FLOAT, false, 0, 0);
-    	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'vTextureCoords'));
+    	gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
+    	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoords'), 2, gl.FLOAT, false, 0, 0);
+    	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
     }    
+    
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     
     if(this._texture){
        gl.activeTexture(gl.TEXTURE0);
        gl.bindTexture(gl.TEXTURE_2D, this._texture);
-       gl.uniform1i(program.samplerUniform, 0);      
+       gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0);      
     }
     
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+
 };
 
 blah.Model.prototype.render = function(context) {
@@ -127,6 +129,12 @@ blah.Model.Quad = function()
 				1.0, 1.0, 0, 
 				0.0, 1.0, 0
 				],
+    			texCoords: [
+        		    0.0, 0.0,
+            	    1.0, 0.0,
+                    1.0, 1.0,
+                    0.0, 1.0
+            	 ],
 				indices: [0, 1, 2, 0, 2, 3]
 			},
 			"default"

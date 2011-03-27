@@ -139,7 +139,7 @@ blah.LandChunk.prototype.uploadBuffers = function(context) {
 		
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);
-		gl.uniform1i(program.samplerUniform, 0); 
+		gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0); 
 	}
 };
 
@@ -147,6 +147,6 @@ blah.LandChunk.prototype.render = function(context) {
 	if(this._vertexBuffer != null) 
 	{
 		var gl = context.gl;
-		gl.drawElements(gl.LINE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
+		gl.drawElements(gl.TRIANGLE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
 	}
 };

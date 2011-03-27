@@ -54,16 +54,17 @@ blah.Hovercraft.prototype.doLogic = function(){
     var hovercraft = this._entity;
     
     // So we'll get the height at the current entity point
-    var height =  terrain.getHeightAt(this._entity.position[0], this._entity.position[2]);    
-     this._entity.position[1] = height + 0.5;   
      vec3.add(this._entity.position, this._velocity);
      
+     var height =  terrain.getHeightAt(this._entity.position[0], this._entity.position[2]);  
+     this._entity.position[1] = height + 0.5;   
+          
      // This much is obvious
      this._scene.camera._lookAt = hovercraft.position;
      
      var cameraTrail = vec3.create();
      vec3.normalize(this._velocity, cameraTrail);
-     vec3.scale(cameraTrail, 20);
+     vec3.scale(cameraTrail, 15);
      
      vec3.subtract(this._entity.position, cameraTrail, cameraTrail);
      
