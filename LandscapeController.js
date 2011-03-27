@@ -68,8 +68,8 @@ blah.LandscapeController.prototype.doLogic = function() {
 		var chunk = this._chunks[i];
 
 		if(chunk.x < minX || chunk.z < minZ || chunk.x > maxX || chunk.z > maxZ) {
-			this._scene.removeEntity(chunk);
-			delete this._chunks[i];		
+			// this._scene.removeEntity(chunk);
+            //delete this._chunks[i];		
 		}
 	}
 
