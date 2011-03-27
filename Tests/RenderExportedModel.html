@@ -20,6 +20,7 @@
 		<script src="../LandscapeController.js"></script>
     	
         <script src="../models/monkey.js"></script>
+        <script src="../models/hovercraft.js"></script>
 
 		<script type="text/javascript">
 			
@@ -29,8 +30,8 @@
         		scene.camera._lookAt = vec3.create([0,0,0]);
         		
             	var model = new blah.Model({
-                    vertices: BlenderExport.Suzanne.vertices,
-                    indices: BlenderExport.Suzanne.indices
+                    vertices: BlenderExport.Hovercraft.vertices,
+                    indices: BlenderExport.Hovercraft.indices
                 },
                 "default");
                 

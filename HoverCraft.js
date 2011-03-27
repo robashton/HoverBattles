@@ -1,7 +1,11 @@
 var blah = blah || {};
 
 blah.Hovercraft = function(id, scene) {
-    this._model = blah.Model.Quad();
+     this._model = new blah.Model({
+         vertices: BlenderExport.Hovercraft.vertices,
+         indices: BlenderExport.Hovercraft.indices
+     },
+     "default");
     this._entity = new blah.Entity(id, this._model);
     this._scene = scene;
     
@@ -14,15 +18,15 @@ blah.Hovercraft = function(id, scene) {
     
     // Attach logic to entity, need to think of a nice tidy way of doing this
     this._entity.impulseForward = function(amount) {
-        var accelerationZ = amount * Math.cos(hovercraft._entity.rotationY);
-        var accelerationX = amount * Math.sin(hovercraft._entity.rotationY);
+        var accelerationZ = (-amount) * Math.cos(hovercraft._entity.rotationY);
+        var accelerationX = (-amount) * Math.sin(hovercraft._entity.rotationY);
         var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
         vec3.add(hovercraft._velocity, acceleration);  
     };
     
     this._entity.impulseBackward = function(amount) {
-        var accelerationZ = (-amount) * Math.cos(hovercraft._entity.rotationY);
-        var accelerationX = (-amount) * Math.sin(hovercraft._entity.rotationY);
+        var accelerationZ = (amount) * Math.cos(hovercraft._entity.rotationY);
+        var accelerationX = (amount) * Math.sin(hovercraft._entity.rotationY);
         var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
         vec3.add(hovercraft._velocity, acceleration);
     };
@@ -60,7 +64,11 @@ blah.Hovercraft.prototype.doLogic = function(){
      
      
      this._scene.camera._location = cameraTrail;
-     this._scene.camera._location[1] = terrain.getHeightAt(this._scene.camera._location[0], this._scene.camera._location[2]) + 5;
+     
+     var terrainHeightAtCameraLocation = terrain.getHeightAt(this._scene.camera._location[0], this._scene.camera._location[2]);
+     var cameraHeight = Math.max(terrainHeightAtCameraLocation, this._entity.position[1]);
+     
+     this._scene.camera._location[1] =  cameraHeight + 5;
                
     vec3.scale(this._velocity, this._decay);
      

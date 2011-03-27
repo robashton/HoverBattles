@@ -70,7 +70,7 @@ blah.Model.prototype.uploadBuffers = function(context) {
 
 blah.Model.prototype.render = function(context) {
 	var gl = context.gl;
-	gl.drawElements(gl.TRIANGLE_STRIP, this._indices.length , gl.UNSIGNED_SHORT, 0);
+	gl.drawElements(gl.TRIANGLES, this._indices.length , gl.UNSIGNED_SHORT, 0);
 };
 
 

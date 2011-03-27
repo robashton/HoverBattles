@@ -147,6 +147,6 @@ blah.LandChunk.prototype.render = function(context) {
 	if(this._vertexBuffer != null) 
 	{
 		var gl = context.gl;
-		gl.drawElements(gl.TRIANGLE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
+		gl.drawElements(gl.LINE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
 	}
 };
