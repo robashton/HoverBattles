@@ -17,6 +17,7 @@ blah.LandChunk = function(width, height, maxHeight, scale,x,y){
     this._vertices
 	
 	this._texture = null;
+    this._detailtexture = null;
     this._heightMap = null;
     
 };
@@ -102,11 +103,25 @@ blah.LandChunk.prototype.createBuffers = function(context) {
 		chunk._texture.image.onload = function() {
 		 	gl.bindTexture(gl.TEXTURE_2D, chunk._texture);
 		 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, chunk._texture.image);
-		 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
+    	 	gl.generateMipmap(gl.TEXTURE_2D);
 		 	gl.bindTexture(gl.TEXTURE_2D, null);
 		}			
 		chunk._texture.image.src = "/textures/grass.jpg";
+    	
+        chunk._detailtexture = gl.createTexture();
+        chunk._detailtexture.image = new Image();
+        chunk._detailtexture.image.onload = function() {
+         	gl.bindTexture(gl.TEXTURE_2D, chunk._detailtexture);
+         	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, chunk._detailtexture.image);
+         	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+         	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
+             gl.generateMipmap(gl.TEXTURE_2D);
+         	gl.bindTexture(gl.TEXTURE_2D, null);
+        }
+        
+        chunk._detailtexture.image.src = "/textures/grassdetail.jpg";
 	});
 };
 
@@ -139,7 +154,11 @@ blah.LandChunk.prototype.uploadBuffers = function(context) {
 		
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);
-		gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0); 
+		gl.uniform1i(gl.getUniformLocation(program, 'uDiffuseSampler'), 0); 
+    	
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this._detailtexture);
+        gl.uniform1i(gl.getUniformLocation(program, 'uDetailSampler'), 1); 
 	}
 };
 

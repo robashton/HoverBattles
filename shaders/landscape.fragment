@@ -5,8 +5,15 @@ precision highp float;
 varying vec4 vColour;
 varying vec2 vTextureCoords;
 
-uniform sampler2D uSampler;
+uniform sampler2D uDiffuseSampler;
+uniform sampler2D uDetailSampler;
 
-void main(void) {
-   gl_FragColor = vColour * texture2D(uSampler, vec2(vTextureCoords.s, vTextureCoords.t));
+void main(void) {    
+    vec4 color = texture2D(uDiffuseSampler, vTextureCoords.st);
+    vec4 detail = texture2D(uDetailSampler, vTextureCoords.st * 10.0);
+
+    color.rgb *= detail.rgb;
+    color.rgb *= vColour.rgb;
+
+   gl_FragColor = color * 2.0;
 }
