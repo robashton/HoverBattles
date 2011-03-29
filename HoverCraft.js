@@ -4,7 +4,8 @@ blah.Hovercraft = function(id, scene) {
      this._model = new blah.Model({
          vertices: BlenderExport.Hovercraft.vertices,
          indices: BlenderExport.Hovercraft.indices,
-         texCoords: BlenderExport.Hovercraft.texCoords
+         texCoords: BlenderExport.Hovercraft.texCoords,
+         normals: BlenderExport.Hovercraft.normals
      },
      "texture");
 
