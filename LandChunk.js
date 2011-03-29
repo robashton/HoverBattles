@@ -18,7 +18,10 @@ blah.LandChunk = function(width, height, maxHeight, scale,x,y){
 	
 	this._texture = null;
     this._detailtexture = null;
+    this._hovertexture = null;
     this._heightMap = null;
+    
+    this._frame = 0.0;
     
 };
 
@@ -99,6 +102,7 @@ blah.LandChunk.prototype.createBuffers = function(context) {
 		chunk._indexCount = data.indices.length;    	
         chunk._texture = context.getTexture("/textures/gridlow.jpg");
         chunk._detailtexture = context.getTexture("/textures/gridhigh.jpg");
+        chunk._hovertexture = context.getTexture("/textures/bars.jpg");
 	});
 };
 
@@ -107,7 +111,8 @@ blah.LandChunk.prototype.destroyBuffers = function(context) {
 	gl.deleteBuffer(this._vertexBuffer);
 	gl.deleteBuffer(this._indexBuffer);
 	gl.deleteBuffer(this._colourBuffer);
-	gl.deleteTexture(this._texture);
+    gl.deleteBuffer(this._texturecoordsBuffer);
+    
 };
 
 blah.LandChunk.prototype.uploadBuffers = function(context) {
@@ -128,6 +133,8 @@ blah.LandChunk.prototype.uploadBuffers = function(context) {
 		gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
 	
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+    	
+        gl.uniform1f(gl.getUniformLocation(program, 'time'), this._frame); 
 		
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);
@@ -136,10 +143,15 @@ blah.LandChunk.prototype.uploadBuffers = function(context) {
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, this._detailtexture);
         gl.uniform1i(gl.getUniformLocation(program, 'uDetailSampler'), 1); 
+        
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, this._hovertexture);
+        gl.uniform1i(gl.getUniformLocation(program, 'uHoverSampler'), 2); 
 	}
 };
 
 blah.LandChunk.prototype.render = function(context) {
+    this._frame += 1.0;
 	if(this._vertexBuffer != null) 
 	{
 		var gl = context.gl;

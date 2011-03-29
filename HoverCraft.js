@@ -65,8 +65,8 @@ blah.Hovercraft.prototype.doLogic = function(){
      var terrainHeight =  terrain.getHeightAt(this._entity.position[0], this._entity.position[2]);  
      var heightDelta = this._entity.position[1] - terrainHeight;
      
-     if(heightDelta < 1.0){
-           this._velocity[1] += (1.0 - heightDelta);
+     if(heightDelta < 10.0){
+           this._velocity[1] += (10.0 - heightDelta) * 0.08;
      }
           
      // "Gravity" kicks in too though
@@ -78,7 +78,7 @@ blah.Hovercraft.prototype.doLogic = function(){
      var cameraTrail = vec3.create(this._velocity);
      cameraTrail[1] = 0;
      vec3.normalize(cameraTrail);
-     vec3.scale(cameraTrail, 15);
+     vec3.scale(cameraTrail, 24);
      vec3.subtract(this._entity.position, cameraTrail, cameraTrail);
      this._scene.camera._location = cameraTrail;
      

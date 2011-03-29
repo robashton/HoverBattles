@@ -7,16 +7,21 @@ varying vec2 vTextureCoords;
 
 uniform sampler2D uDiffuseSampler;
 uniform sampler2D uDetailSampler;
-//uniform sampler2D uHoverSampler;
+
+uniform float time;
 
 void main(void) {    
-    vec4 color = texture2D(uDiffuseSampler, vTextureCoords.st * 2.0);
-    vec4 detail = texture2D(uDetailSampler, vTextureCoords.st * 5.0);
-  //  vec4 hover = texture2D(uHoverSampler, vTextureCoords.st * 10.0);
+    float amount = (sin(time * 0.01) + 1.0) / 2.0;
 
-    color.rgb += vec3(0.1, 0.1, 0.1);
+    float red = clamp(amount, 0.3, 0.8);
+    float blue = clamp(1.0 - amount, 0.3, 0.8);
+    
+    vec4 color = texture2D(uDiffuseSampler, vTextureCoords.st);
+    vec4 detail = texture2D(uDetailSampler, vTextureCoords.st * 5.0 + time * 0.01);
+
     color.rgb *= detail.rgb;
     color.rgb *= vColour.rgb;
+    color.rgb *= vec3(red, 0.0, blue);
 
-   gl_FragColor = color * 2.0;
+   gl_FragColor = color * 3.0;
 }
