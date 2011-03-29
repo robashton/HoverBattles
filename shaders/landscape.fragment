@@ -7,11 +7,14 @@ varying vec2 vTextureCoords;
 
 uniform sampler2D uDiffuseSampler;
 uniform sampler2D uDetailSampler;
+//uniform sampler2D uHoverSampler;
 
 void main(void) {    
-    vec4 color = texture2D(uDiffuseSampler, vTextureCoords.st);
+    vec4 color = texture2D(uDiffuseSampler, vTextureCoords.st * 2.0);
     vec4 detail = texture2D(uDetailSampler, vTextureCoords.st * 5.0);
+  //  vec4 hover = texture2D(uHoverSampler, vTextureCoords.st * 10.0);
 
+    color.rgb += vec3(0.1, 0.1, 0.1);
     color.rgb *= detail.rgb;
     color.rgb *= vColour.rgb;
 

@@ -14,9 +14,30 @@ blah.RenderContext.prototype.init = function(selector) {
    this.gl.viewportHeight = canvas.height;  
 
 	this.gl.clearColor(0.0, 0.5, 0.5, 1.0);
-   this.gl.enable(this.gl.DEPTH_TEST);  
+    this.gl.enable(this.gl.DEPTH_TEST);  
 
+    this._textures = {};
 };
+
+// To be replaced with resource manager
+blah.RenderContext.prototype.getTexture = function(path) {
+    if(this._textures[path]) { return this._textures[path]; }
+    var gl = this.gl;
+    
+    var texture = gl.createTexture();
+    texture.image = new Image();
+    texture.image.onload = function() {
+         gl.bindTexture(gl.TEXTURE_2D, texture);
+     	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+     	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+     	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
+         gl.generateMipmap(gl.TEXTURE_2D);
+     	gl.bindTexture(gl.TEXTURE_2D, null);
+    }    
+    texture.image.src = path;
+    this._textures[path] = texture;
+    return texture;
+}
 
 blah.RenderContext.prototype.createProgram = function(programName) {
 	

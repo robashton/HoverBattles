@@ -96,32 +96,9 @@ blah.LandChunk.prototype.createBuffers = function(context) {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, chunk._indexBuffer);
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(data.indices), gl.STATIC_DRAW);
 
-		chunk._indexCount = data.indices.length;
-		
-		chunk._texture = gl.createTexture();
-		chunk._texture.image = new Image();
-		chunk._texture.image.onload = function() {
-		 	gl.bindTexture(gl.TEXTURE_2D, chunk._texture);
-		 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, chunk._texture.image);
-		 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
-    	 	gl.generateMipmap(gl.TEXTURE_2D);
-		 	gl.bindTexture(gl.TEXTURE_2D, null);
-		}			
-		chunk._texture.image.src = "/textures/grass.jpg";
-    	
-        chunk._detailtexture = gl.createTexture();
-        chunk._detailtexture.image = new Image();
-        chunk._detailtexture.image.onload = function() {
-         	gl.bindTexture(gl.TEXTURE_2D, chunk._detailtexture);
-         	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, chunk._detailtexture.image);
-         	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-         	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
-             gl.generateMipmap(gl.TEXTURE_2D);
-         	gl.bindTexture(gl.TEXTURE_2D, null);
-        }
-        
-        chunk._detailtexture.image.src = "/textures/grassdetail.jpg";
+		chunk._indexCount = data.indices.length;    	
+        chunk._texture = context.getTexture("/textures/gridlow.jpg");
+        chunk._detailtexture = context.getTexture("/textures/gridhigh.jpg");
 	});
 };
 
