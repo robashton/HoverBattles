@@ -10,7 +10,7 @@ uniform sampler2D uDetailSampler;
 
 void main(void) {    
     vec4 color = texture2D(uDiffuseSampler, vTextureCoords.st);
-    vec4 detail = texture2D(uDetailSampler, vTextureCoords.st * 10.0);
+    vec4 detail = texture2D(uDetailSampler, vTextureCoords.st * 5.0);
 
     color.rgb *= detail.rgb;
     color.rgb *= vColour.rgb;
