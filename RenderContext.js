@@ -1,42 +1,50 @@
 var blah = blah || {};
 
-blah.RenderContext = function(){
+blah.RenderContext = function(resourceLoader){
 	this.gl = null;
 	this.programs = {};
+    this._resourceLoader = resourceLoader || new blah.ResourceLoader();
+};
+
+blah.RenderContext.prototype.createDefaultTextureProvider = function(){
+  var gl = this.gl; 
+  return {
+      handles: function() { return true; },
+      load: function(path, callback) {         
+          var texture = gl.createTexture();
+          texture.image = new Image();
+          texture.image.onload = function() {
+               gl.bindTexture(gl.TEXTURE_2D, texture);
+               gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+           	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+           	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
+               gl.generateMipmap(gl.TEXTURE_2D);
+           	gl.bindTexture(gl.TEXTURE_2D, null);
+               callback();
+          }    
+          texture.image.src = path;
+          return texture;
+      }
+  };
 };
 
 blah.RenderContext.prototype.init = function(selector) {
-	var canvas =  document.getElementById(selector);
+  var canvas =  document.getElementById(selector);
 
-   this.gl = canvas.getContext("experimental-webgl");
+  this.gl = canvas.getContext("experimental-webgl");
 
-   this.gl.viewportWidth = canvas.width;
-   this.gl.viewportHeight = canvas.height;  
+  this.gl.viewportWidth = canvas.width;
+  this.gl.viewportHeight = canvas.height;  
 
-	this.gl.clearColor(0.0, 0.5, 0.5, 1.0);
-    this.gl.enable(this.gl.DEPTH_TEST);  
-
-    this._textures = {};
+  this.gl.clearColor(0.0, 0.5, 0.5, 1.0);
+  this.gl.enable(this.gl.DEPTH_TEST);  
+    
+  this._resourceLoader.addTextureProvider(this.createDefaultTextureProvider());
 };
 
-// To be replaced with resource manager
+// To be replaced with resource manager entirely
 blah.RenderContext.prototype.getTexture = function(path) {
-    if(this._textures[path]) { return this._textures[path]; }
-    var gl = this.gl;
-    
-    var texture = gl.createTexture();
-    texture.image = new Image();
-    texture.image.onload = function() {
-         gl.bindTexture(gl.TEXTURE_2D, texture);
-     	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
-     	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-     	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
-         gl.generateMipmap(gl.TEXTURE_2D);
-     	gl.bindTexture(gl.TEXTURE_2D, null);
-    }    
-    texture.image.src = path;
-    this._textures[path] = texture;
-    return texture;
+    return this._resourceLoader.getTexture(path);
 }
 
 blah.RenderContext.prototype.createProgram = function(programName) {
