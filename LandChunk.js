@@ -22,6 +22,7 @@ blah.LandChunk = function(width, height, maxHeight, scale,x,y){
     this._heightMap = null;
     
     this._frame = 0.0;
+    this._playerPosition = vec3.create();
     
 };
 
@@ -135,6 +136,8 @@ blah.LandChunk.prototype.uploadBuffers = function(context) {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     	
         gl.uniform1f(gl.getUniformLocation(program, 'time'), this._frame); 
+        
+        gl.uniform3f(gl.getUniformLocation(program, 'uPlayerPosition'), this._playerPosition);
 		
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);

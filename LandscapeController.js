@@ -50,6 +50,8 @@ blah.LandscapeController.Scale = 5;
 blah.LandscapeController.prototype.doLogic = function() {
     if(this._counter++ % 10 != 0) { return ; }
     
+    var player = this._scene.getEntity("player");
+        
 	var chunkWidth = blah.LandscapeController.ChunkWidth;
 
 	var currentx = this._scene.camera._location[0] / blah.LandscapeController.Scale;
@@ -66,11 +68,14 @@ blah.LandscapeController.prototype.doLogic = function() {
 
 	for(i in this._chunks){
 		var chunk = this._chunks[i];
+    	
+        chunk._playerPosition = player.position;
 
 		if(chunk.x < minX || chunk.z < minZ || chunk.x > maxX || chunk.z > maxZ) {
 			// this._scene.removeEntity(chunk);
             //delete this._chunks[i];		
 		}
+    	
 	}
 
 	// And add missing chunks

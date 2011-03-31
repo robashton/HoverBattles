@@ -4,6 +4,7 @@ precision highp float;
 
 varying vec4 vColour;
 varying vec2 vTextureCoords;
+varying float distanceFromPlayer;
 
 uniform sampler2D uDiffuseSampler;
 uniform sampler2D uDetailSampler;
@@ -19,9 +20,12 @@ void main(void) {
     vec4 color = texture2D(uDiffuseSampler, vTextureCoords.st);
     vec4 detail = texture2D(uDetailSampler, vTextureCoords.st * 5.0 + time * 0.01);
 
+    float adjuster = clamp(distanceFromPlayer / 100.0, 0.0, 1.0);
+
     color.rgb *= detail.rgb;
     color.rgb *= vColour.rgb;
     color.rgb *= vec3(red, 0.0, blue);
+    color.rgb += vec3(adjuster,adjuster,adjuster);
 
    gl_FragColor = color * 3.0;
 }
