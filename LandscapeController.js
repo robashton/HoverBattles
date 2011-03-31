@@ -69,7 +69,7 @@ blah.LandscapeController.prototype.doLogic = function() {
 	for(i in this._chunks){
 		var chunk = this._chunks[i];
     	
-        chunk._playerPosition = player.position;
+        chunk._model._playerPosition = player.position;
 
 		if(chunk.x < minX || chunk.z < minZ || chunk.x > maxX || chunk.z > maxZ) {
 			// this._scene.removeEntity(chunk);

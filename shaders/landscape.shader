@@ -11,21 +11,19 @@ varying vec4 vColour;
 varying vec2 vTextureCoords;
 varying float distanceFromPlayer;
 
-void main(void){
+void main(void) {
 
     vec4 vertexPosition = uWorld * vec4(aVertexPosition, 1.0);
     vec4 vectorToPlayer = vec4(uPlayerPosition, 1.0) - vertexPosition;
+    distanceFromPlayer = 200.0 - abs(dot(vectorToPlayer, vectorToPlayer));
 
     vec4 directionToPlayer = normalize(vectorToPlayer);
+  
+    float effect = clamp(distanceFromPlayer / 200.0, 0.0, 100.0);
 
-    distanceFromPlayer = dot(vectorToPlayer, vectorToPlayer);
+    vertexPosition -= directionToPlayer * effect;
 
-  //  float effect = clamp(1.0 - magSquared, 0.0, 1.0);
-
-    //vertexPosition -= directionToPlayer * effect;
-
-	gl_Position =  uProjection * uView * vertexPosition;  
-
+	gl_Position =  uProjection * uView * vertexPosition;
 	vColour = aVertexColour;
 	vTextureCoords = aTextureCoords;
 }

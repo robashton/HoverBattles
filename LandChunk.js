@@ -137,7 +137,7 @@ blah.LandChunk.prototype.uploadBuffers = function(context) {
     	
         gl.uniform1f(gl.getUniformLocation(program, 'time'), this._frame); 
         
-        gl.uniform3f(gl.getUniformLocation(program, 'uPlayerPosition'), this._playerPosition);
+        gl.uniform3f(gl.getUniformLocation(program, 'uPlayerPosition'), this._playerPosition[0], this._playerPosition[1], this._playerPosition[2]);
 		
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);
