@@ -59,50 +59,49 @@ $(document).ready(function(){
         equal(numberOfTexturesPending, 0, "Textures pending is 0 after a single texture is loaded");        
     });
     
-    test("Resource loader can retrieve buffers from providers", function(){
+    test("Resource loader can retrieve models from providers", function(){
         var loader = new blah.ResourceLoader();
-        var buffer = {};
-        var bufferProvider = {
+        var model = {};
+        var modelProvider = {
             handles: function(name) { return true; },
             load: function(name) {            
-                return buffer;
+                return model;
             }
         };
-        loader.addBufferProvider(bufferProvider);        
-        var returnedBuffer = null;
+        loader.addModelProvider(modelProvider);        
+        var returnedModel = null;
         
-        loader.getBuffer("texture-buffer", function(buffer){
-            returnedBuffer = buffer;
+        loader.getModel("test", function(model){
+            returnedModel = model;
         });
         
-        ok(buffer === returnedBuffer);
+        ok(model === returnedModel);
     });
     
-    test("Resource loader caches buffers if they have been loaded once", function() {
+    test("Resource loader caches models if they have been loaded once", function() {
         var loader = new blah.ResourceLoader();
-        var buffer = {};
+        var model = {};
         var callCount = 0;
-        var bufferProvider = {
+        var modelProvider = {
             handles: function(name) { return true; },
             load: function(name) {  
                 callCount++;
-                return buffer;
+                return model;
             }
         };
-        loader.addBufferProvider(bufferProvider);        
-        var returnedBuffer1= null;
-        var returnedBuffer2 = {};
+        loader.addModelProvider(modelProvider);        
+        var returnedModel1 = null;
+        var returnedModel2 = {};
         
-        loader.getBuffer("texture-buffer", function(buffer){
-            returnedBuffer1 = buffer;
+        loader.getModel("test", function(model){
+            returnedModel1 = model;
         });
-        loader.getBuffer("texture-buffer", function(buffer){
-            returnedBuffer2 = buffer; 
+        loader.getModel("test", function(model){
+            returnedModel2 = model; 
         });
         
-        ok(returnedBuffer1 === returnedBuffer2, "Subsequent calls returned the same buffer");
-        equal(1, callCount, "Load was only called once for duplicate buffer");
-        
+        ok(returnedModel1 === returnedModel2, "Subsequent calls returned the same model");
+        equal(1, callCount, "Load was only called once for duplicate models");        
     });
     
     
