@@ -28,11 +28,12 @@ blah.ResourceLoader.prototype.getModel = function(name, callback) {
   for(var i in this._modelProviders){
    var provider = this._modelProviders[i];
    if(!provider.handles(name)){ continue; }
+   var loader = this;
    
-   var loadedModel = provider.load(name);
-   this._modelCache[name] = loadedModel;
-   callback(loadedModel);
-   return;
+   provider.load(name, function(model){
+      loader._modelCache[name] = model;
+         callback(model);
+   });
   }  
 };
 

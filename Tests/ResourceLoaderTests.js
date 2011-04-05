@@ -64,8 +64,8 @@ $(document).ready(function(){
         var model = {};
         var modelProvider = {
             handles: function(name) { return true; },
-            load: function(name) {            
-                return model;
+            load: function(name, callback) {            
+                callback(model);
             }
         };
         loader.addModelProvider(modelProvider);        
@@ -84,9 +84,9 @@ $(document).ready(function(){
         var callCount = 0;
         var modelProvider = {
             handles: function(name) { return true; },
-            load: function(name) {  
+            load: function(name, callback) {  
                 callCount++;
-                return model;
+                callback(model);
             }
         };
         loader.addModelProvider(modelProvider);        
