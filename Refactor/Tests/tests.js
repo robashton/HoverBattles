@@ -102,26 +102,35 @@ $(document).ready(function(){
             ok(texture, "Texture object was returned from load method");
         });
     });
-    
+
+    asyncTest("Resource manager can return resources", function(){
+         var app = new blah.Application('gameCanvas', '../');
+         app.init(function(){
+            start();
+            
+            var resources = new blah.ResourceManager(app);
+            
+            var model = resources.getModel("Hovercraft.js");
+            var texture = resources.getTexture("/textures/hovercraft.jpg");
+            
+            ok(model != null, "Model was loaded");
+            ok(texture != null, "Texture was loaded");
+        });
+    });
+      
     asyncTest("Default Model Loader can load models from server with appropriate texture", function(){
          var app = new blah.Application('gameCanvas', '../');
          app.init(function(){
-            var loader = new blah.DefaultModelLoader(app);
+             var resources = new blah.ResourceManager(app);
+            var loader = new blah.DefaultModelLoader(resources);
             var model = loader.load('Hovercraft.js', function(){
                 ok(true, "Model finished loading from server");
+                ok(model._texture, "Model has texture");
                 start();
             });
             
             ok(model, "Model object was returned from load method");
         });
     });
-    
-    asyncTest("Context bound resource provider can cache context bound resources", function(){
-         var app = new blah.Application('gameCanvas', '../');
-         app.init(function(){
-            start();
-
-        });
-    });
-  
+ 
 });

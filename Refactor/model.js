@@ -1,25 +1,26 @@
 var blah = blah || {};
 
 blah.Model = function(data){
+    this._programName = "default";
+        
     if(data) { this.setData(data); }
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
 	this._colourBuffer = null;
     this._textureBuffer = null;
     this._normalBuffer = null;
-    this._textureName = null;
-    this._texture = null;
-    this._programName = "default";
+
     this._hasData = false;
 };
 
 blah.Model.prototype.setData = function(data) {
+    console.log('setting data' + data);
     this._vertices = data.vertices;
     this._colours = data.colours;
 	this._indices = data.indices;
     this._texCoords = data.texCoords;
     this._normals = data.normals;
-    this._textureName = data.texture;
+    this._texture = data.texture;
     this._hasData = true;
     if(this._texCoords) { this._programName = "texture"; }
     else if( this._colours ) { this._programName = "colour"; }
@@ -51,21 +52,6 @@ blah.Model.prototype.createBuffers = function(context) {
         this._normalBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._normals), gl.STATIC_DRAW)
-    }
-    
-    if(this._textureName) {
-        var model = this;
-        this._texture = gl.createTexture();
-        this._texture.image = new Image();
-        this._texture.image.onload = function() {
-         	gl.bindTexture(gl.TEXTURE_2D, model._texture);
-             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-         	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, model._texture.image);
-         	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-         	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-         	gl.bindTexture(gl.TEXTURE_2D, null);
-        }			
-        this._texture.image.src = this._textureName;
     }
 
 	this._indexBuffer = gl.createBuffer();
@@ -133,7 +119,7 @@ blah.Model.prototype.uploadBuffers = function(context) {
     
     if(this._texture){
        gl.activeTexture(gl.TEXTURE0);
-       gl.bindTexture(gl.TEXTURE_2D, this._texture);
+       gl.bindTexture(gl.TEXTURE_2D, this._texture.get());
        gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0);      
     }
 };

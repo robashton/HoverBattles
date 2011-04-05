@@ -21,6 +21,7 @@ blah.Application.prototype.init = function(finishedCallback){
             this._root + 'defaulttextureloader.js',
             this._root + 'defaultmodelloader.js',
             '/Shaders.js',
+            this._root + 'resources.js'
         ]
         , function () {            
             var context = new blah.RenderContext();
