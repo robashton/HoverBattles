@@ -2,6 +2,7 @@ var blah = blah || {};
 
 blah.Scene = function(){
     this._entities = {};
+    this.camera = new blah.Camera();
 };
 
 blah.Scene.prototype.addEntity = function(entity){
