@@ -1,14 +1,25 @@
 var blah = blah || {};
 
-blah.Texture = function(name){
+blah.Texture = function(name, image){
     this._data = null;
+    this._image = image;
     this._name = name;
-};
-
-blah.Texture.prototype.setData = function(data) {
-    this._data = data;
 };
 
 blah.Texture.prototype.get = function(){
     return this._data;
+};
+
+blah.Texture.prototype.activate = function(context, callback) {
+    var gl = context.gl;
+    var data = gl.createTexture();
+    this._data = data;
+    
+    data.image = this._image;
+    gl.bindTexture(gl.TEXTURE_2D, data);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data.image);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.bindTexture(gl.TEXTURE_2D, null);
 };

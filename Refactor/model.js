@@ -30,7 +30,7 @@ blah.Model.prototype.getProgram = function() {
 	return this._programName;
 };
 
-blah.Model.prototype.createBuffers = function(context) {
+blah.Model.prototype.activate = function(context, callback) {
 	var gl = context.gl;
 
 	this._vertexBuffer = gl.createBuffer();
@@ -57,6 +57,8 @@ blah.Model.prototype.createBuffers = function(context) {
 	this._indexBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this._indices), gl.STATIC_DRAW);
+    
+    callback();
 };
 
 blah.Model.prototype.destroyBuffers = function(context) {
