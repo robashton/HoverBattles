@@ -21,7 +21,6 @@ blah.LandChunk = function(width, height, maxHeight, scale,x,y){
     
     this._frame = 0.0;
     this._playerPosition = vec3.create();
-    
 };
 
 blah.LandChunk.prototype.getProgram = function(){

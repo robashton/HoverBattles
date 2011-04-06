@@ -1,49 +1,24 @@
 <html>
     <head>
-		<script src="jquery-1.5.1.min.js"></script>
-		<link rel="stylesheet" type="text/css" href="style.css"/>
-
-		<!-- Library Includes -->
-		<script src="../glMatrix-0.9.5.min.js"></script>
-				
-		<!-- Game Includes -->	
-    	<script src="../ResourceLoader.js"></script>
-		<script src="../Services.js"></script>		
-		<script src="../Model.js"></script>
-		<script src="../Entity.js"></script>
-		<script src="../Camera.js"></script>
-		<script src="../Scene.js"></script>
-		<script src="../RenderContext.js"></script>
-		<script src="../Controller.js"></script>
-		<script src="../Coordinator.js"></script>
-		<script src="../Shaders.js"></script>
-		<script src="../LandChunk.js"></script>
-		<script src="../LandscapeController.js"></script>
-        <script src="../HoverCraft.js"></script>
-        
-        <script src="../models/cube.js"></script>
-        <script src="../models/hovercraft.js"></script> 
-
+    	<script src="../jquery-1.5.1.min.js"></script>
+        <script src="../bootstrap.js"></script>        
+        <script src="../lazyload.js"></script>
         
 		<script type="text/javascript">
 			
 			$(document).ready(function(){
-				var scene = new blah.Scene();
-				scene.camera.setLocation([0,10,-10]);
-
-				var context = new blah.RenderContext();
-				context.init('game');    			
-        		
-				var keyboardController = new blah.Controller(scene);
+                
+                var app = new blah.Application('game', '../Refactor/');
+                app.init(function() {
+                    app.scene.camera.setLocation([0, 10, -10]);
+                    
+                });
+                
+			//	var keyboardController = new blah.Controller(scene);
 				var landscapeController = new blah.LandscapeController(scene);
     			var playerHovercraft = new blah.Hovercraft("player", scene);
 
-				var coordinator = new blah.Coordinator(
-						scene, 
-						[keyboardController], 
-						context);
-
-				setInterval(function() {  coordinator.tick(); }, 1000 / 30);
+				setInterval(function() {  app.tick(); }, 1000 / 30);
 
 			});
 

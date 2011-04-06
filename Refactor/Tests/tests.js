@@ -1,3 +1,9 @@
+// HAhaha take that .NET developers, I know these tests are highly integrated and the code not TDDd
+// And I know that these tests require a web server and all sorts to function
+// But I don't care, because they're delivering me a big pile of VALUE
+// Also, so much code is dependent on webgl and assets from the server that it's just too much effort to
+// think about splitting out at all
+
 $(document).ready(function(){
     module("End to end tests");
 
@@ -136,8 +142,7 @@ $(document).ready(function(){
     asyncTest("Land chunk model loader knows what it's for", function(){
         var app = new blah.Application('gameCanvas', '../');
         app.init(function() {
-            var resources = new blah.ResourceManager(app);
-            var loader = new blah.LandChunkModelLoader(resources);
+            var loader = new blah.LandChunkModelLoader(app.resources);
             
             var handles = loader.handles('chunk_');
             var nothandles = loader.handles('Something');
@@ -151,8 +156,7 @@ $(document).ready(function(){
     asyncTest("Land chunk model loader can load a chunk from the server", function(){
         var app = new blah.Application('gameCanvas', '../');
         app.init(function() {
-            var resources = new blah.ResourceManager(app);
-            var loader = new blah.LandChunkModelLoader(resources);
+            var loader = new blah.LandChunkModelLoader(app.resources);
                 
             var data = 'chunk_' + JSON.stringify({
                height: 32,
@@ -174,9 +178,8 @@ $(document).ready(function(){
     asyncTest("Land chunk model can be loaded and activated from resource manager", function(){
         var app = new blah.Application('gameCanvas', '../');
         app.init(function() {
-            var resources = new blah.ResourceManager(app);
-            var loader = new blah.LandChunkModelLoader(resources);
-            resources.addModelLoader(loader);
+            var loader = new blah.LandChunkModelLoader(app.resources);
+            app.resources.addModelLoader(loader);
             
             var data = 'chunk_' + JSON.stringify({
                height: 32,
@@ -187,7 +190,7 @@ $(document).ready(function(){
                y: 1               
             });
             
-            var model = resources.getModel(data);            
+            var model = app.resources.getModel(data);            
             ok(model != null, "Model was returned from resource provider");
             start();            
         });        
@@ -195,12 +198,11 @@ $(document).ready(function(){
     
     asyncTest("We can wait for all assets to be loaded from the resource manager", function(){
         var app = new blah.Application('gameCanvas', '../');
-        app.init(function() {
-            var resources = new blah.ResourceManager(app);            
-            var model = resources.getModel("Hovercraft.js");
-            var texture = resources.getTexture("/textures/hovercraft.jpg");
+        app.init(function() {      
+            var model = app.resources.getModel("Hovercraft.js");
+            var texture = app.resources.getTexture("/textures/hovercraft.jpg");
             
-            resources.onAllAssetsLoaded(function(){
+            app.resources.onAllAssetsLoaded(function(){
                 ok(model._vertexBuffer != null, "Model is fully loaded");
                 ok(texture._data != null, "Texture is fully loaded");
                 start();
@@ -210,12 +212,11 @@ $(document).ready(function(){
         
     asyncTest("A loaded model can be rendered with a context", function(){
         var app = new blah.Application('gameCanvas', '../');
-        app.init(function() {
-            var resources = new blah.ResourceManager(app);            
-            var model = resources.getModel("Hovercraft.js");
-            var texture = resources.getTexture("/textures/hovercraft.jpg");
+        app.init(function() {       
+            var model = app.resources.getModel("Hovercraft.js");
+            var texture = app.resources.getTexture("/textures/hovercraft.jpg");
             
-            resources.onAllAssetsLoaded(function(){
+            app.resources.onAllAssetsLoaded(function(){
                 app.context.setActiveProgram(model.getProgram());
                 model.upload(app.context);
                 model.render(app.context);
@@ -229,9 +230,8 @@ $(document).ready(function(){
     asyncTest("A loaded land chunk can be rendered with a context", function(){
         var app = new blah.Application('gameCanvas', '../');
         app.init(function() {
-            var resources = new blah.ResourceManager(app);
-            var loader = new blah.LandChunkModelLoader(resources);
-            resources.addModelLoader(loader);
+            var loader = new blah.LandChunkModelLoader(app.resources);
+            app.resources.addModelLoader(loader);
             
             var data = 'chunk_' + JSON.stringify({
                height: 32,
@@ -242,9 +242,9 @@ $(document).ready(function(){
                y: 1               
             });
             
-            var model = resources.getModel(data);
+            var model = app.resources.getModel(data);
             
-            resources.onAllAssetsLoaded(function(){
+            app.resources.onAllAssetsLoaded(function(){
                 app.context.setActiveProgram(model.getProgram());
                 model.upload(app.context);
                 model.render(app.context);
@@ -253,7 +253,18 @@ $(document).ready(function(){
             });          
         });        
     });
-    
-    
+        
+ /*   asyncTest("A Landscape controller will happily load and render piles of landscape chunks", function(){
+        var app = new blah.Application('gameCanvas', '../');
+        app.init(function() {
+            var landscapeController = new blah.LandscapeController(app);
+            app.resources.onAssetsLoading(function(){                            
+                app.resources.onAllAssetsLoaded(function(){
+                    
+                });                
+            });
+         
+        });        
+    });    */
  
 });

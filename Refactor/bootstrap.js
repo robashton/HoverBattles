@@ -38,6 +38,7 @@ blah.Application.prototype.init = function(finishedCallback){
 blah.Application.prototype.go = function(context) {
     this.context = context;
     this.scene = new blah.Scene();
+    this.resources = new blah.ResourceManager(this);
     var app = this;
 };
 
