@@ -7,7 +7,11 @@ require('./matrixwrapper');
 exports.handle = function(req, res) {
 	generateData(req, res, function(model) {
 		res.writeHead(200, "Content-Type: application/javascript");
+        res.write('var blah = blah || {};');
+        res.write('blah.Land = blah.Land || {};');
+        res.write('blah.Land["' + req.url + '"] = ');
 		res.write(JSON.stringify(model));
+        res.write(';');
 		res.end();
 	});
 };

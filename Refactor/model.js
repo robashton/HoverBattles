@@ -14,7 +14,6 @@ blah.Model = function(data){
 };
 
 blah.Model.prototype.setData = function(data) {
-    console.log('setting data' + data);
     this._vertices = data.vertices;
     this._colours = data.colours;
 	this._indices = data.indices;
@@ -30,7 +29,7 @@ blah.Model.prototype.getProgram = function() {
 	return this._programName;
 };
 
-blah.Model.prototype.activate = function(context, callback) {
+blah.Model.prototype.activate = function(context) {
 	var gl = context.gl;
 
 	this._vertexBuffer = gl.createBuffer();
@@ -57,8 +56,7 @@ blah.Model.prototype.activate = function(context, callback) {
 	this._indexBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this._indices), gl.STATIC_DRAW);
-    
-    callback();
+
 };
 
 blah.Model.prototype.destroyBuffers = function(context) {

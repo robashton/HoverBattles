@@ -133,4 +133,81 @@ $(document).ready(function(){
         });
     });
  
+    asyncTest("Land chunk model loader knows what it's for", function(){
+        var app = new blah.Application('gameCanvas', '../');
+        app.init(function() {
+            var resources = new blah.ResourceManager(app);
+            var loader = new blah.LandChunkModelLoader(resources);
+            
+            var handles = loader.handles('chunk_');
+            var nothandles = loader.handles('Something');
+            
+            ok(handles == true, "Loader handles chunk requests");
+            ok(nothandles == false, "Loader disregards other things");
+            start();
+        });        
+    });
+    
+    asyncTest("Land chunk model loader can load a chunk from the server", function(){
+        var app = new blah.Application('gameCanvas', '../');
+        app.init(function() {
+            var resources = new blah.ResourceManager(app);
+            var loader = new blah.LandChunkModelLoader(resources);
+                
+            var data = 'chunk_' + JSON.stringify({
+               height: 32,
+               width: 32,
+               maxHeight: 32,
+               scale: 1,
+               x: 1,
+               y: 1               
+            });
+            
+            var model = loader.load(data, function(){
+                ok(true, "Model finished loading from server");
+                start();
+            });          
+            ok(model != null, "Model was returned from land chunk");
+        });        
+    });
+    
+    asyncTest("Land chunk model can be loaded and activated from resource manager", function(){
+        var app = new blah.Application('gameCanvas', '../');
+        app.init(function() {
+            var resources = new blah.ResourceManager(app);
+            var loader = new blah.LandChunkModelLoader(resources);
+            resources.addModelLoader(loader);
+            
+            var data = 'chunk_' + JSON.stringify({
+               height: 32,
+               width: 32,
+               maxHeight: 32,
+               scale: 1,
+               x: 1,
+               y: 1               
+            });
+            
+            var model = resources.getModel(data);            
+            ok(model != null, "Model was returned from resource provider");
+            start();            
+        });        
+    });
+    
+    asyncTest("We can wait for all assets to be loaded from the resource manager", function(){
+        var app = new blah.Application('gameCanvas', '../');
+        app.init(function() {
+            var resources = new blah.ResourceManager(app);            
+            var model = resources.getModel("Hovercraft.js");
+            var texture = resources.getTexture("/textures/hovercraft.jpg");
+            
+            resources.onAllAssetsLoaded(function(){
+                ok(model._vertexBuffer != null, "Model is fully loaded");
+                ok(texture._data != null, "Texture is fully loaded");
+                start();
+            });          
+        });        
+    });
+    
+    
+ 
 });

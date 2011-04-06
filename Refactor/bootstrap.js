@@ -22,7 +22,10 @@ blah.Application.prototype.init = function(finishedCallback){
             this._root + 'defaultmodelloader.js',
             '/Shaders.js',
             this._root + 'resources.js',
-            this._root + 'camera.js'
+            this._root + 'camera.js',
+            
+            this._root + 'landchunkloader.js',
+            this._root + 'landchunk.js'
         ]
         , function () {            
             var context = new blah.RenderContext();

@@ -10,7 +10,7 @@ blah.Texture.prototype.get = function(){
     return this._data;
 };
 
-blah.Texture.prototype.activate = function(context, callback) {
+blah.Texture.prototype.activate = function(context) {
     var gl = context.gl;
     var data = gl.createTexture();
     this._data = data;
