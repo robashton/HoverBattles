@@ -207,6 +207,52 @@ $(document).ready(function(){
             });          
         });        
     });
+        
+    asyncTest("A loaded model can be rendered with a context", function(){
+        var app = new blah.Application('gameCanvas', '../');
+        app.init(function() {
+            var resources = new blah.ResourceManager(app);            
+            var model = resources.getModel("Hovercraft.js");
+            var texture = resources.getTexture("/textures/hovercraft.jpg");
+            
+            resources.onAllAssetsLoaded(function(){
+                app.context.setActiveProgram(model.getProgram());
+                model.upload(app.context);
+                model.render(app.context);
+                ok(true, "Model rendered with no errors");
+                start();
+            });          
+        });        
+    });
+ 
+ 
+    asyncTest("A loaded land chunk can be rendered with a context", function(){
+        var app = new blah.Application('gameCanvas', '../');
+        app.init(function() {
+            var resources = new blah.ResourceManager(app);
+            var loader = new blah.LandChunkModelLoader(resources);
+            resources.addModelLoader(loader);
+            
+            var data = 'chunk_' + JSON.stringify({
+               height: 32,
+               width: 32,
+               maxHeight: 32,
+               scale: 1,
+               x: 1,
+               y: 1               
+            });
+            
+            var model = resources.getModel(data);
+            
+            resources.onAllAssetsLoaded(function(){
+                app.context.setActiveProgram(model.getProgram());
+                model.upload(app.context);
+                model.render(app.context);
+                ok(true, "Model rendered with no errors");
+                start();
+            });          
+        });        
+    });
     
     
  

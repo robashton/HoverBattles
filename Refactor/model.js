@@ -89,7 +89,7 @@ blah.Model.prototype.getProgram = function() {
 	return this._programName;
 };
 
-blah.Model.prototype.uploadBuffers = function(context) {
+blah.Model.prototype.upload = function(context) {
 	var gl = context.gl;
 	var program = context.program;
 

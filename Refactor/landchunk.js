@@ -24,6 +24,10 @@ blah.LandChunk = function(width, height, maxHeight, scale,x,y){
     
 };
 
+blah.LandChunk.prototype.getProgram = function(){
+    return "landscape";
+};
+
 blah.LandChunk.prototype.loadTextures = function(resources) {
     this._texture = resources.getTexture("/textures/gridlow.jpg");
     this._detailtexture = resources.getTexture("/textures/gridhigh.jpg");
@@ -54,5 +58,46 @@ blah.LandChunk.prototype.activate = function(context) {
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this._data.indices), gl.STATIC_DRAW);
 
 	this._indexCount = this._data.indices.length;    	
-    
+};
+
+
+blah.LandChunk.prototype.upload = function(context) {
+    var gl = context.gl;
+	var program = context.program;
+
+	if(this._vertexBuffer != null) {
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
+		gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
+		gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexColour'), 4, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexColour'));
+				
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
+		gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoords'), 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
+	
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+    	
+     //   gl.uniform1f(gl.getUniformLocation(program, 'time'), this._frame);         
+    //    gl.uniform3f(gl.getUniformLocation(program, 'uPlayerPosition'), this._playerPosition[0], this._playerPosition[1], this._playerPosition[2]);
+		
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, this._texture.get());
+		gl.uniform1i(gl.getUniformLocation(program, 'uDiffuseSampler'), 0); 
+    	
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this._detailtexture.get());
+        gl.uniform1i(gl.getUniformLocation(program, 'uDetailSampler'), 1); 
+        
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, this._hovertexture.get());
+        gl.uniform1i(gl.getUniformLocation(program, 'uHoverSampler'), 2); 
+	}
+};
+
+blah.LandChunk.prototype.render = function(context) {
+	var gl = context.gl;
+	gl.drawElements(gl.TRIANGLE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
 };
