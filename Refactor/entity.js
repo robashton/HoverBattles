@@ -28,9 +28,7 @@ blah.Entity.prototype.attach = function(logic) {
     };
 };
 
-blah.Entity.prototype.doLogic = function() {
-    
-};
+blah.Entity.prototype.doLogic = function() { };
 
 blah.Entity.prototype.setScene = function(scene) {
 	this._scene = scene;
@@ -43,7 +41,6 @@ blah.Entity.prototype.render = function(context){
 	var viewMatrix = this._scene.camera.getViewMatrix();
 	var projectionMatrix = this._scene.camera.getProjectionMatrix(gl);
     
-
 	var worldMatrix = mat4.create();
     mat4.identity(worldMatrix);
     mat4.translate(worldMatrix, this.position);
@@ -58,7 +55,7 @@ blah.Entity.prototype.render = function(context){
 
 	var program = context.setActiveProgram(this._model.getProgram());
     
-	this._model.uploadBuffers(context);
+	this._model.upload(context);
 
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);

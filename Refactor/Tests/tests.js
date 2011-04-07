@@ -52,10 +52,9 @@ $(document).ready(function(){
                     setContext = context;    
                 }
             });
-             start();
+            start();
             app.render();            
-            ok(setContext === app.context, "Context was passed to entity for rendering");
-           
+            ok(setContext === app.context, "Context was passed to entity for rendering");           
         });
     });
     
@@ -253,18 +252,22 @@ $(document).ready(function(){
             });          
         });        
     });
-        
- /*   asyncTest("A Landscape controller will happily load and render piles of landscape chunks", function(){
+
+    asyncTest("A Landscape controller will happily load and render piles of landscape chunks", function(){
         var app = new blah.Application('gameCanvas', '../');
         app.init(function() {
+            
             var landscapeController = new blah.LandscapeController(app);
-            app.resources.onAssetsLoading(function(){                            
-                app.resources.onAllAssetsLoaded(function(){
-                    
-                });                
-            });
-         
+            app.tick();
+                        
+            app.resources.onAllAssetsLoaded(function(){       
+                var count = 0;
+                for(i in app.scene._entities) count++;
+                ok(count > 6, "Landscape loaded entities into scene");                    
+                app.render();
+                start();
+            });         
         });        
-    });    */
+    });
  
 });

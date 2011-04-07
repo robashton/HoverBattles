@@ -1,14 +1,14 @@
 var blah = blah || {};
 
 blah.Camera = function(location){
-    this._location = location;
-    this._lookAt = vec3.create();
-    this._up = vec3.create([0,1,0]);
+    this.location = location || vec3.create();
+    this.lookAt = vec3.create();
+    this.up = vec3.create([0,1,0]);
 };
 
 
 blah.Camera.prototype.setLocation = function(location){
-	this._location = location;
+	this.location = location;
 };
 
 blah.Camera.prototype.getProjectionMatrix = function(gl) {
@@ -19,6 +19,6 @@ blah.Camera.prototype.getProjectionMatrix = function(gl) {
 
 blah.Camera.prototype.getViewMatrix = function(){ 	
     var viewMatrix = mat4.create();
-    mat4.lookAt(this._location, this._lookAt, this._up, viewMatrix);
+    mat4.lookAt(this.location, this.lookAt, this.up, viewMatrix);
 	return viewMatrix;	
 };

@@ -35,7 +35,8 @@ exports.handle = function(req, res) {
 						shaderData += JSON.stringify(shaders);
 						shaderData += ";";
 
-						res.writeHead(200, "Content-Type: application/javascript");
+                        res.setHeader("Content-Type", "text/javascript");
+						res.writeHead(200);
 						res.write(shaderData);
 						res.end();
 					}
