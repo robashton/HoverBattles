@@ -28,7 +28,7 @@ blah.LandscapeController = function(scene) {
         
         var key = currentChunkX + '_' + currentChunkZ
         
-        var chunk = controller._chunks[key];
+        var chunk = this._chunks[key];
         if(chunk){
             return chunk._model.getHeightAt(x, z);
         }

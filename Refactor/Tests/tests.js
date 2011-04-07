@@ -253,7 +253,7 @@ $(document).ready(function(){
         });        
     });
 
-    asyncTest("A Landscape controller will happily load and render piles of landscape chunks", function(){
+    asyncTest("A Landscape controller will do all sorts of stuff with terrain (mammoth test)", function(){
         var app = new blah.Application('gameCanvas', '../');
         app.init(function() {
             
@@ -263,7 +263,13 @@ $(document).ready(function(){
             app.resources.onAllAssetsLoaded(function(){       
                 var count = 0;
                 for(i in app.scene._entities) count++;
-                ok(count > 6, "Landscape loaded entities into scene");                    
+                
+                ok(count > 6, "Landscape loaded entities into scene");  
+                
+                var height = landscapeController.getHeightAt(0,0);
+                
+                ok(height != undefined, "Height can be retrieved from landscape controller");     
+                
                 app.render();
                 start();
             });         

@@ -6,7 +6,8 @@ blah.HovercraftFactory = function(app){
 
 blah.HovercraftFactory.prototype.create = function(id) {
   var model = this._app.resources.getModel("Hovercraft.js");
-  var entity = new blah.Entity(id, model);
+  var entity = new blah.Entity(id);
+  entity.setModel(model);
   entity.attach(blah.Hovercraft);
   return entity;
 };

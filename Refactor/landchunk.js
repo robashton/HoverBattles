@@ -99,3 +99,36 @@ blah.LandChunk.prototype.render = function(context) {
 	var gl = context.gl;
 	gl.drawElements(gl.TRIANGLE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
 };
+
+blah.LandChunk.prototype.getHeightAt = function(x, z) {
+    if(!this._data) {
+        return 6;
+    }
+    
+    var heightmap = this._data.heights;
+    
+    // Transform to values we can (almost) index our array with
+    var transformedX = x - this._x;
+    var transformedZ = z - this._y;
+    
+    var baseX = Math.floor(transformedX);
+    var baseZ = Math.floor(transformedZ);
+
+    var horizontalWeight = transformedX - baseX;
+    var verticalWeight = transformedZ - baseZ; 
+    
+    var leftX = baseX;
+    var rightX = baseX + 1;
+    var topX = baseZ; 
+    var bottomX = baseZ + 1;
+        
+    var topLeft = heightmap[leftX + topX * this._width];
+    var topRight = heightmap[rightX + topX * this._width];
+    var bottomLeft = heightmap[leftX + bottomX * this._width];
+    var bottomRight = heightmap[rightX + bottomX * this._width];
+    
+    var top = (horizontalWeight*topRight)+(1.0-horizontalWeight)*topLeft;
+    var bottom = (horizontalWeight*bottomRight)+(1.0-horizontalWeight)*bottomLeft;
+    
+    return (verticalWeight*bottom)+(1.0-verticalWeight)*top;
+};

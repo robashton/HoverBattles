@@ -17,6 +17,29 @@ blah.LandscapeController.prototype.getId = function() {
   return "terrain";  
 };
 
+blah.LandscapeController.prototype.getHeightAt = function(x, z) {
+    x /= this._scale;
+    z /= this._scale;        
+    
+    var currentChunkX = parseInt(x / this._chunkWidth) * this._chunkWidth;
+    var currentChunkZ = parseInt(z / this._chunkWidth) * this._chunkWidth;
+    
+    if(x < 0) { currentChunkX -= this._chunkWidth; }
+    if(z < 0) { currentChunkZ -= this._chunkWidth; }
+    
+    var key = currentChunkX + '_' + currentChunkZ
+    
+    var chunk = this._chunks[key];
+    if(chunk)
+    {
+        return chunk.getHeightAt(x, z);
+    }
+    else
+    {
+        return 20; // FTW
+    }    
+};
+
 blah.LandscapeController.prototype.doLogic = function(){
     if(this._counter++ % 10 != 0) { return ; }
     
@@ -65,6 +88,7 @@ blah.LandscapeController.prototype.doLogic = function(){
             var model = app.resources.getModel(data);
 			var chunkEntity = new blah.Entity('Chunk_' + key);
             chunkEntity.setModel(model);
+            chunkEntity.attach(blah.LandChunkEntity);
 			chunkEntity.x = x;
 			chunkEntity.z = z;
 
@@ -72,7 +96,12 @@ blah.LandscapeController.prototype.doLogic = function(){
 			this.app.scene.addEntity(chunkEntity);			
 		}
 	}
-    
+};
+
+blah.LandChunkEntity = {
+  getHeightAt: function(x,z){
+   return this._model.getHeightAt(x,z);   
+  }
 };
 
 // Interface segregation, I rather suspect I should do something about this in scene
