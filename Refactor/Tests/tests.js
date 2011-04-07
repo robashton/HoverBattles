@@ -275,6 +275,7 @@ $(document).ready(function(){
         app.init(function() {
             var factory = new blah.HovercraftFactory(app);
             var hovercraft = factory.create("player");
+            app.scene.addEntity(blah.DummyTerrain);
             app.scene.addEntity(hovercraft);
             
             app.resources.onAllAssetsLoaded(function(){                
@@ -290,6 +291,7 @@ $(document).ready(function(){
         app.init(function() {
             var factory = new blah.HovercraftFactory(app);
             var hovercraft = factory.create("player");
+            app.scene.addEntity(blah.DummyTerrain);
             app.scene.addEntity(hovercraft);
             
             app.resources.onAllAssetsLoaded(function(){    
@@ -302,6 +304,30 @@ $(document).ready(function(){
                 
                 app.tick();                
                 notEqual(original, hovercraft.position, "Hovercraft was moved by controller methods");
+                start();
+            });         
+        }); 
+    });
+    
+    asyncTest("We can attach a chase camera to the hovercraft, hurrah!", function() {
+        var app = new blah.Application('gameCanvas', '../');
+        app.init(function() {
+            var factory = new blah.HovercraftFactory(app);
+            var hovercraft = factory.create("player");
+            app.scene.addEntity(blah.DummyTerrain);
+            app.scene.addEntity(hovercraft);
+            hovercraft.attach(blah.ChaseCamera);
+            
+            app.resources.onAllAssetsLoaded(function(){    
+                var original = vec3.create(app.scene.camera.location);               
+                
+                hovercraft.impulseForward(0.1);
+                hovercraft.impulseForward(-0.1);                
+                hovercraft.impulseLeft(0.1);
+                hovercraft.impulseRight(0.1);
+                
+                app.tick();                
+                notEqual(original, app.scene.camera.location, "Camera was moved when hovercraft moved");
                 start();
             });         
         }); 

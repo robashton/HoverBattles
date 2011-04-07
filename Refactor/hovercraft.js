@@ -22,33 +22,19 @@ blah.Hovercraft = {
         this.rotationY -= amount;
     },
     doLogic: function() {
-       //  var terrain = this._scene.getEntity("terrain");
-         vec3.add(this.position, this._velocity);
-     /*    
-         var terrainHeight =  terrain.getHeightAt(this._entity.position[0], this._entity.position[2]);  
-         var heightDelta = this._entity.position[1] - terrainHeight;
+        var terrain = this._scene.getEntity("terrain");
+        vec3.add(this.position, this._velocity);
+         
+        var terrainHeight =  terrain.getHeightAt(this.position[0], this.position[2]);  
+        var heightDelta = this.position[1] - terrainHeight;
          
          if(heightDelta < 10.0){
                this._velocity[1] += (10.0 - heightDelta) * 0.08;
          }
-              
-         // "Gravity" kicks in too though
-         this._velocity[1] -= 0.07;;
-              
-         // This much is obvious
-         this._scene.camera._lookAt = hovercraft.position;
+         this._velocity[1] -= 0.07;              
+         vec3.scale(this._velocity, this._decay);
+    }
+}
          
-         var cameraTrail = vec3.create(this._velocity);
-         cameraTrail[1] = 0;
-         vec3.normalize(cameraTrail);
-         vec3.scale(cameraTrail, 50);
-         vec3.subtract(this._entity.position, cameraTrail, cameraTrail);
-         this._scene.camera._location = cameraTrail;
          
-         var terrainHeightAtCameraLocation = terrain.getHeightAt(this._scene.camera._location[0], this._scene.camera._location[2]);
-         var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, hovercraft.position[1] + 15);
-         
-         this._scene.camera._location[1] =  cameraHeight;               
-         vec3.scale(this._velocity, this._decay);   */
-    }    
-};
+
