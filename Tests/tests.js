@@ -9,7 +9,7 @@ $(document).ready(function(){
 
  
     asyncTest("We can bootstrap an application around the canvas with a valid context", function(){
-       var app = new blah.Application('gameCanvas', '../');
+       var app = new blah.Application('gameCanvas', '../client/');
        app.init(function(){
             ok(app.context != null, "Context is created");
             ok(app.scene != null, "Scene is created");
@@ -18,7 +18,7 @@ $(document).ready(function(){
     });	
     
     asyncTest("Entity added to scene is dealt with accordingly", function(){ 
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function(){
             var scene = app.scene;
             var addedScene = null;
@@ -39,7 +39,7 @@ $(document).ready(function(){
     });
     
     asyncTest("Entity added to scene is rendered by the scene", function(){ 
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function(){
             var scene = app.scene;
             var setContext = null;
@@ -59,7 +59,7 @@ $(document).ready(function(){
     });
     
     asyncTest("Model with unknown combination uses the default shader", function(){
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function(){
            var model = new blah.Model({
               vertices: [],
@@ -71,7 +71,7 @@ $(document).ready(function(){
     });
     
     asyncTest("Model with vertices, indices and colour uses the colour shader", function(){
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function(){
            var model = new blah.Model({
               vertices: [],
@@ -84,7 +84,7 @@ $(document).ready(function(){
     });
     
     asyncTest("Model with vertices, indices and tex coords uses the texture shader", function(){
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function(){
            var model = new blah.Model({
               vertices: [],
@@ -97,7 +97,7 @@ $(document).ready(function(){
     });
     
     asyncTest("Default Texture Loader can load textures from server", function(){
-         var app = new blah.Application('gameCanvas', '../');
+         var app = new blah.Application('gameCanvas', '../client/');
          app.init(function(){        
             var loader = new blah.DefaultTextureLoader(app);
             var texture = loader.load('/textures/hovercraft.jpg', function(){
@@ -109,7 +109,7 @@ $(document).ready(function(){
     });
 
     asyncTest("Resource manager can return resources", function(){
-         var app = new blah.Application('gameCanvas', '../');
+         var app = new blah.Application('gameCanvas', '../client/');
          app.init(function(){
             start();
             
@@ -124,7 +124,7 @@ $(document).ready(function(){
     });
       
     asyncTest("Default Model Loader can load models from server with appropriate texture", function(){
-         var app = new blah.Application('gameCanvas', '../');
+         var app = new blah.Application('gameCanvas', '../client/');
          app.init(function(){
             var resources = new blah.ResourceManager(app);
             var loader = new blah.DefaultModelLoader(resources);
@@ -139,7 +139,7 @@ $(document).ready(function(){
     });
  
     asyncTest("Land chunk model loader knows what it's for", function(){
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function() {
             var loader = new blah.LandChunkModelLoader(app.resources);
             
@@ -153,7 +153,7 @@ $(document).ready(function(){
     });
     
     asyncTest("Land chunk model loader can load a chunk from the server", function(){
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function() {
             var loader = new blah.LandChunkModelLoader(app.resources);
                 
@@ -175,7 +175,7 @@ $(document).ready(function(){
     });
     
     asyncTest("Land chunk model can be loaded and activated from resource manager", function(){
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function() {
             var loader = new blah.LandChunkModelLoader(app.resources);
             app.resources.addModelLoader(loader);
@@ -196,7 +196,7 @@ $(document).ready(function(){
     });
     
     asyncTest("We can wait for all assets to be loaded from the resource manager", function(){
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function() {      
             var model = app.resources.getModel("Hovercraft.js");
             var texture = app.resources.getTexture("/textures/hovercraft.jpg");
@@ -210,7 +210,7 @@ $(document).ready(function(){
     });
         
     asyncTest("A loaded model can be rendered with a context", function(){
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function() {       
             var model = app.resources.getModel("Hovercraft.js");
             var texture = app.resources.getTexture("/textures/hovercraft.jpg");
@@ -227,7 +227,7 @@ $(document).ready(function(){
  
  
     asyncTest("A loaded land chunk can be rendered with a context", function(){
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function() {
             var loader = new blah.LandChunkModelLoader(app.resources);
             app.resources.addModelLoader(loader);
@@ -254,7 +254,7 @@ $(document).ready(function(){
     });
 
     asyncTest("A Landscape controller will do all sorts of stuff with terrain (mammoth test)", function(){
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function() {
             
             var landscapeController = new blah.LandscapeController(app);
@@ -277,7 +277,7 @@ $(document).ready(function(){
     });    
     
     asyncTest("A Hovercraft can be added to the scene and rendered without too much fuss", function() {
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function() {
             var factory = new blah.HovercraftFactory(app);
             var hovercraft = factory.create("player");
@@ -293,7 +293,7 @@ $(document).ready(function(){
     });
     
     asyncTest("A hovercraft has basic hovercraft functionality (smoke test)", function() {
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function() {
             var factory = new blah.HovercraftFactory(app);
             var hovercraft = factory.create("player");
@@ -316,7 +316,7 @@ $(document).ready(function(){
     });
     
     asyncTest("We can attach a chase camera to the hovercraft, hurrah!", function() {
-        var app = new blah.Application('gameCanvas', '../');
+        var app = new blah.Application('gameCanvas', '../client/');
         app.init(function() {
             var factory = new blah.HovercraftFactory(app);
             var hovercraft = factory.create("player");

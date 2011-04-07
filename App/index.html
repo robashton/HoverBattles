@@ -1,14 +1,14 @@
 <html>
     <head>
-    	<script src="../Refactor/jquery-1.5.1.min.js"></script>
-        <script src="../Refactor/bootstrap.js"></script>        
-        <script src="../Refactor/lazyload.js"></script>
+    	<script src="../client/jquery-1.5.1.min.js"></script>
+        <script src="../client/bootstrap.js"></script>
+        <script src="../client/lazyload.js"></script>
         
 		<script type="text/javascript">
 			
 			$(document).ready(function(){
                 
-                var app = new blah.Application('game', '../Refactor/');
+                var app = new blah.Application('game', '../client/');
                 app.init(function() {
                     app.scene.camera.setLocation([0, 10, -10]);
                     var landscapeController = new blah.LandscapeController(app);            
@@ -21,11 +21,10 @@
                     app.scene.addEntity(hovercraft);
                     
                     app.resources.onAllAssetsLoaded(function(){
-                        alert('Loaded');
+                        setInterval(function() {  app.render(); }, 1000 / 30);
                     });
                     
                     setInterval(function() {  app.tick(); }, 1000 / 30);
-                    setInterval(function() {  app.render(); }, 1000 / 30);
                     
                 });
 
