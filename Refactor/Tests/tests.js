@@ -268,6 +268,43 @@ $(document).ready(function(){
                 start();
             });         
         });        
+    });    
+    
+    asyncTest("A Hovercraft can be added to the scene and rendered without too much fuss", function() {
+        var app = new blah.Application('gameCanvas', '../');
+        app.init(function() {
+            var factory = new blah.HovercraftFactory(app);
+            var hovercraft = factory.create("player");
+            app.scene.addEntity(hovercraft);
+            
+            app.resources.onAllAssetsLoaded(function(){                
+                ok(app.scene.getEntity("player"), "Hovercraft was added to scene");                
+                app.render();
+                start();
+            });         
+        });
+    });
+    
+    asyncTest("A hovercraft has basic hovercraft functionality (smoke test)", function() {
+        var app = new blah.Application('gameCanvas', '../');
+        app.init(function() {
+            var factory = new blah.HovercraftFactory(app);
+            var hovercraft = factory.create("player");
+            app.scene.addEntity(hovercraft);
+            
+            app.resources.onAllAssetsLoaded(function(){    
+                var original = vec3.create(hovercraft.position);               
+                
+                hovercraft.impulseForward(0.1);
+                hovercraft.impulseForward(-0.1);                
+                hovercraft.impulseLeft(0.1);
+                hovercraft.impulseRight(0.1);
+                
+                app.tick();                
+                notEqual(original, hovercraft.position, "Hovercraft was moved by controller methods");
+                start();
+            });         
+        }); 
     });
  
 });

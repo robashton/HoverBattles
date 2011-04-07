@@ -20,12 +20,20 @@ blah.Entity.prototype.getModel = function(){
 	return this._model;
 };
 
-blah.Entity.prototype.attach = function(logic) {
-    var oldLogic = this.doLogic;
-    this.doLogic = function(){
-      oldLogic.call(this);
-      logic.call(this);
-    };
+blah.Entity.prototype.attach = function(component) {
+    for(i in component){
+        if(i == "doLogic"){
+            var newLogic = component[i];
+            var oldLogic = this.doLogic;
+            this.doLogic = function(){
+              oldLogic.call(this);
+              newLogic.call(this);
+            };
+        }
+        else {
+            this[i] = component[i]; 
+        }
+    }
 };
 
 blah.Entity.prototype.doLogic = function() { };

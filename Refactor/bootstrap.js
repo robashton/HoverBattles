@@ -26,7 +26,9 @@ blah.Application.prototype.init = function(finishedCallback){
             
             this._root + 'landchunkloader.js',
             this._root + 'landchunk.js',
-            this._root + 'landscapecontroller.js'
+            this._root + 'landscapecontroller.js',
+            this._root + 'hovercraftfactory.js',
+            this._root + 'hovercraft.js',
         ]
         , function () {            
             var context = new blah.RenderContext();
