@@ -126,7 +126,7 @@ $(document).ready(function(){
     asyncTest("Default Model Loader can load models from server with appropriate texture", function(){
          var app = new blah.Application('gameCanvas', '../');
          app.init(function(){
-             var resources = new blah.ResourceManager(app);
+            var resources = new blah.ResourceManager(app);
             var loader = new blah.DefaultModelLoader(resources);
             var model = loader.load('Hovercraft.js', function(){
                 ok(true, "Model finished loading from server");

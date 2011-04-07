@@ -14,7 +14,7 @@ blah.LandscapeController = function(app){
 };
 
 blah.LandscapeController.prototype.getId = function() {
-  return "landscape";  
+  return "terrain";  
 };
 
 blah.LandscapeController.prototype.doLogic = function(){

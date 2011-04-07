@@ -23,6 +23,7 @@ blah.Application.prototype.init = function(finishedCallback){
             '/Shaders.js',
             this._root + 'resources.js',
             this._root + 'camera.js',
+            this._root + 'keyboard.js',
             
             this._root + 'landchunkloader.js',
             this._root + 'landchunk.js',
