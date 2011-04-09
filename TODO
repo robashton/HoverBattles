@@ -1,3 +1,35 @@
+- Limit the player to a pre-set grid (clipping, cba dealing with the resources)         [x]
+- Add a box of some sort to show the user that they can't go past that pre-set grid
+
+- Add multiplayer code so we can move a few players around in the world
+    - First up, the logic for our single player needs to run on the server
+    - Commands sent to the craft on client should also be sent to run on the server
+    - Server should update craft position/velocitu periodically
+
+- Add firing code (shift??)
+- Add the ability to jump to the hovercraft's controls (space??)
+
+- Look at unloading resources (whether it is necessary or not)
+- Make the terrain rendering a bit more sane
+    - Bumpmapping over a plain black/purple underlay
+    - Specular + diffuse lighting over that bump map
+    - Using the player as a light source
+- Add collision detection between entities (players and landscape models)
+- Add collision detection between firing
+- Improve the camera control (Add mouse/something hints?)
+- Add a specular map to the hovercraft (possibly)
+
+- Write a basic state engine for the actual game
+- Add a loading screen, show percentage on the loading screen
+
+
+- Add a particle system
+    - Hovercraft should emit particles of some sort, probably slow decay, low gravity
+    - Hovercraft should be able to blow up, them be particles too
+
+- The game itself - add power-ups
+
+--------------------- WORK BELOW COMPLETED --------------------------
 - Add a camera class that has the ability to 
 	- Be positioned																	     [x]
 	- Look at stuff																		 
@@ -24,12 +56,7 @@
 - Put the generator server-side															 [x]		
 
 - Add some light blue fog (easier than adding a skybox)										
-- Add models to the landscape (trees, houses)
-- Add player model
-- Add controls and basic physics to move player model
-- Write code for camera to follow player model about cleanly
-
-- Add multiplayer code so we can move a few players around in the world					
-- Add firing code (somehow)
-- Add collision detection between entities (players and landscape models)
-- Add collision detection between firing
+- Add models to the landscape (trees, houses)                                           [x] // Not a priority any more
+- Add player model                                                                      [x]
+- Add controls and basic physics to move player model                                   [x]
+- Write code for camera to follow player model about cleanly                            [x]

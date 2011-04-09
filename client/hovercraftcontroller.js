@@ -16,5 +16,8 @@ blah.HovercraftController = {
         else if(blah.KeyboardStates[blah.KeyCodes.A]) {
             this.impulseLeft(0.05);
     	}
+        if(blah.KeyboardStates[blah.KeyCodes.Space]) {
+            this.impulseUp(1.0);
+        }
     }
 };

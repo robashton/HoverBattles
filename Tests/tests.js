@@ -338,5 +338,32 @@ $(document).ready(function(){
             });         
         }); 
     });
+    
+    module("Less end to end tests, more unit tests, yeah?");
+    
+    asyncTest("An entity can be constrained with a clipping component", function(){
+        var app = new blah.Application('gameCanvas', '../client/');
+        app.init(function() {
+           var entity = new blah.Entity("id");
+           entity.attach(blah.Clipping);
+           entity.setBounds([0,0,0], [10,10,10]);
+           
+           entity.position = [-10,-5,-2];
+           entity._velocity = [-1, -2, -3];
+           entity.doLogic();
+           
+           equal(entity.position, [0,0,0], "Entity can't go below min");
+           equal(entity._velocity, [0,0,0], "Entity has velocity halted on going below min");       
+                  
+           entity.position = [20,20,20];
+           entity._velocity = [1, 2, 3];
+           entity.doLogic();
+           
+           equal(entity.position, [10,10,10], "Entity can't go above max");
+           equal(entity._velocity, [0,0,0], "Entity has velocity halted on going above max");
+           start();
+        });
+        
+    });
  
 });

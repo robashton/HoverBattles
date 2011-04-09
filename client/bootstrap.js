@@ -25,6 +25,8 @@ blah.Application.prototype.init = function(finishedCallback){
             this._root + 'camera.js',
             this._root + 'keyboard.js',
             
+            this._root + 'clipping.js',
+            
             this._root + 'landchunkloader.js',
             this._root + 'landchunk.js',
             this._root + 'landscapecontroller.js',
