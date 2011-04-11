@@ -5,6 +5,21 @@ fs = require('fs');
 paperboy = require('paperboy');
 landscape = require('./LandscapeGeneration');
 shaders = require('./ShaderGeneration');
+var stitch  = require('stitch');
+
+/*
+*/
+var pkg = stitch.createPackage({
+  paths: ['./game']
+});
+
+
+pkg.compile(function (err, source){
+  fs.writeFile('package.js', source, function (err) {
+    if (err) throw err;
+    console.log('Compiled package.js');
+  })
+});
 
 ROOT = path.dirname(__filename);
 SHADERDIR = path.join(ROOT, "shaders");

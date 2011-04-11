@@ -1,14 +1,12 @@
-var blah = blah || {};
-
-blah.LandChunkModelLoader = function(resources){
+var LandChunkModelLoader = function(resources){
     this._resources = resources;
 };
 
-blah.LandChunkModelLoader.prototype.handles = function(path){
+LandChunkModelLoader.prototype.handles = function(path){
   return path.indexOf('chunk_') > -1;
 };
 
-blah.LandChunkModelLoader.prototype.load = function(id, callback) {
+LandChunkModelLoader.prototype.load = function(id, callback) {
     var data = JSON.parse(id.substr(6, id.length - 6));
     
     var url = '/Landscape&height=' + (data.height) +
@@ -18,7 +16,7 @@ blah.LandChunkModelLoader.prototype.load = function(id, callback) {
 	'&startx=' + data.x + 
 	'&starty=' + data.y;
     
-    var model = new blah.LandChunk(data.height, data.width, data.maxHeight, data.scale, data.x, data.y);
+    var model = new LandChunk(data.height, data.width, data.maxHeight, data.scale, data.x, data.y);
     model.loadTextures(this._resources);
     
     var loader = this;
@@ -30,3 +28,5 @@ blah.LandChunkModelLoader.prototype.load = function(id, callback) {
     
     return model;
 };
+
+exports.LandChunkModelLoader = LandChunkModelLoader;

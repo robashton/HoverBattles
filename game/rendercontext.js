@@ -1,11 +1,10 @@
-var blah = blah || {};
 
-blah.RenderContext = function(resourceLoader){
+var RenderContext = function(resourceLoader){
     this.gl = null;
 	this.programs = {};
 };
 
-blah.RenderContext.prototype.init = function(selector) {
+RenderContext.prototype.init = function(selector) {
   var canvas =  document.getElementById(selector);
 
   this.gl = canvas.getContext("experimental-webgl");
@@ -17,7 +16,7 @@ blah.RenderContext.prototype.init = function(selector) {
   this.gl.enable(this.gl.DEPTH_TEST);  
 };
 
-blah.RenderContext.prototype.createProgram = function(programName) {
+RenderContext.prototype.createProgram = function(programName) {
 	
 	var fragmentShader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
 	var vertexShader = this.gl.createShader(this.gl.VERTEX_SHADER);
@@ -48,7 +47,7 @@ blah.RenderContext.prototype.createProgram = function(programName) {
 };
 
 
-blah.RenderContext.prototype.setActiveProgram = function(programName) {
+RenderContext.prototype.setActiveProgram = function(programName) {
 	if(!this.programs[programName]) { this.createProgram(programName); }
 	var program = this.programs[programName];
 
@@ -57,4 +56,5 @@ blah.RenderContext.prototype.setActiveProgram = function(programName) {
 	return program;
 }; 
 
+exports.RenderContext = RenderContext;
 

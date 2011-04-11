@@ -1,6 +1,4 @@
-var blah = blah || {};
-
-blah.Model = function(data){
+var Model = function(data){
     this._programName = "default";
         
     if(data) { this.setData(data); }
@@ -13,7 +11,7 @@ blah.Model = function(data){
     this._hasData = false;
 };
 
-blah.Model.prototype.setData = function(data) {
+Model.prototype.setData = function(data) {
     this._vertices = data.vertices;
     this._colours = data.colours;
 	this._indices = data.indices;
@@ -25,11 +23,11 @@ blah.Model.prototype.setData = function(data) {
     else if( this._colours ) { this._programName = "colour"; }
 };
 
-blah.Model.prototype.getProgram = function() {
+Model.prototype.getProgram = function() {
 	return this._programName;
 };
 
-blah.Model.prototype.activate = function(context) {
+Model.prototype.activate = function(context) {
 	var gl = context.gl;
 
 	this._vertexBuffer = gl.createBuffer();
@@ -59,7 +57,7 @@ blah.Model.prototype.activate = function(context) {
 
 };
 
-blah.Model.prototype.destroyBuffers = function(context) {
+Model.prototype.destroyBuffers = function(context) {
 	var gl = context.gl;
 	gl.deleteBuffer(this._vertexBuffer);
 	gl.deleteBuffer(this._indexBuffer);
@@ -85,11 +83,11 @@ blah.Model.prototype.destroyBuffers = function(context) {
 };
 
 
-blah.Model.prototype.getProgram = function() {
+Model.prototype.getProgram = function() {
 	return this._programName;
 };
 
-blah.Model.prototype.upload = function(context) {
+Model.prototype.upload = function(context) {
 	var gl = context.gl;
 	var program = context.program;
 
@@ -124,14 +122,14 @@ blah.Model.prototype.upload = function(context) {
     }
 };
 
-blah.Model.prototype.render = function(context) {
+Model.prototype.render = function(context) {
 	var gl = context.gl;
 	gl.drawElements(gl.TRIANGLES, this._indices.length , gl.UNSIGNED_SHORT, 0);
 };
 
-blah.Model.Quad = function()
+Model.Quad = function()
 {
-	return new blah.Model({
+	return new Model({
 				vertices: [			
 				0.0, 0.0, 0, 
 				1.0, 0.0, 0, 
@@ -150,4 +148,5 @@ blah.Model.Quad = function()
 		);
 };
 
+exports.Model = Model;
 

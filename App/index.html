@@ -8,16 +8,16 @@
 			
 			$(document).ready(function(){
                 
-                var app = new blah.Application('game', '../client/');
+                var app = new blah.Application('game');
                 app.init(function() {
                     app.scene.camera.setLocation([0, 10, -10]);
-                    var landscapeController = new blah.LandscapeController(app);            
+                    var landscapeController = new LandscapeController(app);            
                     
                     // Player hovercraft
-                    var factory = new blah.HovercraftFactory(app);
+                    var factory = new HovercraftFactory(app);
                     var hovercraft = factory.create("player");
-                    hovercraft.attach(blah.ChaseCamera);
-                    hovercraft.attach(blah.HovercraftController);
+                    hovercraft.attach(ChaseCamera);
+                    hovercraft.attach(HovercraftController);
                     app.scene.addEntity(hovercraft);
                     
                     app.resources.onAllAssetsLoaded(function(){

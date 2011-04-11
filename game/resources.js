@@ -1,11 +1,13 @@
-var blah = blah || {};
+var DefaultModelLoader = require('defaultmodelloader').DefaultModelLoader;
+var DefaultTextureLoader = require('defaulttextureloader').DefaultTextureLoader;
 
-blah.ResourceManager = function(app){
+
+var ResourceManager = function(app){
     this._app = app;
     this._modelLoaders = [];
     
-    this._textureLoader = new blah.DefaultTextureLoader(app);
-    this._modelLoaders.push( new blah.DefaultModelLoader(this) );
+    this._textureLoader = new DefaultTextureLoader(app);
+    this._modelLoaders.push( new DefaultModelLoader(this) );
     
     this._textures = {};
     this._models = {};
@@ -14,7 +16,7 @@ blah.ResourceManager = function(app){
     this._pendingModelCount = 0;
 };
 
-blah.ResourceManager.prototype.getTexture = function(path){
+ResourceManager.prototype.getTexture = function(path){
     if(this._textures[path]) return this._textures[path];   
     
     var resources = this;
@@ -28,7 +30,7 @@ blah.ResourceManager.prototype.getTexture = function(path){
     return texture;    
 };
 
-blah.ResourceManager.prototype.onAllAssetsLoaded = function(callback){
+ResourceManager.prototype.onAllAssetsLoaded = function(callback){
     var resources = this;
     var intervalId = setInterval(function(){      
       if( resources._pendingTextureCount == 0 &&
@@ -41,15 +43,15 @@ blah.ResourceManager.prototype.onAllAssetsLoaded = function(callback){
     
 };
 
-blah.ResourceManager.prototype.addModelLoader = function(loader) {
+ResourceManager.prototype.addModelLoader = function(loader) {
   this._modelLoaders.push(loader);  
 };
 
-blah.ResourceManager.prototype.registerForActivation = function(resource) {
+ResourceManager.prototype.registerForActivation = function(resource) {
   resource.activate(this._app.context);
 };
 
-blah.ResourceManager.prototype.getModel = function(path) {
+ResourceManager.prototype.getModel = function(path) {
     if(this._models[path]) return this._models[path];
     var resources = this;
     for(i in this._modelLoaders){
@@ -65,3 +67,5 @@ blah.ResourceManager.prototype.getModel = function(path) {
         }
     }
 };
+
+exports.ResourceManager = ResourceManager;

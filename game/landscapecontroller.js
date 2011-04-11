@@ -1,8 +1,6 @@
-var blah = blah || {};
-
-blah.LandscapeController = function(app){
+var LandscapeController = function(app){
   app.resources.addModelLoader(
-        new blah.LandChunkModelLoader(app.resources)
+        new LandChunkModelLoader(app.resources)
         );
   app.scene.addEntity(this);
   
@@ -13,11 +11,11 @@ blah.LandscapeController = function(app){
   this._scale = 5;
 };
 
-blah.LandscapeController.prototype.getId = function() {
+LandscapeController.prototype.getId = function() {
   return "terrain";  
 };
 
-blah.LandscapeController.prototype.getHeightAt = function(x, z) {
+LandscapeController.prototype.getHeightAt = function(x, z) {
     x /= this._scale;
     z /= this._scale;        
     
@@ -40,7 +38,7 @@ blah.LandscapeController.prototype.getHeightAt = function(x, z) {
     }    
 };
 
-blah.LandscapeController.prototype.doLogic = function(){
+LandscapeController.prototype.doLogic = function(){
     if(this._counter++ % 10 != 0) { return ; }
     
     var app = this.app,
@@ -86,9 +84,9 @@ blah.LandscapeController.prototype.doLogic = function(){
             })
 
             var model = app.resources.getModel(data);
-			var chunkEntity = new blah.Entity('Chunk_' + key);
+			var chunkEntity = new Entity('Chunk_' + key);
             chunkEntity.setModel(model);
-            chunkEntity.attach(blah.LandChunkEntity);
+            chunkEntity.attach(LandChunkEntity);
 			chunkEntity.x = x;
 			chunkEntity.z = z;
 
@@ -98,13 +96,14 @@ blah.LandscapeController.prototype.doLogic = function(){
 	}
 };
 
-blah.LandChunkEntity = {
+LandChunkEntity = {
   getHeightAt: function(x,z){
    return this._model.getHeightAt(x,z);   
   }
 };
 
 // Interface segregation, I rather suspect I should do something about this in scene
-blah.LandscapeController.prototype.setScene = function(scene){};
-blah.LandscapeController.prototype.render = function(context){};
+LandscapeController.prototype.setScene = function(scene){};
+LandscapeController.prototype.render = function(context){};
 
+exports.LandscapeController = LandscapeController;

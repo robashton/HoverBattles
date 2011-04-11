@@ -1,6 +1,4 @@
-var blah = blah || {};
-
-blah.Clipping = {
+var Clipping = {
   setBounds: function(min, max){
     this._min = min;
     this._max = max;
@@ -20,3 +18,5 @@ blah.Clipping = {
   }
     
 };
+
+exports.Clipping = Clipping;

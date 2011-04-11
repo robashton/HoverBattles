@@ -1,6 +1,4 @@
-var blah = blah || {};
-
-blah.Entity = function(id){
+var Entity = function(id){
     this._model = null;
 	this._id = id;
 	this.position = vec3.create();
@@ -8,19 +6,19 @@ blah.Entity = function(id){
 	this._scene = null;
 };
 
-blah.Entity.prototype.getId = function(){
+Entity.prototype.getId = function(){
 	return this._id;
 };
 
-blah.Entity.prototype.setModel = function(model) {
+Entity.prototype.setModel = function(model) {
    this._model = model;  
 };
 
-blah.Entity.prototype.getModel = function(){
+Entity.prototype.getModel = function(){
 	return this._model;
 };
 
-blah.Entity.prototype.attach = function(component) {
+Entity.prototype.attach = function(component) {
     for(i in component){
         if(i == "doLogic"){
             var newLogic = component[i];
@@ -36,13 +34,13 @@ blah.Entity.prototype.attach = function(component) {
     }
 };
 
-blah.Entity.prototype.doLogic = function() { };
+Entity.prototype.doLogic = function() { };
 
-blah.Entity.prototype.setScene = function(scene) {
+Entity.prototype.setScene = function(scene) {
 	this._scene = scene;
 };
 
-blah.Entity.prototype.render = function(context){
+Entity.prototype.render = function(context){
     if(!this._model) { return; }
 	var gl = context.gl;
 
@@ -72,3 +70,5 @@ blah.Entity.prototype.render = function(context){
 
 	this._model.render(context);
 };
+
+exports.Entity = Entity;

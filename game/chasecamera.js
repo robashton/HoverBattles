@@ -1,6 +1,4 @@
-var blah = blah || {};
-
-blah.ChaseCamera = {
+var ChaseCamera = {
   doLogic: function(){      
       var terrain = this._scene.getEntity("terrain");
       
@@ -21,3 +19,5 @@ blah.ChaseCamera = {
      this._scene.camera.location[1] =  cameraHeight;
   }    
 };
+
+exports.ChaseCamera = ChaseCamera;

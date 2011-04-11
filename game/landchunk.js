@@ -1,6 +1,4 @@
-var blah = blah || {};
-
-blah.LandChunk = function(width, height, maxHeight, scale,x,y){
+var LandChunk = function(width, height, maxHeight, scale,x,y){
     this._maxHeight = maxHeight;
 	this._width = width;
 	this._height = height;
@@ -23,21 +21,21 @@ blah.LandChunk = function(width, height, maxHeight, scale,x,y){
     this._playerPosition = vec3.create();
 };
 
-blah.LandChunk.prototype.getProgram = function(){
+LandChunk.prototype.getProgram = function(){
     return "landscape";
 };
 
-blah.LandChunk.prototype.loadTextures = function(resources) {
+LandChunk.prototype.loadTextures = function(resources) {
     this._texture = resources.getTexture("/textures/gridlow.jpg");
     this._detailtexture = resources.getTexture("/textures/gridhigh.jpg");
     this._hovertexture = resources.getTexture("/textures/bars.jpg");
 };
 
-blah.LandChunk.prototype.setData = function(data) {
+LandChunk.prototype.setData = function(data) {
     this._data = data;
 };
 
-blah.LandChunk.prototype.activate = function(context) {
+LandChunk.prototype.activate = function(context) {
     var gl = context.gl;
   	 
 	this._vertexBuffer = gl.createBuffer();
@@ -59,7 +57,7 @@ blah.LandChunk.prototype.activate = function(context) {
 	this._indexCount = this._data.indices.length;    	
 };
 
-blah.LandChunk.prototype.upload = function(context) {
+LandChunk.prototype.upload = function(context) {
     var gl = context.gl;
 	var program = context.program;
 
@@ -94,13 +92,13 @@ blah.LandChunk.prototype.upload = function(context) {
 
 };
 
-blah.LandChunk.prototype.render = function(context) {
+LandChunk.prototype.render = function(context) {
     this._frame++;
 	var gl = context.gl;
 	gl.drawElements(gl.TRIANGLE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
 };
 
-blah.LandChunk.prototype.getHeightAt = function(x, z) {
+LandChunk.prototype.getHeightAt = function(x, z) {
     if(!this._data) {
         return 6;
     }
@@ -132,3 +130,5 @@ blah.LandChunk.prototype.getHeightAt = function(x, z) {
     
     return (verticalWeight*bottom)+(1.0-verticalWeight)*top;
 };
+
+exports.LandChunk = LandChunk;

@@ -1,6 +1,4 @@
-var blah = blah || {};
-
-blah.Hovercraft = {
+var Hovercraft = {
     _velocity: vec3.create([0.01,0,0.01]),
     _decay: 0.97,
     impulseForward: function(amount) {
@@ -48,10 +46,9 @@ blah.Hovercraft = {
          this._velocity[1] -= 0.07;              
          vec3.scale(this._velocity, this._decay);    
          
-         
-         
     }
 }
          
+exports.Hovercraft = Hovercraft;
          
 

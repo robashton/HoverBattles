@@ -1,16 +1,14 @@
-var blah = blah || {};
-
-blah.Texture = function(name, image){
+var Texture = function(name, image){
     this._data = null;
     this._image = image;
     this._name = name;
 };
 
-blah.Texture.prototype.get = function(){
+Texture.prototype.get = function(){
     return this._data;
 };
 
-blah.Texture.prototype.activate = function(context) {
+Texture.prototype.activate = function(context) {
     var gl = context.gl;
     var data = gl.createTexture();
     this._data = data;
@@ -24,3 +22,5 @@ blah.Texture.prototype.activate = function(context) {
     gl.generateMipmap(gl.TEXTURE_2D);
     gl.bindTexture(gl.TEXTURE_2D, null);
 };
+
+exports.Texture = Texture;
