@@ -1,3 +1,6 @@
+var vec3 = require('../glmatrix').vec3;
+var mat4 = require('../glmatrix').mat4;
+
 var LandChunk = function(width, height, maxHeight, scale,x,y){
     this._maxHeight = maxHeight;
 	this._width = width;

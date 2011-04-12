@@ -1,3 +1,7 @@
+var vec3 = require('../glmatrix').vec3;
+var mat4 = require('../glmatrix').mat4;
+var mat3 = require('../glmatrix').mat4;
+
 var Entity = function(id){
     this._model = null;
 	this._id = id;

@@ -2,8 +2,7 @@ var blah = blah || {};
 
 $app = function(callback){    
     LazyLoad.js([        
-        '/glMatrix-0.9.5.min.js', 
-        '/package.js',
+        '/game.js',
         '/Shaders.js'
         ],
         function(){
@@ -25,7 +24,12 @@ $app = function(callback){
             RenderContext = require('rendercontext').RenderContext;
             ResourceManager = require('resources').ResourceManager;           
             Scene = require('scene').Scene;           
-            Texture = require('texture').Texture;            
+            Texture = require('texture').Texture; 
+            
+            vec3 = require('../glmatrix').vec3;
+            mat3 = require('../glmatrix').mat3;
+            quat4 = require('../glmatrix').quat4;
+            mat4 = require('../glmatrix').mat4;
             callback();
     });
 };

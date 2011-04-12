@@ -1,3 +1,6 @@
+var vec3 = require('../glmatrix').vec3;
+var mat4 = require('../glmatrix').mat4;
+
 var Camera = require('camera').Camera;
 
 var Scene = function(){

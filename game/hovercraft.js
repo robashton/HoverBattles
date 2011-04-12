@@ -1,3 +1,6 @@
+var vec3 = require('../glmatrix').vec3;
+var mat4 = require('../glmatrix').mat4;
+
 var Hovercraft = {
     _velocity: vec3.create([0.01,0,0.01]),
     _decay: 0.97,

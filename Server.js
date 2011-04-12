@@ -10,14 +10,14 @@ var stitch  = require('stitch');
 /*
 */
 var pkg = stitch.createPackage({
-  paths: ['./game']
+  paths: ['./game', './thirdparty']
 });
 
 
 pkg.compile(function (err, source){
-  fs.writeFile('package.js', source, function (err) {
+  fs.writeFile('game.js', source, function (err) {
     if (err) throw err;
-    console.log('Compiled package.js');
+    console.log('Compiled game.js');
   })
 });
 

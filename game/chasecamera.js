@@ -1,3 +1,6 @@
+var vec3 = require('../glmatrix').vec3;
+var mat4 = require('../glmatrix').mat4;
+
 var ChaseCamera = {
   doLogic: function(){      
       var terrain = this._scene.getEntity("terrain");
