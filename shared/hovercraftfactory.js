@@ -1,4 +1,5 @@
-var Entity = require('entity').Entity;
+var Entity = require('./entity').Entity;
+var Hovercraft = require('./hovercraft').Hovercraft;
 
 var HovercraftFactory = function(app){
   this._app = app;  

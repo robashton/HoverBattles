@@ -10,7 +10,7 @@ var stitch  = require('stitch');
 /*
 */
 var pkg = stitch.createPackage({
-  paths: ['./game', './thirdparty']
+  paths: ['./game']
 });
 
 

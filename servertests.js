@@ -1,13 +1,29 @@
 var assert = require('assert');
 
-var Scene = require('./client/scene.js').Scene;
-var Controller = require('./client/controller.js').Controller;
+var HovercraftFactory = require('./game/hovercraftfactory').HovercraftFactory;
+var Scene = require('./game/scene').Scene;
+var Controller = require('./game/controller').Controller;
+var Model = require('./game/model').Model;
+
+ServerResourceManager = function(app) {
+  this._app = app;  
+};
+
+ServerResourceManager.prototype.getModel = function(path){
+  return new Model();  
+};
+
+ServerApp = function(){
+  this.resources = new ServerResourceManager(this);
+  this.scene = new Scene();
+  this.controller = new Controller(this.scene);
+};
 
 (function(){
     
-    var scene = new Scene();
-    var controller = new Controller(scene);
+    var app = new ServerApp();
+    var factory = new HovercraftFactory(app);
     
-    assert.ok(controller != null, "Controller can be created around a scene"); 
-    
+     var craft = factory.create('player');
+     assert.ok(craft != null, "A Hovercraft can be boot-strapped with an application and all that jazz");
 })();

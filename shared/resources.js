@@ -1,5 +1,5 @@
-var DefaultModelLoader = require('defaultmodelloader').DefaultModelLoader;
-var DefaultTextureLoader = require('defaulttextureloader').DefaultTextureLoader;
+var DefaultModelLoader = require('./defaultmodelloader').DefaultModelLoader;
+var DefaultTextureLoader = require('./defaulttextureloader').DefaultTextureLoader;
 
 
 var ResourceManager = function(app){

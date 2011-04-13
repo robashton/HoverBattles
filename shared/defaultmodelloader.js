@@ -1,3 +1,5 @@
+var Model = require('./Model.js').Model;
+
 var DefaultModelLoader = function(resources){
     this._resources = resources;
 };
