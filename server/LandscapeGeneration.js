@@ -1,8 +1,8 @@
 path = require('path');
 fs = require('fs');
 querystring = require('querystring');
+vec3 = require('../shared/glmatrix').vec3;
 
-require('./matrixwrapper');
 
 exports.handle = function(req, res) {
 	generateData(req, res, function(model) {

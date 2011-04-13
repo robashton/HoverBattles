@@ -143,7 +143,9 @@ Controller.prototype.tick = function(){
 	this._timeAtLastFrame = timeAtThisFrame;  
 };
 
-exports.Controller = Controller;}, "defaultmodelloader": function(exports, require, module) {var DefaultModelLoader = function(resources){
+exports.Controller = Controller;}, "defaultmodelloader": function(exports, require, module) {var Model = require('./model').Model;
+
+var DefaultModelLoader = function(resources){
     this._resources = resources;
 };
 
@@ -382,6 +384,7 @@ var HovercraftController = {
 
 exports.HovercraftControllre = HovercraftController;
 exports.KeyCodes = KeyCodes;}, "hovercraftfactory": function(exports, require, module) {var Entity = require('./entity').Entity;
+var Hovercraft = require('./hovercraft').Hovercraft;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -909,8 +912,8 @@ RenderContext.prototype.setActiveProgram = function(programName) {
 
 exports.RenderContext = RenderContext;
 
-}, "resources": function(exports, require, module) {var DefaultModelLoader = require('defaultmodelloader').DefaultModelLoader;
-var DefaultTextureLoader = require('defaulttextureloader').DefaultTextureLoader;
+}, "resources": function(exports, require, module) {var DefaultModelLoader = require('./defaultmodelloader').DefaultModelLoader;
+var DefaultTextureLoader = require('./defaulttextureloader').DefaultTextureLoader;
 
 
 var ResourceManager = function(app){

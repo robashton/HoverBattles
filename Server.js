@@ -3,14 +3,17 @@ path = require('path'),
 io = require('socket.io'), 
 fs = require('fs');
 paperboy = require('paperboy');
-landscape = require('./LandscapeGeneration');
-shaders = require('./ShaderGeneration');
 var stitch  = require('stitch');
+
+
+landscape = require('./server/LandscapeGeneration');
+shaders = require('./server/ShaderGeneration');
+
 
 /*
 */
 var pkg = stitch.createPackage({
-  paths: ['./game']
+  paths: ['./shared']
 });
 
 
