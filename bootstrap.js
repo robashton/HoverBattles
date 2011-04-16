@@ -23,7 +23,8 @@ $app = function(callback){
             RenderContext = require('rendercontext').RenderContext;
             ResourceManager = require('resources').ResourceManager;           
             Scene = require('scene').Scene;           
-            Texture = require('texture').Texture; 
+            Texture = require('texture').Texture;
+            ClientCommunication = require('communication').ClientCommunication;
             
             vec3 = require('../glmatrix').vec3;
             mat3 = require('../glmatrix').mat3;

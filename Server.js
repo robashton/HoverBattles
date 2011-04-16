@@ -8,7 +8,8 @@ var stitch  = require('stitch');
 
 landscape = require('./server/LandscapeGeneration');
 shaders = require('./server/ShaderGeneration');
-
+ServerApp = require('./server/application').ServerApp;
+ServerCommunication = require('./server/communication').ServerCommunication;
 
 /*
 */
@@ -29,7 +30,6 @@ SHADERDIR = path.join(ROOT, "shaders");
 
 server = http.createServer(function(req, res){ 
 
-	// Serve all these lovely static files
 	paperboy
 	.deliver(ROOT, req, res)
 	.addHeader('Cache-Control', 'no-cache')
@@ -51,8 +51,8 @@ server = http.createServer(function(req, res){
 		}
 
 	});
-	
-	
-
 });
 server.listen(1220);
+
+var app = new ServerApp();
+var game = new ServerCommunication(app, server);

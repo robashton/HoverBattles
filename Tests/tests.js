@@ -350,7 +350,7 @@ $(document).ready(function(){$app(function(){
         }); 
     });
     
-    module("Less end to end tests, more unit tests, yeah?");
+    module("Component checks");
     
     asyncTest("An entity can be constrained with a clipping component", function(){
         var app = new blah.Application('gameCanvas');
@@ -373,8 +373,43 @@ $(document).ready(function(){$app(function(){
            same(entity.position, [10,10,10], "Entity can't go above max");
            same(entity._velocity, [0,0,0], "Entity has velocity halted on going above max");
            start();
-        });
+        });        
+    });
+    
+    
+    module("Multiplayer tests");
         
+    
+    asyncTest("Two players connecting to the server", function(){
+
+         var app1 = new blah.Application('gameCanvas');
+         var app2 = new blah.Application('gameCanvas');
+         
+         app1.init(function() { app2.init(function() {         
+             var clientOne = new ClientCommunication(app1);
+             var clientTwo = new ClientCommunication(app2);
+             
+             var otherStarted = false;             
+             var intervalId = setInterval(function(){
+                 
+                 if(clientOne.started && clientTwo.started){
+                     ok(clientOne.craft != null, "Client one was given a hovercraft when starting");
+                     ok(clientTwo.craft != null, "Client two was given a hovercraft when starting");              
+                                         
+                     var clientOneId = clientOne.craft.getId();
+                     var clientTwoId = clientTwo.craft.getId();
+                     
+                     var clientTwoEntityFromAppOne = app1.scene.getEntity(clientTwoId);
+                     var clientOneEntityFromAppTwo = app2.scene.getEntity(clientOneId);
+                     
+                     ok(clientOneEntityFromAppTwo != null, "Client one has an entity in client two's world");
+                     ok(clientTwoEntityFromAppOne != null, "Client two has an entity in client one's world");
+                                         
+                     clearInterval(intervalId);
+                     start();
+                 }
+            }, 300);      
+         })});        
     });
  
 }); });

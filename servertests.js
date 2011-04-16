@@ -8,15 +8,7 @@ var Model = require('./shared/model').Model;
 var ServerModelLoader = require('./server/servermodelloader').ServerModelLoader;
 var ServerLandChunkModelLoader = require('./server/serverlandchunkloader').ServerLandChunkModelLoader;
 var LandscapeController = require('./shared/landscapecontroller').LandscapeController;
-
-
-ServerApp = function(){
-  this.resources = new ResourceManager(this);
-  this.scene = new Scene();
-  this.controller = new Controller(this.scene);
-  this.resources.addModelLoader(new ServerModelLoader());
-  this.resources.addModelLoader(new ServerLandChunkModelLoader(this.resources));
-};
+var ServerApp = require('./server/application').ServerApp;
 
 (function(){
     

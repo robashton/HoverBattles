@@ -21,8 +21,6 @@ var HovercraftController = {
     }
 };
 
-
-
 document.onkeydown = function(event) { 
     KeyboardStates[event.keyCode] = true;   
 
