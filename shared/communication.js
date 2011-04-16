@@ -1,4 +1,6 @@
 var HovercraftFactory = require('./hovercraftfactory').HovercraftFactory;
+var HovercraftController = require('./hovercraftcontroller').HovercraftController;
+var ChaseCamera = require('./chasecamera').ChaseCamera;
 
 ClientCommunication = function(app){
     this.app = app;
@@ -39,15 +41,17 @@ ClientCommunication.prototype.sendMessage = function(command, data){
 ClientCommunication.prototype._start = function(data) {
     this.started = true;
     this.craft = this._hovercraftFactory.create(data.id);
+    this.craft.attach(HovercraftController);
+    this.craft.attach(ChaseCamera);
     this.craft.position = data.position;
-    this.craft._velocity = data._velocity;
+    this.craft._velocity = data.velocity;
     this.app.scene.addEntity(this.craft);    
 };
 
 ClientCommunication.prototype._addplayer = function(data) {
     var craft = this._hovercraftFactory.create(data.id);
     craft.position = data.position;
-    craft._velocity = data._velocity;
+    craft._velocity = data.velocity;
     this.app.scene.addEntity(craft);
 };
 

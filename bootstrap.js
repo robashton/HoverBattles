@@ -3,7 +3,8 @@ var blah = blah || {};
 $app = function(callback){    
     LazyLoad.js([        
         '/game.js',
-        '/Shaders.js'
+        '/Shaders.js',
+        '/socket.io/socket.io.js'
         ],
         function(){
             Camera = require('camera').Camera;

@@ -391,6 +391,7 @@ $(document).ready(function(){$app(function(){
              
              var otherStarted = false;             
              var intervalId = setInterval(function(){
+                 clearInterval(intervalId);
                  
                  if(clientOne.started && clientTwo.started){
                      ok(clientOne.craft != null, "Client one was given a hovercraft when starting");
@@ -404,8 +405,7 @@ $(document).ready(function(){$app(function(){
                      
                      ok(clientOneEntityFromAppTwo != null, "Client one has an entity in client two's world");
                      ok(clientTwoEntityFromAppOne != null, "Client two has an entity in client one's world");
-                                         
-                     clearInterval(intervalId);
+                     
                      start();
                  }
             }, 300);      

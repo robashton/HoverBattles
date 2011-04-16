@@ -8,34 +8,27 @@
 			
 			$app(function(){
                 
-                var app = new blah.Application('game');
+                var app = new blah.Application('game');             
                 app.init(function() {
                     app.scene.camera.setLocation([0, 10, -10]);
-                    var landscapeController = new LandscapeController(app);            
+                    var landscapeController = new LandscapeController(app);    
                     
-                    // Player hovercraft
-                    var factory = new HovercraftFactory(app);
-                    var hovercraft = factory.create("player");
-                    hovercraft.attach(ChaseCamera);
-                    hovercraft.attach(HovercraftController);
-                    app.scene.addEntity(hovercraft);
-                    
+                    var clientOne = new ClientCommunication(app);
+                                    
                     app.resources.onAllAssetsLoaded(function(){
                         setInterval(function() {  app.render(); }, 1000 / 30);
                     });
                     
-                    setInterval(function() {  app.tick(); }, 1000 / 30);
-                    
+                    setInterval(function() {  app.tick(); }, 1000 / 30);                    
                 });
-
 			});
 
 		</script>
 	</head>
 	<body>		
 		<h1>HOVERBATTLES!!!</h1>
-		<p>WASD to move around</p>
-    	<p>FFS be patient, it'll all be black for a while and then there will be colour and stuff.</p>
+		<p>WASD to move around, space to jump</p>
+    	<p>FFS be patient, it'll all be white for a while and then there will be colour and stuff.</p>
 		<canvas id="game" style="border: none;" width="750" height="500">
 
 		</canvas>

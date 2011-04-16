@@ -48,7 +48,7 @@ ServerCommunication.prototype.unhookClient = function(socket) {
 
 ServerCommunication.prototype.removePlayer = function(socket) {
     if(socket.craft){
-       this.scene.removeEntity(socket.craft);   
+       this.app.scene.removeEntity(socket.craft); 
     }
     
     // Inform all connected clients that this has happened
