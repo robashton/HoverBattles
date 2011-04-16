@@ -40,8 +40,8 @@ ClientCommunication.prototype.sendMessage = function(command, data){
 
 ClientCommunication.prototype._start = function(data) {
     this.started = true;
-    this.craft = this._hovercraftFactory.create(data.id);
-    this.craft.attach(HovercraftController);
+    this.craft = this._hovercraftFactory.create(data.id);    
+    this.controller = new HovercraftController(this.craft, this);    
     this.craft.attach(ChaseCamera);
     this.craft.position = data.position;
     this.craft._velocity = data.velocity;
@@ -59,5 +59,13 @@ ClientCommunication.prototype._removeplayer = function(data) {
     var craft = this.app.scene.getEntity(data.id);
     this.app.scene.removeEntity(craft);
 };
+
+ClientCommunication.prototype._sync = function(data) {
+    var entity = this.app.scene.getEntity(data.id);
+    entity.position = data.position;
+    entity._velocity = data.velocity;
+};
+
+
 
 exports.ClientCommunication = ClientCommunication;

@@ -3,8 +3,7 @@ fs = require('fs');
 querystring = require('querystring');
 vec3 = require('../shared/glmatrix').vec3;
 
-
-exports.handle = function(req, res) {
+handle = function(req, res) {
 	parseQueryStringAndGenerateData(req, res, function(model) {
         res.setHeader("Content-Type", "text/javascript");
 		res.writeHead(200);
@@ -192,4 +191,5 @@ generateTerrainData = function(width, height, maxHeight, scale, startX, startY, 
     };
 };
 
+exports.handle = handle;
 exports.createTerrainChunk = createTerrainChunk;

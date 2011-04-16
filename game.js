@@ -163,8 +163,8 @@ ClientCommunication.prototype.sendMessage = function(command, data){
 
 ClientCommunication.prototype._start = function(data) {
     this.started = true;
-    this.craft = this._hovercraftFactory.create(data.id);
-    this.craft.attach(HovercraftController);
+    this.craft = this._hovercraftFactory.create(data.id);    
+    this.controller = new HovercraftController(this.craft, this);    
     this.craft.attach(ChaseCamera);
     this.craft.position = data.position;
     this.craft._velocity = data.velocity;
@@ -182,6 +182,14 @@ ClientCommunication.prototype._removeplayer = function(data) {
     var craft = this.app.scene.getEntity(data.id);
     this.app.scene.removeEntity(craft);
 };
+
+ClientCommunication.prototype._sync = function(data) {
+    var entity = this.app.scene.getEntity(data.id);
+    entity.position = data.position;
+    entity._velocity = data.velocity;
+};
+
+
 
 exports.ClientCommunication = ClientCommunication;}, "controller": function(exports, require, module) {var Controller = function(scene) {
   this.scene = scene;
@@ -253,10 +261,21 @@ exports.DefaultTextureLoader = DefaultTextureLoader;}, "entity": function(export
 var mat4 = require('./glmatrix').mat4;
 var mat3 = require('./glmatrix').mat4;
 
+function cloneObject(obj) {
+    var clone = {};
+    for(var i in obj) {
+        if(typeof(obj[i])=="object")
+            clone[i] = cloneObject(obj[i]);
+        else
+            clone[i] = obj[i];
+    }
+    return clone;
+}
+
 var Entity = function(id){
     this._model = null;
 	this._id = id;
-	this.position = vec3.create();
+	this.position = vec3.create([0,0,0]);
     this.rotationY = 0;
 	this._scene = null;
 };
@@ -284,7 +303,13 @@ Entity.prototype.attach = function(component) {
             };
         }
         else {
-            this[i] = component[i]; 
+            if(typeof component[i] == "object"){
+                this[i] = cloneObject(component[i]);
+            }
+            else
+            {
+                this[i] = component[i];
+            }
         }
     }
 };
@@ -371,25 +396,30 @@ var mat4 = require('./glmatrix').mat4;
 var Hovercraft = {
     _velocity: vec3.create([0.01,0,0.01]),
     _decay: 0.97,
-    impulseForward: function(amount) {
+    impulseForward: function() {
+        var amount = 0.2;
         var accelerationZ = (-amount) * Math.cos(this.rotationY);
         var accelerationX = (-amount) * Math.sin(this.rotationY);
         var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
         vec3.add(this._velocity, acceleration);
     },
-    impulseBackward: function(amount) {
+    impulseBackward: function() {
+        var amount = 0.1;
         var accelerationZ = (amount) * Math.cos(this.rotationY);
         var accelerationX = (amount) * Math.sin(this.rotationY);
         var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
         vec3.add(this._velocity, acceleration);
     },
     impulseLeft: function(amount) {
+        var amount = 0.05;
         this.rotationY += amount;
     },
     impulseRight: function(amount) {
+        var amount = 0.05;
         this.rotationY -= amount;
     },
     impulseUp: function(amount) {
+        var amount = 1.0;
         var terrain = this._scene.getEntity("terrain");
         
         var terrainHeight = terrain.getHeightAt(this.position[0], this.position[2]);
@@ -425,23 +455,35 @@ exports.Hovercraft = Hovercraft;
 }, "hovercraftcontroller": function(exports, require, module) {var KeyCodes = {S:83,X:88, W: 87, D: 68, A: 65, Space: 32};
 var KeyboardStates = {};
 
-var HovercraftController = {
-    doLogic: function(){        
-        if(KeyboardStates[KeyCodes.W]) {
-		    this.impulseForward(0.2);
-    	} 
-        else if(KeyboardStates[KeyCodes.S]) {
-        	this.impulseBackward(0.1);
-    	}    
-    	if(KeyboardStates[KeyCodes.D]) {
-        	this.impulseRight(0.05);
-    	}
-        else if(KeyboardStates[KeyCodes.A]) {
-            this.impulseLeft(0.05);
-    	}
-        if(KeyboardStates[KeyCodes.Space]) {
-            this.impulseUp(1.0);
-        }
+
+var HovercraftController = function(entity, server){
+  this.entity = entity;
+  this.server = server;
+  
+  var controller = this;
+  setInterval(function() { controller.processInput(); }, 1000 / 30);
+};
+
+HovercraftController.prototype.processInput = function(){
+  if(KeyboardStates[KeyCodes.W]) {
+	    this.entity.impulseForward();
+        this.server.sendMessage('message', { method: 'impulseForward' });
+	} 
+    else if(KeyboardStates[KeyCodes.S]) {
+    	this.entity.impulseBackward();
+        this.server.sendMessage('message', { method: 'impulseBackward' });
+	}    
+	if(KeyboardStates[KeyCodes.D]) {
+    	this.entity.impulseRight();
+        this.server.sendMessage('message', { method: 'impulseRight' });
+	}
+    else if(KeyboardStates[KeyCodes.A]) {
+        this.entity.impulseLeft();
+        this.server.sendMessage('message', { method: 'impulseLeft' });
+	}
+    if(KeyboardStates[KeyCodes.Space]) {
+        this.entity.impulseUp();
+        this.server.sendMessage('message', { method: 'impulseUp' });
     }
 };
 
@@ -632,7 +674,7 @@ LandChunkModelLoader.prototype.load = function(id, callback) {
 	'&startx=' + data.x + 
 	'&starty=' + data.y;
     
-    var model = new LandChunk(data.height, data.width, data.maxHeight, data.scale, data.x, data.y);
+    var model = new LandChunk(data.width, data.height, data.maxHeight, data.scale, data.x, data.y);
     model.loadTextures(this._resources);
     
     var loader = this;
@@ -641,7 +683,6 @@ LandChunkModelLoader.prototype.load = function(id, callback) {
         model.setData(data);
         callback();
     });
-    
     return model;
 };
 
@@ -668,7 +709,7 @@ LandscapeController.prototype.getId = function() {
 
 LandscapeController.prototype.getHeightAt = function(x, z) {
     x /= this._scale;
-    z /= this._scale;        
+    z /= this._scale;    
     
     var currentChunkX = parseInt(x / this._chunkWidth) * this._chunkWidth;
     var currentChunkZ = parseInt(z / this._chunkWidth) * this._chunkWidth;
@@ -685,16 +726,14 @@ LandscapeController.prototype.getHeightAt = function(x, z) {
     }
     else
     {
-        return 20; // FTW
+        return 120; // FTW
     }    
 };
 
 LandscapeController.prototype.loadChunks = function(x, z){
     var app = this.app,
     scene = this.app.scene;
-    
-    var player = scene.getEntity("player");
-        
+           
     var currentx = x / this._scale;
 	var currentz = z / this._scale;
 

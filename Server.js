@@ -6,10 +6,11 @@ paperboy = require('paperboy');
 var stitch  = require('stitch');
 
 
-landscape = require('./server/LandscapeGeneration');
+landscapeHandle = require('./server/LandscapeGeneration').handle;
 shaders = require('./server/ShaderGeneration');
 ServerApp = require('./server/application').ServerApp;
 ServerCommunication = require('./server/communication').ServerCommunication;
+LandscapeController = require('./shared/landscapecontroller').LandscapeController;
 
 /*
 */
@@ -38,7 +39,7 @@ server = http.createServer(function(req, res){
 		console.log(req.url);
 
 		if(req.url.indexOf("/Landscape&") == 0) {
-			landscape.handle(req, res);
+			landscapeHandle(req, res);
 		}
 		else if(req.url.indexOf("/Shaders.js") == 0) {
 			shaders.handle(req, res);
@@ -54,5 +55,25 @@ server = http.createServer(function(req, res){
 });
 server.listen(1220);
 
+console.log("Listening on port 1220");
+
 var app = new ServerApp();
+var controller = new Controller(app.scene);
 var game = new ServerCommunication(app, server);
+var landscape = new LandscapeController(app);
+
+console.log("Initialized Engine");
+
+app.resources.onAllAssetsLoaded(function(){
+    
+    console.log("Loaded engine assets");
+    setInterval(function(){
+        controller.tick();
+    }, 1000 / 30);
+    
+    setInterval(function(){    
+        game.synchronise();
+    }, 1000);
+});
+
+

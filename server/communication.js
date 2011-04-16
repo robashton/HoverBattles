@@ -7,13 +7,24 @@ ServerCommunication = function(app, server){
   this.socket = io.listen(server); 
   this.clients = {};
   
-  var server = this;  
+  var server = this;
   this.socket.on('connection', function(socket) { server.onConnection(socket); });
 };
 
 ServerCommunication.prototype.onConnection = function(socket){
     this.clients[socket.sessionId] = socket;
     this.hookClientEvents(socket);
+};
+
+ServerCommunication.prototype.synchronise = function(){
+    for(i in this.clients){
+     var client = this.clients[i];
+     this.broadcast('sync', {
+         id: client.sessionId,
+         position: client.craft.position,
+         velocity: client.craft._velocity
+     });
+    }
 };
 
 ServerCommunication.prototype.hookClientEvents = function(socket) {
@@ -58,6 +69,8 @@ ServerCommunication.prototype.removePlayer = function(socket) {
 ServerCommunication.prototype._ready = function(socket, data) {
     var factory = new HovercraftFactory(this.app);
     socket.craft = factory.create(socket.sessionId);
+    
+    console.log(socket.craft.position);
     this.app.scene.addEntity(socket.craft);
 
     // Tell the player to create its own craft
@@ -87,5 +100,18 @@ ServerCommunication.prototype._ready = function(socket, data) {
     },
     socket);
 };
+
+ServerCommunication.prototype._message = function(socket, data){
+    var method = socket.craft[data.method];
+    method.call(socket.craft);
+
+    // And force an update
+    this.broadcast('sync', {
+         id: socket.sessionId,
+         position: socket.craft.position,
+         velocity: socket.craft._velocity
+    });
+};
+
 
 exports.ServerCommunication = ServerCommunication;

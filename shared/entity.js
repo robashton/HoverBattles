@@ -2,10 +2,21 @@ var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var mat3 = require('./glmatrix').mat4;
 
+function cloneObject(obj) {
+    var clone = {};
+    for(var i in obj) {
+        if(typeof(obj[i])=="object")
+            clone[i] = cloneObject(obj[i]);
+        else
+            clone[i] = obj[i];
+    }
+    return clone;
+}
+
 var Entity = function(id){
     this._model = null;
 	this._id = id;
-	this.position = vec3.create();
+	this.position = vec3.create([0,0,0]);
     this.rotationY = 0;
 	this._scene = null;
 };
@@ -33,7 +44,13 @@ Entity.prototype.attach = function(component) {
             };
         }
         else {
-            this[i] = component[i]; 
+            if(typeof component[i] == "object"){
+                this[i] = cloneObject(component[i]);
+            }
+            else
+            {
+                this[i] = component[i];
+            }
         }
     }
 };

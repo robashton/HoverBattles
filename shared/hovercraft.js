@@ -4,25 +4,30 @@ var mat4 = require('./glmatrix').mat4;
 var Hovercraft = {
     _velocity: vec3.create([0.01,0,0.01]),
     _decay: 0.97,
-    impulseForward: function(amount) {
+    impulseForward: function() {
+        var amount = 0.2;
         var accelerationZ = (-amount) * Math.cos(this.rotationY);
         var accelerationX = (-amount) * Math.sin(this.rotationY);
         var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
         vec3.add(this._velocity, acceleration);
     },
-    impulseBackward: function(amount) {
+    impulseBackward: function() {
+        var amount = 0.1;
         var accelerationZ = (amount) * Math.cos(this.rotationY);
         var accelerationX = (amount) * Math.sin(this.rotationY);
         var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
         vec3.add(this._velocity, acceleration);
     },
     impulseLeft: function(amount) {
+        var amount = 0.05;
         this.rotationY += amount;
     },
     impulseRight: function(amount) {
+        var amount = 0.05;
         this.rotationY -= amount;
     },
     impulseUp: function(amount) {
+        var amount = 1.0;
         var terrain = this._scene.getEntity("terrain");
         
         var terrainHeight = terrain.getHeightAt(this.position[0], this.position[2]);

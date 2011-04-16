@@ -21,7 +21,7 @@ LandChunkModelLoader.prototype.load = function(id, callback) {
 	'&startx=' + data.x + 
 	'&starty=' + data.y;
     
-    var model = new LandChunk(data.height, data.width, data.maxHeight, data.scale, data.x, data.y);
+    var model = new LandChunk(data.width, data.height, data.maxHeight, data.scale, data.x, data.y);
     model.loadTextures(this._resources);
     
     var loader = this;
@@ -30,7 +30,6 @@ LandChunkModelLoader.prototype.load = function(id, callback) {
         model.setData(data);
         callback();
     });
-    
     return model;
 };
 

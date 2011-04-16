@@ -1,23 +1,35 @@
 var KeyCodes = {S:83,X:88, W: 87, D: 68, A: 65, Space: 32};
 var KeyboardStates = {};
 
-var HovercraftController = {
-    doLogic: function(){        
-        if(KeyboardStates[KeyCodes.W]) {
-		    this.impulseForward(0.2);
-    	} 
-        else if(KeyboardStates[KeyCodes.S]) {
-        	this.impulseBackward(0.1);
-    	}    
-    	if(KeyboardStates[KeyCodes.D]) {
-        	this.impulseRight(0.05);
-    	}
-        else if(KeyboardStates[KeyCodes.A]) {
-            this.impulseLeft(0.05);
-    	}
-        if(KeyboardStates[KeyCodes.Space]) {
-            this.impulseUp(1.0);
-        }
+
+var HovercraftController = function(entity, server){
+  this.entity = entity;
+  this.server = server;
+  
+  var controller = this;
+  setInterval(function() { controller.processInput(); }, 1000 / 30);
+};
+
+HovercraftController.prototype.processInput = function(){
+  if(KeyboardStates[KeyCodes.W]) {
+	    this.entity.impulseForward();
+        this.server.sendMessage('message', { method: 'impulseForward' });
+	} 
+    else if(KeyboardStates[KeyCodes.S]) {
+    	this.entity.impulseBackward();
+        this.server.sendMessage('message', { method: 'impulseBackward' });
+	}    
+	if(KeyboardStates[KeyCodes.D]) {
+    	this.entity.impulseRight();
+        this.server.sendMessage('message', { method: 'impulseRight' });
+	}
+    else if(KeyboardStates[KeyCodes.A]) {
+        this.entity.impulseLeft();
+        this.server.sendMessage('message', { method: 'impulseLeft' });
+	}
+    if(KeyboardStates[KeyCodes.Space]) {
+        this.entity.impulseUp();
+        this.server.sendMessage('message', { method: 'impulseUp' });
     }
 };
 

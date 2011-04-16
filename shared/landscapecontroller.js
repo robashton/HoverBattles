@@ -21,7 +21,7 @@ LandscapeController.prototype.getId = function() {
 
 LandscapeController.prototype.getHeightAt = function(x, z) {
     x /= this._scale;
-    z /= this._scale;        
+    z /= this._scale;    
     
     var currentChunkX = parseInt(x / this._chunkWidth) * this._chunkWidth;
     var currentChunkZ = parseInt(z / this._chunkWidth) * this._chunkWidth;
@@ -38,16 +38,14 @@ LandscapeController.prototype.getHeightAt = function(x, z) {
     }
     else
     {
-        return 20; // FTW
+        return 120; // FTW
     }    
 };
 
 LandscapeController.prototype.loadChunks = function(x, z){
     var app = this.app,
     scene = this.app.scene;
-    
-    var player = scene.getEntity("player");
-        
+           
     var currentx = x / this._scale;
 	var currentz = z / this._scale;
 
