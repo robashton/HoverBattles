@@ -2,9 +2,6 @@ var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
 var LandscapeController = function(app){
-  app.resources.addModelLoader(
-        new LandChunkModelLoader(app.resources)
-        );
   app.scene.addEntity(this);
   
   this.app = app;

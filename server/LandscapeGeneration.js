@@ -5,7 +5,7 @@ vec3 = require('../shared/glmatrix').vec3;
 
 
 exports.handle = function(req, res) {
-	generateData(req, res, function(model) {
+	parseQueryStringAndGenerateData(req, res, function(model) {
         res.setHeader("Content-Type", "text/javascript");
 		res.writeHead(200);
         res.write('var blah = blah || {};');
@@ -17,7 +17,7 @@ exports.handle = function(req, res) {
 	});
 };
 
-generateData = function(req, res, callback)
+parseQueryStringAndGenerateData = function(req, res, callback)
 {
 	var chunk = {};
 	var query = querystring.parse(req.url);
@@ -29,28 +29,33 @@ generateData = function(req, res, callback)
 	var startY = parseInt(query.starty);
     var scale = parseInt(query.scale);
     
-	var heightMap = new Array(width * height);
+    var data = createTerrainChunk(width, height, startX, startY, scale, maxHeight);
+    callback(data);
+};
 
-	for(var x = 0; x < width ; x++){
+
+createTerrainChunk = function(width, height, startX, startY, scale, maxHeight) {
+    var heightMap = new Array(width * height);
+
+    for(var x = 0; x < width ; x++){
 		for(var y = 0; y < height; y++) {
 			var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
 			heightMap[x + (y * width)] = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;			
 		}
 	}
     
-    var data = blah.generateTerrainData(width, height, maxHeight, scale, startX, startY, heightMap);
+    var data = generateTerrainData(width, height, maxHeight, scale, startX, startY, heightMap);
 
-	callback({
+	return {
 		heights: heightMap,
     	colours: data.colours,
         vertices: data.vertices,
         indices: data.indices,
         texturecoords: data.texturecoords  
-	});
+	};
 };
 
-var blah = blah || {};
-blah.generateTerrainData = function(width, height, maxHeight, scale, startX, startY, heightMap) {
+generateTerrainData = function(width, height, maxHeight, scale, startX, startY, heightMap) {
     
     var indexCount = (height - 1) * width * 2;
     var vertices = new Array(width* height * 3);
@@ -186,3 +191,5 @@ blah.generateTerrainData = function(width, height, maxHeight, scale, startX, sta
       texturecoords: texturecoords     
     };
 };
+
+exports.createTerrainChunk = createTerrainChunk;

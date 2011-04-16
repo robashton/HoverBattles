@@ -1,4 +1,5 @@
-var Model = require('./model').Model;
+var Model = require('../shared/model').Model;
+var fs = require('fs');
 
 var ServerModelLoader = function(){
 };
@@ -11,19 +12,26 @@ ServerModelLoader.prototype.load = function(path, callback) {
     var model = new Model();
     var name = path.substr(0, path.length - 3);
     var loader = this;
-    /*
-    LazyLoad.js('/models/' + path, function () {
-        model.setData({
-             vertices: BlenderExport[name].vertices,
-             indices: BlenderExport[name].indices,
-             texCoords: BlenderExport[name].texCoords,
-             normals: BlenderExport[name].normals,
-             texture: loader._resources.getTexture("/textures/" + name + ".jpg")
-         });
-         callback();
-    });
     
-    return model; */
+    fs.readFile('./models/' + path, function(err, data) {
+        var func = '(function(){';
+        func += data;
+        func += '\n';
+        func += 'return BlenderExport;'
+        func += '})();';
+        
+        var modelData = eval(func);
+     
+        model.setData({
+            vertices: modelData[name].vertices,
+             indices: modelData[name].indices,
+             texCoords: modelData[name].texCoords,
+             normals: modelData[name].normals            
+        });    
+    
+       callback();
+    });
+    return model;    
 };
 
 exports.ServerModelLoader = ServerModelLoader;

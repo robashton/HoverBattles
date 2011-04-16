@@ -53,7 +53,7 @@ blah.Application.prototype.go = function(context) {
     
     this.resources.setTextureLoader(new DefaultTextureLoader(app));
     this.resources.addModelLoader(new DefaultModelLoader(this.resources));
-    
+    this.resources.addModelLoader(new LandChunkModelLoader(this.resources));
     this.controller = new Controller(this.scene);
     var app = this;
 };

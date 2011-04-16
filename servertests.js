@@ -5,20 +5,17 @@ var Scene = require('./shared/scene').Scene;
 var ResourceManager = require('./shared/resources').ResourceManager;
 var Controller = require('./shared/controller').Controller;
 var Model = require('./shared/model').Model;
+var ServerModelLoader = require('./server/servermodelloader').ServerModelLoader;
+var ServerLandChunkModelLoader = require('./server/serverlandchunkloader').ServerLandChunkModelLoader;
+var LandscapeController = require('./shared/landscapecontroller').LandscapeController;
 
-ServerResourceManager.prototype.getModel = function(path){
-  return new Model();  
-};
 
 ServerApp = function(){
-  this.resources = ResourceManager(this);
+  this.resources = new ResourceManager(this);
   this.scene = new Scene();
   this.controller = new Controller(this.scene);
-  
-  this.resources.clearModelProviders();
-  this.resources.clearTextureProviders();  
-  this.resources.add
-
+  this.resources.addModelLoader(new ServerModelLoader());
+  this.resources.addModelLoader(new ServerLandChunkModelLoader(this.resources));
 };
 
 (function(){
@@ -54,19 +51,26 @@ ServerApp = function(){
     assert.ok(player === craft, "Scene can have entities added and requested from it");    
 })();
 
-
 (function(){
     var app = new ServerApp();
+    var factory = new HovercraftFactory(app);
+    var hovercraft = factory.create("player");
     var landscape = new LandscapeController(app);
-    var craft = factory.create('player');
-    
-    app.scene.addEntity(craft);
-    
-    var controller = new Controller(app.scene);
-    controller.tick();    
-    
+    app.scene.addEntity(hovercraft);
+    app.scene.doLogic();
+            
+    app.resources.onAllAssetsLoaded(function(){    
+        var original = vec3.create(hovercraft.position);               
+        
+        hovercraft.impulseForward(0.1);
+        hovercraft.impulseForward(-0.1);                
+        hovercraft.impulseLeft(0.1);
+        hovercraft.impulseRight(0.1);
+        
+        app.scene.doLogic();       
+        console.log("WOOT");
+    });
 })();
-
 
 
 console.log('Tests completed');

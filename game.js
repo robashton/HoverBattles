@@ -974,7 +974,8 @@ ResourceManager.prototype.addModelLoader = function(loader) {
 };
 
 ResourceManager.prototype.registerForActivation = function(resource) {
-  resource.activate(this._app.context);
+    if(this._app.context)
+        resource.activate(this._app.context);
 };
 
 ResourceManager.prototype.getModel = function(path) {
