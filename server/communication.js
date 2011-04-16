@@ -18,8 +18,8 @@ ServerCommunication.prototype.onConnection = function(socket){
 };
 
 ServerCommunication.prototype.synchronise = function(){
-    for(i in this.clients){
-     var client = this.clients[i];
+    for(i in this.liveClients){
+     var client = this.liveClients[i];
      this.broadcast('sync', {
          id: client.sessionId,
          position: client.craft.position,
