@@ -16,8 +16,11 @@ handle = function(req, res) {
 	});
 };
 
+var cache = {};
+
 parseQueryStringAndGenerateData = function(req, res, callback)
-{
+{ 
+    if(cache[req.url]) { callback(cache[req.url]); return; }
 	var chunk = {};
 	var query = querystring.parse(req.url);
 
@@ -29,6 +32,7 @@ parseQueryStringAndGenerateData = function(req, res, callback)
     var scale = parseInt(query.scale);
     
     var data = createTerrainChunk(width, height, startX, startY, scale, maxHeight);
+    cache[req.url] = data;
     callback(data);
 };
 

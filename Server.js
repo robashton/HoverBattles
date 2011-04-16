@@ -5,7 +5,6 @@ fs = require('fs');
 paperboy = require('paperboy');
 var stitch  = require('stitch');
 
-
 landscapeHandle = require('./server/LandscapeGeneration').handle;
 shaders = require('./server/ShaderGeneration');
 ServerApp = require('./server/application').ServerApp;
@@ -53,7 +52,7 @@ server = http.createServer(function(req, res){
 
 	});
 });
-server.listen(1220);
+server.listen(8080);
 
 console.log("Listening on port 1220");
 

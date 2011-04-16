@@ -9,9 +9,12 @@ var RenderContext = function(resourceLoader){
 
 RenderContext.prototype.init = function(selector) {
   var canvas =  document.getElementById(selector);
-
-  this.gl = canvas.getContext("experimental-webgl");
-
+  try
+  {
+    this.gl = canvas.getContext("experimental-webgl");
+  } catch (ex){
+    alert("Sorry dude, I couldn't create webgl, try Chrome or something");   
+  }
   this.gl.viewportWidth = canvas.width;
   this.gl.viewportHeight = canvas.height;  
 
