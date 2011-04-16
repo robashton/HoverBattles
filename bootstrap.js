@@ -50,6 +50,10 @@ blah.Application.prototype.go = function(context) {
     this.context = context;
     this.scene = new Scene();
     this.resources = new ResourceManager(this);
+    
+    this.resources.setTextureLoader(new DefaultTextureLoader(app));
+    this.resources.addModelLoader(new DefaultModelLoader(this.resources));
+    
     this.controller = new Controller(this.scene);
     var app = this;
 };

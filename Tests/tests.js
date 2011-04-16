@@ -113,6 +113,8 @@ $(document).ready(function(){$app(function(){
             start();
             
             var resources = new ResourceManager(app);
+            resources.setTextureLoader(new DefaultTextureLoader(app));
+            resources.addModelLoader(new DefaultModelLoader(resources));
             
             var model = resources.getModel("Hovercraft.js");
             var texture = resources.getTexture("/textures/hovercraft.jpg");
@@ -126,6 +128,7 @@ $(document).ready(function(){$app(function(){
          var app = new blah.Application('gameCanvas');
          app.init(function(){
             var resources = new ResourceManager(app);
+            resources.setTextureLoader(new DefaultTextureLoader(app));
             var loader = new DefaultModelLoader(resources);
             var model = loader.load('Hovercraft.js', function(){
                 ok(true, "Model finished loading from server");
@@ -197,6 +200,7 @@ $(document).ready(function(){$app(function(){
     asyncTest("We can wait for all assets to be loaded from the resource manager", function(){
         var app = new blah.Application('gameCanvas');
         app.init(function() {      
+            
             var model = app.resources.getModel("Hovercraft.js");
             var texture = app.resources.getTexture("/textures/hovercraft.jpg");
             
@@ -359,15 +363,15 @@ $(document).ready(function(){$app(function(){
            entity._velocity = [-1, -2, -3];
            entity.doLogic();
            
-           equal(entity.position, [0,0,0], "Entity can't go below min");
-           equal(entity._velocity, [0,0,0], "Entity has velocity halted on going below min");       
+           same(entity.position, [0,0,0], "Entity can't go below min");
+           same(entity._velocity, [0,0,0], "Entity has velocity halted on going below min");       
                   
            entity.position = [20,20,20];
            entity._velocity = [1, 2, 3];
            entity.doLogic();
            
-           equal(entity.position, [10,10,10], "Entity can't go above max");
-           equal(entity._velocity, [0,0,0], "Entity has velocity halted on going above max");
+           same(entity.position, [10,10,10], "Entity can't go above max");
+           same(entity._velocity, [0,0,0], "Entity has velocity halted on going above max");
            start();
         });
         

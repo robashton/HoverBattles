@@ -1,5 +1,7 @@
 var vec3 = require('./glmatrix').vec3;
-var mat4 = require('./glmatrix').mat4;
+var mat4 = require('./glmatrix').mat4
+var LazyLoad = require('./lazyload').LazyLoad;
+
 
 var LandChunkModelLoader = function(resources){
     this._resources = resources;

@@ -6,8 +6,7 @@ var ResourceManager = function(app){
     this._app = app;
     this._modelLoaders = [];
     
-    this._textureLoader = new DefaultTextureLoader(app);
-    this._modelLoaders.push( new DefaultModelLoader(this) );
+    this._textureLoader = null;
     
     this._textures = {};
     this._models = {};
@@ -41,6 +40,10 @@ ResourceManager.prototype.onAllAssetsLoaded = function(callback){
       }      
   }, 100);
     
+};
+
+ResourceManager.prototype.setTextureLoader = function(loader){
+  this._textureLoader = loader;
 };
 
 ResourceManager.prototype.addModelLoader = function(loader) {

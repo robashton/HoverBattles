@@ -187,8 +187,8 @@ DefaultTextureLoader.prototype.load = function(path, callback) {
   return texture; 
 };
 
-exports.DefaultTextureLoader = DefaultTextureLoader;}, "entity": function(exports, require, module) {var vec3 = require('../glmatrix').vec3;
-var mat4 = require('../glmatrix').mat4;
+exports.DefaultTextureLoader = DefaultTextureLoader;}, "entity": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+var mat4 = require('./glmatrix').mat4;
 var mat3 = require('./glmatrix').mat4;
 
 var Entity = function(id){
@@ -549,7 +549,9 @@ LandChunk.prototype.getHeightAt = function(x, z) {
 
 exports.LandChunk = LandChunk;
 }, "landchunkloader": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
-var mat4 = require('./glmatrix').mat4;
+var mat4 = require('./glmatrix').mat4
+var LazyLoad = require('./lazyload').LazyLoad;
+
 
 var LandChunkModelLoader = function(resources){
     this._resources = resources;
@@ -694,7 +696,14 @@ LandscapeController.prototype.setScene = function(scene){};
 LandscapeController.prototype.render = function(context){};
 
 exports.LandscapeController = LandscapeController;
-}, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+}, "lazyload": function(exports, require, module) {if(typeof LazyLoad == undefined){
+    LazyLoad = {};
+    LazyLoad.js = function(path, callback) {
+        
+    };
+};
+
+exports.LazyLoad = LazyLoad;}, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
 var Model = function(data){
@@ -920,8 +929,7 @@ var ResourceManager = function(app){
     this._app = app;
     this._modelLoaders = [];
     
-    this._textureLoader = new DefaultTextureLoader(app);
-    this._modelLoaders.push( new DefaultModelLoader(this) );
+    this._textureLoader = null;
     
     this._textures = {};
     this._models = {};
@@ -955,6 +963,10 @@ ResourceManager.prototype.onAllAssetsLoaded = function(callback){
       }      
   }, 100);
     
+};
+
+ResourceManager.prototype.setTextureLoader = function(loader){
+  this._textureLoader = loader;
 };
 
 ResourceManager.prototype.addModelLoader = function(loader) {

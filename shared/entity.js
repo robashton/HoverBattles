@@ -1,5 +1,5 @@
-var vec3 = require('../glmatrix').vec3;
-var mat4 = require('../glmatrix').mat4;
+var vec3 = require('./glmatrix').vec3;
+var mat4 = require('./glmatrix').mat4;
 var mat3 = require('./glmatrix').mat4;
 
 var Entity = function(id){
