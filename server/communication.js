@@ -6,6 +6,7 @@ ServerCommunication = function(app, server){
   this.app = app;
   this.socket = io.listen(server); 
   this.clients = {};
+  this.liveClients = {};
   
   var server = this;
   this.socket.on('connection', function(socket) { server.onConnection(socket); });
@@ -46,15 +47,16 @@ ServerCommunication.prototype.sendMessage = function(socket, command, data){
 };
 
 ServerCommunication.prototype.broadcast = function(command, data, from) {
-  for(i in this.clients){
-      if(from && this.clients[i] === from) continue;
-      this.sendMessage(this.clients[i], command, data);   
+  for(i in this.liveClients){
+      if(from && this.liveClients[i] === from) continue;
+      this.sendMessage(this.liveClients[i], command, data);   
   }
 };
 
 ServerCommunication.prototype.unhookClient = function(socket) {
     this.removePlayer(socket);
     delete this.clients[socket.sessionId];  
+    delete this.liveClients[socket.sessionId];
 };
 
 ServerCommunication.prototype.removePlayer = function(socket) {
@@ -81,8 +83,8 @@ ServerCommunication.prototype._ready = function(socket, data) {
     });
     
     // Tell the player about the rest of the scene
-    for(i in this.clients) {
-        var client = this.clients[i];
+    for(i in this.liveClients) {
+        var client = this.liveClients[i];
         if(client == socket) continue;
         
         this.sendMessage(socket, 'addplayer', {
@@ -91,6 +93,8 @@ ServerCommunication.prototype._ready = function(socket, data) {
            velocity: client.craft._velocity
         });
     }
+    
+    this.liveClients[client.sessionId] = socket;
 
     // Tell everybody else that this player has joined the party
     this.broadcast('addplayer', {

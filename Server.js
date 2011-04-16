@@ -52,7 +52,7 @@ server = http.createServer(function(req, res){
 
 	});
 });
-server.listen(8080);
+server.listen(1220);
 
 console.log("Listening on port 1220");
 
