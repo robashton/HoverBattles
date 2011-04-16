@@ -1,4 +1,5 @@
 var KeyCodes = {S:83,X:88, W: 87, D: 68, A: 65, Space: 32};
+var KeyboardStates = {};
 
 var HovercraftController = {
     doLogic: function(){        
@@ -20,5 +21,14 @@ var HovercraftController = {
     }
 };
 
-exports.HovercraftControllre = HovercraftController;
-exports.KeyCodes = KeyCodes;
+
+
+document.onkeydown = function(event) { 
+    KeyboardStates[event.keyCode] = true;   
+
+};
+document.onkeyup = function(event) { 
+    KeyboardStates[event.keyCode] = false;
+};
+
+exports.HovercraftController = HovercraftController;

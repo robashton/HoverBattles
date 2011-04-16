@@ -16,7 +16,6 @@ $app = function(callback){
             Hovercraft = require('hovercraft').Hovercraft;
             HovercraftController = require('hovercraftcontroller').HovercraftController;
             HovercraftFactory = require('hovercraftfactory').HovercraftFactory;
-            KeyboardStates = require('keyboard').KeyboardStates;
             LandChunk = require('landchunk').LandChunk;
             LandChunkModelLoader = require('landchunkloader').LandChunkModelLoader;
             LandscapeController = require('landscapecontroller').LandscapeController;

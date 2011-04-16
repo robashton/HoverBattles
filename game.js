@@ -361,6 +361,7 @@ exports.Hovercraft = Hovercraft;
          
 
 }, "hovercraftcontroller": function(exports, require, module) {var KeyCodes = {S:83,X:88, W: 87, D: 68, A: 65, Space: 32};
+var KeyboardStates = {};
 
 var HovercraftController = {
     doLogic: function(){        
@@ -382,8 +383,17 @@ var HovercraftController = {
     }
 };
 
-exports.HovercraftControllre = HovercraftController;
-exports.KeyCodes = KeyCodes;}, "hovercraftfactory": function(exports, require, module) {var Entity = require('./entity').Entity;
+
+
+document.onkeydown = function(event) { 
+    KeyboardStates[event.keyCode] = true;   
+
+};
+document.onkeyup = function(event) { 
+    KeyboardStates[event.keyCode] = false;
+};
+
+exports.HovercraftController = HovercraftController;}, "hovercraftfactory": function(exports, require, module) {var Entity = require('./entity').Entity;
 var Hovercraft = require('./hovercraft').Hovercraft;
 
 var HovercraftFactory = function(app){
@@ -401,16 +411,7 @@ HovercraftFactory.prototype.create = function(id) {
   return entity;
 };
 
-exports.HovercraftFactory = HovercraftFactory;}, "keyboard": function(exports, require, module) {var KeyboardStates = {};
-
-document.onkeydown = function(event) { 
-    KeyboardStates[event.keyCode] = true;   
-
-};
-document.onkeyup = function(event) { 
-    KeyboardStates[event.keyCode] = false;
-};
-
+exports.HovercraftFactory = HovercraftFactory;}, "keyboard": function(exports, require, module) {
 exports.KeyboardStates = KeyboardStates;}, "landchunk": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
@@ -588,9 +589,6 @@ exports.LandChunkModelLoader = LandChunkModelLoader;}, "landscapecontroller": fu
 var mat4 = require('./glmatrix').mat4;
 
 var LandscapeController = function(app){
-  app.resources.addModelLoader(
-        new LandChunkModelLoader(app.resources)
-        );
   app.scene.addEntity(this);
   
   this.app = app;
