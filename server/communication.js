@@ -94,7 +94,7 @@ ServerCommunication.prototype._ready = function(socket, data) {
         });
     }
     
-    this.liveClients[client.sessionId] = socket;
+    this.liveClients[socket.sessionId] = socket;
 
     // Tell everybody else that this player has joined the party
     this.broadcast('addplayer', {
