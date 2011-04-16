@@ -179,7 +179,8 @@ ClientCommunication.prototype._addplayer = function(data) {
 };
 
 ClientCommunication.prototype._removeplayer = function(data) {
-    
+    var craft = this.app.scene.getEntity(data.id);
+    this.app.scene.removeEntity(craft);
 };
 
 exports.ClientCommunication = ClientCommunication;}, "controller": function(exports, require, module) {var Controller = function(scene) {

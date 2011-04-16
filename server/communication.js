@@ -52,6 +52,7 @@ ServerCommunication.prototype.removePlayer = function(socket) {
     }
     
     // Inform all connected clients that this has happened
+    this.broadcast('removeplayer', { id: socket.sessionId}, socket);
 };
 
 ServerCommunication.prototype._ready = function(socket, data) {
