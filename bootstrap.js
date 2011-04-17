@@ -26,6 +26,7 @@ $app = function(callback){
             Scene = require('scene').Scene;           
             Texture = require('texture').Texture;
             ClientCommunication = require('communication').ClientCommunication;
+            ParticleEmitter = require('particleemitter').ParticleEmitter;
             
             vec3 = require('../glmatrix').vec3;
             mat3 = require('../glmatrix').mat3;
