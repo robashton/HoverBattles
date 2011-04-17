@@ -13,7 +13,7 @@
                     app.scene.camera.setLocation([0, 10, -10]);
                     app.scene.camera.lookAt = vec3.create([0,0,0]);
                     
-                    var emitter = new ParticleEmitter('particles', 10000, app);
+                    var emitter = new ParticleEmitter('particles', 1000, app);
                     emitter.position = vec3.create(0,0,0);
                     app.scene.addEntity(emitter);
                                     

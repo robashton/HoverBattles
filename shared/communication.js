@@ -41,10 +41,25 @@ ClientCommunication.prototype.sendMessage = function(command, data){
 ClientCommunication.prototype._start = function(data) {
     this.started = true;
     this.craft = this._hovercraftFactory.create(data.id);    
-    this.controller = new HovercraftController(this.craft, this);    
+    this.controller = new HovercraftController(this.craft, this);
     this.craft.attach(ChaseCamera);
     this.craft.position = data.position;
     this.craft._velocity = data.velocity;
+    
+    // Let's look at this a bit
+    var craft = this.craft;
+    var emitter = new ParticleEmitter(data.id + 'trail', 1000, this.app,
+    {
+        maxsize: 100,
+        maxlifetime: 0.2,
+        rate: 50,
+        scatter: vec3.create([1.0, 0.001, 1.0]),
+        track: function(){
+            this.position = vec3.create(craft.position);
+        }
+    });
+    
+    this.app.scene.addEntity(emitter);    
     this.app.scene.addEntity(this.craft);    
 };
 
@@ -52,11 +67,25 @@ ClientCommunication.prototype._addplayer = function(data) {
     var craft = this._hovercraftFactory.create(data.id);
     craft.position = data.position;
     craft._velocity = data.velocity;
+    
+    craft.emitter = new ParticleEmitter(data.id + 'trail', 1000, this.app,
+    {
+        maxsize: 100,
+        maxlifetime: 0.2,
+        rate: 50,
+        scatter: vec3.create([1.0, 0.001, 1.0]),
+        track: function(){
+            this.position = vec3.create(craft.position);
+        }
+    });
+    
+    this.app.scene.addEntity(craft.emitter);    
     this.app.scene.addEntity(craft);
 };
 
 ClientCommunication.prototype._removeplayer = function(data) {
     var craft = this.app.scene.getEntity(data.id);
+    this.app.scene.removeEntity(craft.emitter);
     this.app.scene.removeEntity(craft);
 };
 
