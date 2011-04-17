@@ -24,6 +24,28 @@ Model.prototype.setData = function(data) {
     this._hasData = true;
     if(this._texCoords) { this._programName = "texture"; }
     else if( this._colours ) { this._programName = "colour"; }
+    
+    this.calculateBounds();
+};
+
+Model.prototype.calculateBounds = function() {
+    min = vec3.create([999,999,999]);
+    max = vec3.create([-999,-999,-999]);
+    
+   for(var i = 0 ; i < this._vertices.length / 3 ; i++){
+       var index = i * 3;
+       
+       min[0] = Math.min(this._vertices[index], min[0]);
+       min[1] = Math.min(this._vertices[index+1], min[1]);
+       min[2] = Math.min(this._vertices[index+2], min[2]);
+       
+       max[0] = Math.max(this._vertices[index], max[0]);
+       max[1] = Math.max(this._vertices[index+1], max[1]);
+       max[2] = Math.max(this._vertices[index+2], max[2]);       
+   }
+   
+   this.min = min;
+   this.max = max;
 };
 
 Model.prototype.getProgram = function() {

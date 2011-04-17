@@ -374,8 +374,54 @@ $(document).ready(function(){$app(function(){
            same(entity._velocity, [0,0,0], "Entity has velocity halted on going above max");
            start();
         });        
+    });    
+    
+    
+    test("When creating a default model", function() {
+       var model = new Model({
+            vertices: [
+                0, 0, 0,
+                1, 1, 1,
+                2, 2, 2,
+                -1,-1,-1,
+                -2,-2,-2
+            ]
+       });
+           
+        var min = model.min;
+        var max = model.max;
+        
+        // I'll be calculating this as part of model post-processing after exporting from blender
+        same(min, vec3.create([-2,-2,-2]), "Model calculates its own min");
+        same(max, vec3.create([2, 2, 2]), "Model calculates its own max");
+        
     });
     
+    
+    test("When doing a collision check between entities that are colliding with physics (sorta)", function() {
+
+        var entityOne = {
+            getMin: function() { return vec3.create([0, 0, 0]); },
+            getMax: function() { return vec3.create([10, 10, 10]); },
+            position: vec3.create([0,0,0]),
+            _velocity: vec3.create([1,1,1])
+        };
+        
+        var entityTwo = {
+            getMin: function() { return vec3.create([0, 0, 0]); },
+            getMax: function() { return vec3.create([10, 10, 10]); },
+            position: vec3.create([5,5,5]),
+            _velocity: vec3.create([-1,-1,-1])
+        };
+         
+        var collisionManager = new CollisionManager();
+        collisionManager.processPair(entityOne, entityTwo);
+        
+        same(entityOne.position, vec3.create(-5,-5,-5), "Entity one bounced out correctly");
+        same(entityTwo.position, vec3.create(10,10,10), "Entity two bounced out correctly");
+        same(entityOne._velocity, vec3.create(-1,-1,-1), "Entity one reversed velocity correctly");
+        same(entityTwo._velocity, vec3.create(1,1,1), "Entity two reversed velocity correctly");
+    });
     
     module("Multiplayer tests");
         

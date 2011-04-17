@@ -1,7 +1,0 @@
-Collision = {
-    
-    
-  doLogic: function(){
-            
-  }
-};

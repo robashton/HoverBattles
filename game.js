@@ -121,13 +121,23 @@ exports.ChaseCamera = ChaseCamera;}, "clipping": function(exports, require, modu
     
 };
 
-exports.Clipping = Clipping;}, "collision": function(exports, require, module) {Collision = {
+exports.Clipping = Clipping;}, "collisionmanager": function(exports, require, module) {CollisionManager = function(){
     
-    
-  doLogic: function(){
-            
-  }
-};}, "communication": function(exports, require, module) {var HovercraftFactory = require('./hovercraftfactory').HovercraftFactory;
+};
+
+CollisionManager.prototype.processPair = function(entityOne, entityTwo) {
+  if(entityOne._velocity == null || entityTwo._velocity == null) { return; }
+  if(entityOne.position == null || entityTwo.position == null) { return; }
+
+  // For simplicity, we'll actually do a sphere check here cos we can probably get away with that
+  // rather than enter the complexity of having to deal with AABB rotation and all that
+  //var objectOneBoundingSphere = entityOne.
+  
+  
+};
+
+
+exports.CollisionManager = CollisionManager;}, "communication": function(exports, require, module) {var HovercraftFactory = require('./hovercraftfactory').HovercraftFactory;
 var HovercraftController = require('./hovercraftcontroller').HovercraftController;
 var ChaseCamera = require('./chasecamera').ChaseCamera;
 
@@ -532,6 +542,7 @@ document.onkeyup = function(event) {
 
 exports.HovercraftController = HovercraftController;}, "hovercraftfactory": function(exports, require, module) {var Entity = require('./entity').Entity;
 var Hovercraft = require('./hovercraft').Hovercraft;
+var ModelBounding = require('./modelbounding').ModelBounding;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -541,6 +552,7 @@ HovercraftFactory.prototype.create = function(id) {
   var model = this._app.resources.getModel("Hovercraft.js");
   var entity = new Entity(id);
   entity.setModel(model);
+  entity.attach(ModelBounding);
   //entity.attach(Clipping);
   entity.attach(Hovercraft);
   
@@ -852,6 +864,28 @@ Model.prototype.setData = function(data) {
     this._hasData = true;
     if(this._texCoords) { this._programName = "texture"; }
     else if( this._colours ) { this._programName = "colour"; }
+    
+    this.calculateBounds();
+};
+
+Model.prototype.calculateBounds = function() {
+    min = vec3.create([999,999,999]);
+    max = vec3.create([-999,-999,-999]);
+    
+   for(var i = 0 ; i < this._vertices.length / 3 ; i++){
+       var index = i * 3;
+       
+       min[0] = Math.min(this._vertices[index], min[0]);
+       min[1] = Math.min(this._vertices[index+1], min[1]);
+       min[2] = Math.min(this._vertices[index+2], min[2]);
+       
+       max[0] = Math.max(this._vertices[index], max[0]);
+       max[1] = Math.max(this._vertices[index+1], max[1]);
+       max[2] = Math.max(this._vertices[index+2], max[2]);       
+   }
+   
+   this.min = min;
+   this.max = max;
 };
 
 Model.prototype.getProgram = function() {
@@ -981,7 +1015,14 @@ Model.Quad = function()
 
 exports.Model = Model;
 
-}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
+}, "modelbounding": function(exports, require, module) {ModelBounding = {
+  getMin: function() {
+    return this._model.min;
+  },
+  getMax: function() {
+    return this._model.max;
+  }    
+};}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;
     this.capacity = capacity;
