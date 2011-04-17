@@ -391,9 +391,9 @@ $(document).ready(function(){$app(function(){
              
              var otherStarted = false;             
              var intervalId = setInterval(function(){
-                 clearInterval(intervalId);
-                 
+                                  
                  if(clientOne.started && clientTwo.started){
+                     clearInterval(intervalId);
                      ok(clientOne.craft != null, "Client one was given a hovercraft when starting");
                      ok(clientTwo.craft != null, "Client two was given a hovercraft when starting");              
                                          

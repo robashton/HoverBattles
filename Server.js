@@ -66,13 +66,14 @@ console.log("Initialized Engine");
 app.resources.onAllAssetsLoaded(function(){
     
     console.log("Loaded engine assets");
+    
     setInterval(function(){
         controller.tick();
     }, 1000 / 30);
     
     setInterval(function(){    
         game.synchronise();
-    }, 1000);
+    }, 5000);
 });
 
 

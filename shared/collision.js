@@ -1,0 +1,7 @@
+Collision = {
+    
+    
+  doLogic: function(){
+            
+  }
+};

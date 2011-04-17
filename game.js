@@ -121,7 +121,13 @@ exports.ChaseCamera = ChaseCamera;}, "clipping": function(exports, require, modu
     
 };
 
-exports.Clipping = Clipping;}, "communication": function(exports, require, module) {var HovercraftFactory = require('./hovercraftfactory').HovercraftFactory;
+exports.Clipping = Clipping;}, "collision": function(exports, require, module) {Collision = {
+    
+    
+  doLogic: function(){
+            
+  }
+};}, "communication": function(exports, require, module) {var HovercraftFactory = require('./hovercraftfactory').HovercraftFactory;
 var HovercraftController = require('./hovercraftcontroller').HovercraftController;
 var ChaseCamera = require('./chasecamera').ChaseCamera;
 
