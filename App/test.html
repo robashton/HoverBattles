@@ -10,17 +10,109 @@
                 
                 var app = new blah.Application('game');             
                 app.init(function() {
-                    app.scene.camera.setLocation([0, 10, -10]);
+                    app.scene.camera.setLocation([0, 10, 300]);
                     app.scene.camera.lookAt = vec3.create([0,0,0]);
                     
-                    var emitter = new ParticleEmitter('particles', 1000, app);
-                    emitter.position = vec3.create(0,0,0);
-                    app.scene.addEntity(emitter);
+                    var entity = {
+                            rotation: 0.0,
+                            vertices: [    		
+                				-100.0, -100.0, 0, 
+                				 100.0, -100.0, 0, 
+                				 100.0,  100.0, 0, 
+                				-100.0,  100.0, 0
+            				],
+                            normals: [        	
+                				0.0, 0.0, 1, 
+                				0.0, 0.0, 1, 
+                				0.0, 0.0, 1, 
+                				0.0, 0.0, 1
+            				],
+                			texCoords: [
+                    		    0.0, 0.0,
+                        	    1.0, 0.0,
+                                1.0, 1.0,
+                                0.0, 1.0
+                        	 ],
+                            rotationAmount: 0.01,
+            				indices: [0, 1, 2, 0, 2, 3],
+                            position: vec3.create(0,0,0),
+                            setScene: function(scene){ entity.scene = scene; },
+                            getId: function() { return "testQuad"; },
+                            doLogic: function() { entity.rotation += entity.rotationAmount; if(entity.rotation > 0.5 || entity.rotation < -0.5) entity.rotationAmount = -entity.rotationAmount; },
+                            render: function(context) {                               
+                                var gl = context.gl;
+                                var program = context.setActiveProgram("wip");
+                                
+                                var viewMatrix = entity.scene.camera.getViewMatrix();
+                            	var projectionMatrix = entity.scene.camera.getProjectionMatrix(gl);
+                                
+                            	var worldMatrix = mat4.create();
+                                mat4.identity(worldMatrix);
+                                mat4.rotateY(worldMatrix, entity.rotation);
+                                
+                                var modelViewMatrix = mat4.create();
+                                mat4.multiply(worldMatrix,viewMatrix, modelViewMatrix);
+                                
+                                var normalMatrix = mat3.create();
+                                mat4.toInverseMat3(worldMatrix, normalMatrix);
+                                mat3.transpose(normalMatrix);
+                                
+                                gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
+                            	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
+                            	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
+                                gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormal"), false, normalMatrix);
+                                
+                                gl.uniform3f(gl.getUniformLocation(program, "vLight"), false, 0, 0, -10);
+                                gl.uniform3f(gl.getUniformLocation(program, "vViewDirection"), false, 0, 0, -1);
+                                                                
+                                gl.bindBuffer(gl.ARRAY_BUFFER, entity.vertexBuffer);
+                            	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
+                            	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));   
+                                
+                                gl.bindBuffer(gl.ARRAY_BUFFER, entity.normalBuffer);
+                                gl.vertexAttribPointer(gl.getAttribLocation(program, 'aNormal'), 3, gl.FLOAT, false, 0, 0);
+                            	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aNormal'));
+                                
+                                gl.bindBuffer(gl.ARRAY_BUFFER, entity.textureBuffer);
+                                gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoord'), 2, gl.FLOAT, false, 0, 0);
+                                gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoord'));
+                                
+                                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entity.indexBuffer);
+                                
+                                gl.activeTexture(gl.TEXTURE0);
+                                gl.bindTexture(gl.TEXTURE_2D, entity.bumpmap.get());
+                                gl.uniform1i(gl.getUniformLocation(program, 'uBumpSampler'), 0);
+  
+                                gl.drawElements(gl.TRIANGLES, entity.indices.length , gl.UNSIGNED_SHORT, 0);
+                                
+                            }                        
+                        };           
+                     
+                    var gl = app.context.gl;
+                    
+                    entity.vertexBuffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, entity.vertexBuffer);
+                	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(entity.vertices), gl.STATIC_DRAW);
+                    
+                    entity.normalBuffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, entity.normalBuffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(entity.normals), gl.STATIC_DRAW);
+                                    
+                    entity.textureBuffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, entity.textureBuffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(entity.texCoords), gl.STATIC_DRAW);
+                    
+                    entity.indexBuffer = gl.createBuffer();
+                	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entity.indexBuffer);
+                	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(entity.indices), gl.STATIC_DRAW);
+                    
+                    entity.bumpmap = app.resources.getTexture('/textures/testbump.jpg');
+                    
+                     app.scene.addEntity(entity);
                                     
                     app.resources.onAllAssetsLoaded(function(){
                         setInterval(function() {  app.render(); }, 1000 / 30);
-                    });
-                    
+                    });                    
                     setInterval(function() {  app.tick(); }, 1000 / 30);                    
                 });
 			});
@@ -28,13 +120,10 @@
 		</script>
 	</head>
 	<body>		
-		<h1>HOVERBATTLES!!!</h1>
-		<p>WASD to move around, space to jump</p>
-    	<p>FFS be patient, it'll all be white for a while and then there will be colour and stuff.</p>
+		<h1>TEST PAGE!!!</h1>
+    	<p>This is just a test page, nothing to see here, move along</p>
 		<canvas id="game" style="border: none;" width="750" height="500">
 
 		</canvas>
-          <p>Clearly I need some proper assets, and things aren't going to be quite so messed up in actual version, but hey - check out my shaders being given the appropriate information!</p>
-	      <p>I do have multiplayer though, and look - determinative resource loading!!</p>
     </body>
 </html>
