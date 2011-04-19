@@ -22,7 +22,7 @@ void main(void){
     vec4 vTransformedPosition =  uView * uWorld * vec4(aVertexPosition, 1.0);
 
     // Calculate vector from light
-    vec3 vectorToLight = vec3(vec4(vLight.x, vLight.y, vLight.z, 1.0) - vTransformedPosition);
+    vec3 vectorToLight = vec3(vLight - vec3(vTransformedPosition));
     vectorToLight = normalize(vectorToLight);
 
     // Transform tangent/bitangent/normal
@@ -45,7 +45,7 @@ void main(void){
     vViewDirection = normalize(vViewDirection);
     
     // Transform the half vector into texture space
-    vHalfVector = normalize((vViewDirection + vVectorToLight) / 2.0);
+    vHalfVector = normalize(vViewDirection + vVectorToLight);
     vHalfVector = vec3(
                 dot(vHalfVector, vTangent),
                 dot(vHalfVector, vBiTangent),

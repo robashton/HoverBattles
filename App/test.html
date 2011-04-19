@@ -10,7 +10,7 @@
                 
                 var app = new blah.Application('game');             
                 app.init(function() {
-                    app.scene.camera.setLocation([1, 300, 1]);
+                    app.scene.camera.setLocation([200, 300, 0]);
                     app.scene.camera.lookAt = vec3.create([0,0,0]);
                     
                     var entity = {
@@ -38,7 +38,7 @@
                             position: vec3.create(0,0,0),
                             setScene: function(scene){ entity.scene = scene; },
                             getId: function() { return "testQuad"; },
-                            doLogic: function() { entity.rotation += entity.rotationAmount; if(entity.rotation > 0.5 || entity.rotation < -0.5) entity.rotationAmount = -entity.rotationAmount; },
+                            doLogic: function() { entity.rotation += entity.rotationAmount; }, //if(entity.rotation > 0.5 || entity.rotation < -0.5) entity.rotationAmount = -entity.rotationAmount; },
                             render: function(context) {                               
                                 var gl = context.gl;
                                 var program = context.setActiveProgram("wip");
@@ -62,11 +62,10 @@
                             	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
                                 gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormal"), false, normalMatrix);                                                   
                                 
-                                var viewDirection = vec3.create(entity.scene.camera.location);
-                                vec3.normalize(viewDirection);
+                                var cameraPosition = vec3.create(entity.scene.camera.location);
                                 
-                                gl.uniform3f(gl.getUniformLocation(program, "vLight"), false, 1, 20, 1);                                 
-                                gl.uniform3f(gl.getUniformLocation(program, "uViewDirection"), false, -viewDirection[0], -viewDirection[1], -viewDirection[2]);
+                                gl.uniform3f(gl.getUniformLocation(program, "uLightPosition"), 0, 200, 0);                                 
+                                gl.uniform3f(gl.getUniformLocation(program, "uCameraPosition"), cameraPosition[0], cameraPosition[1], cameraPosition[2]);
                                                                 
                                 gl.bindBuffer(gl.ARRAY_BUFFER, entity.vertexBuffer);
                             	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);

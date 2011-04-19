@@ -1,0 +1,21 @@
+#ifdef GL_ES
+precision highp float;
+#endif
+
+varying vec2 vTextureCoord;
+varying vec3 vDirectionToLight;
+varying vec3 vHalfNormal;
+
+uniform sampler2D uBumpSampler;
+
+void main(void) {
+
+    // Sample the texture to get our new normal in texture space
+  //  vec3 bumpNormal = (texture2D(uBumpSampler, vTextureCoord.st)).rgb * 2.0 - 1.0;
+
+
+ //   float diffuse = dot(bumpNormal, vDirectionToLight);
+  //  float specular = pow(dot(bumpNormal, vHalfNormal), 2.0);    
+  //  float light = diffuse + specular;
+    gl_FragColor =  vec4(1.0, 1.0,1.0, 1.0); 
+}
