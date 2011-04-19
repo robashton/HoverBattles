@@ -10,22 +10,22 @@
                 
                 var app = new blah.Application('game');             
                 app.init(function() {
-                    app.scene.camera.setLocation([0, 10, 300]);
+                    app.scene.camera.setLocation([1, 300, 1]);
                     app.scene.camera.lookAt = vec3.create([0,0,0]);
                     
                     var entity = {
                             rotation: 0.0,
                             vertices: [    		
-                				-100.0, -100.0, 0, 
-                				 100.0, -100.0, 0, 
-                				 100.0,  100.0, 0, 
-                				-100.0,  100.0, 0
+                				-100.0, 0 , -100.0, 
+                				 100.0, 0 , -100.0, 
+                				 100.0, 0 , 100.0 , 
+                				-100.0, 0 , 100.0
             				],
                             normals: [        	
-                				0.0, 0.0, 1, 
-                				0.0, 0.0, 1, 
-                				0.0, 0.0, 1, 
-                				0.0, 0.0, 1
+                				0.0, 1.0, 0, 
+                				0.0, 1.0, 0, 
+                				0.0, 1.0, 0, 
+                				0.0, 1.0, 0
             				],
                 			texCoords: [
                     		    0.0, 0.0,
@@ -48,7 +48,7 @@
                                 
                             	var worldMatrix = mat4.create();
                                 mat4.identity(worldMatrix);
-                                mat4.rotateY(worldMatrix, entity.rotation);
+                                mat4.rotateZ(worldMatrix, entity.rotation);
                                 
                                 var modelViewMatrix = mat4.create();
                                 mat4.multiply(worldMatrix,viewMatrix, modelViewMatrix);
@@ -60,10 +60,13 @@
                                 gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
                             	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
                             	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
-                                gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormal"), false, normalMatrix);
+                                gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormal"), false, normalMatrix);                                                   
                                 
-                                gl.uniform3f(gl.getUniformLocation(program, "vLight"), false, 0, 0, -10);
-                                gl.uniform3f(gl.getUniformLocation(program, "vViewDirection"), false, 0, 0, -1);
+                                var viewDirection = vec3.create(entity.scene.camera.location);
+                                vec3.normalize(viewDirection);
+                                
+                                gl.uniform3f(gl.getUniformLocation(program, "vLight"), false, 1, 20, 1);                                 
+                                gl.uniform3f(gl.getUniformLocation(program, "uViewDirection"), false, -viewDirection[0], -viewDirection[1], -viewDirection[2]);
                                                                 
                                 gl.bindBuffer(gl.ARRAY_BUFFER, entity.vertexBuffer);
                             	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);

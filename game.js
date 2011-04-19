@@ -198,6 +198,18 @@ ClientCommunication.prototype._start = function(data) {
         }
     });
     
+    var light = {
+      doLogic: function(){
+          light.position = light.craft.position;
+      },
+      setScene: function(scene) {},
+      render: function(context) {},
+      getId: function() { return "light"; }     
+    };
+    
+    light.craft = craft;
+    
+    this.app.scene.addEntity(light);
     this.app.scene.addEntity(emitter);    
     this.app.scene.addEntity(this.craft);    
 };
@@ -575,26 +587,22 @@ var LandChunk = function(width, height, maxHeight, scale,x,y){
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
 	this._indexCount = 0;
-	this._colourBuffer = null;
 	this._texturecoordsBuffer = null;
 	
-	this._texture = null;
-    this._detailtexture = null;
-    this._hovertexture = null;
+	this._bumpTexture = null;
     this._data = null;
     
     this._frame = 0.0;
     this._playerPosition = vec3.create();
+    this._viewDirection = vec3.create();
 };
 
 LandChunk.prototype.getProgram = function(){
-    return "landscape";
+    return "wip";
 };
 
 LandChunk.prototype.loadTextures = function(resources) {
-    this._texture = resources.getTexture("/textures/gridlow.jpg");
-    this._detailtexture = resources.getTexture("/textures/gridhigh.jpg");
-    this._hovertexture = resources.getTexture("/textures/bars.jpg");
+    this._bumpTexture = resources.getTexture('/textures/testbump.jpg');
 };
 
 LandChunk.prototype.setData = function(data) {
@@ -608,10 +616,6 @@ LandChunk.prototype.activate = function(context) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.vertices), gl.STATIC_DRAW)
 
-	this._colourBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.colours), gl.STATIC_DRAW)
-	
 	this._texturecoordsBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.texturecoords), gl.STATIC_DRAW)
@@ -630,31 +634,19 @@ LandChunk.prototype.upload = function(context) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
 	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
-
-	gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexColour'), 4, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexColour'));
-			
+		
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoords'), 2, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
+	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoord'), 2, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoord'));
 
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-	
-    gl.uniform1f(gl.getUniformLocation(program, 'time'), this._frame);         
-    gl.uniform3f(gl.getUniformLocation(program, 'uPlayerPosition'), this._playerPosition[0], this._playerPosition[1], this._playerPosition[2]);
-	
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, this._texture.get());
-	gl.uniform1i(gl.getUniformLocation(program, 'uDiffuseSampler'), 0); 
-	
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, this._detailtexture.get());
-    gl.uniform1i(gl.getUniformLocation(program, 'uDetailSampler'), 1); 
     
-    gl.activeTexture(gl.TEXTURE2);
-    gl.bindTexture(gl.TEXTURE_2D, this._hovertexture.get());
-    gl.uniform1i(gl.getUniformLocation(program, 'uHoverSampler'), 2); 
+    gl.uniform3f(gl.getUniformLocation(program, "vLight"), false, this._playerPosition[0], this._playerPosition[1], this._playerPosition[2]);
+    gl.uniform3f(gl.getUniformLocation(program, "vViewDirection"), false, this._viewDirection[0], this._viewDirection[1], this._viewDirection[2]);
+	  
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, this._bumpTexture.get());
+	gl.uniform1i(gl.getUniformLocation(program, 'uBumpSampler'), 0); 
 
 };
 
@@ -825,8 +817,28 @@ LandChunkEntity = {
   }
 };
 
+LandscapeController.prototype.doLogic = function() {
+    
+  var light = this.app.scene.getEntity("light");
+  
+  if(light) {
+      var lightPosition = light.position;
+      
+      var viewDirection = vec3.create();
+      vec3.subtract(this.app.scene.camera.lookAt, this.app.scene.camera.location, viewDirection);
+      vec3.normalize(viewDirection);
+      
+      for(i in this._chunks){
+       var chunk = this._chunks[i];
+       chunk._model._playerPosition = lightPosition;
+       chunk._model._viewDirection = viewDirection;
+      }
+  }
+    
+};
+
 // Interface segregation, I rather suspect I should do something about this in scene
-LandscapeController.prototype.doLogic = function() {}
+
 LandscapeController.prototype.setScene = function(scene){};
 LandscapeController.prototype.render = function(context){};
 
@@ -1435,7 +1447,7 @@ Texture.prototype.activate = function(context) {
     gl.bindTexture(gl.TEXTURE_2D, data);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data.image);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
     gl.generateMipmap(gl.TEXTURE_2D);
     gl.bindTexture(gl.TEXTURE_2D, null);

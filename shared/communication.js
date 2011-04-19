@@ -59,6 +59,18 @@ ClientCommunication.prototype._start = function(data) {
         }
     });
     
+    var light = {
+      doLogic: function(){
+          light.position = light.craft.position;
+      },
+      setScene: function(scene) {},
+      render: function(context) {},
+      getId: function() { return "light"; }     
+    };
+    
+    light.craft = craft;
+    
+    this.app.scene.addEntity(light);
     this.app.scene.addEntity(emitter);    
     this.app.scene.addEntity(this.craft);    
 };

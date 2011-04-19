@@ -90,8 +90,28 @@ LandChunkEntity = {
   }
 };
 
+LandscapeController.prototype.doLogic = function() {
+    
+  var light = this.app.scene.getEntity("light");
+  
+  if(light) {
+      var lightPosition = light.position;
+      
+      var viewDirection = vec3.create();
+      vec3.subtract(this.app.scene.camera.lookAt, this.app.scene.camera.location, viewDirection);
+      vec3.normalize(viewDirection);
+      
+      for(i in this._chunks){
+       var chunk = this._chunks[i];
+       chunk._model._playerPosition = lightPosition;
+       chunk._model._viewDirection = viewDirection;
+      }
+  }
+    
+};
+
 // Interface segregation, I rather suspect I should do something about this in scene
-LandscapeController.prototype.doLogic = function() {}
+
 LandscapeController.prototype.setScene = function(scene){};
 LandscapeController.prototype.render = function(context){};
 
