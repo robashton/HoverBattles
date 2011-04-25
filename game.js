@@ -65,7 +65,7 @@ Camera.prototype.setLocation = function(location){
 
 Camera.prototype.getProjectionMatrix = function(gl) {
 	var projectionMatrix = mat4.create();
-	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 1024.0, projectionMatrix);
+	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 1.0, 5000.0, projectionMatrix);
 	return projectionMatrix;
 };
 
@@ -591,7 +591,7 @@ var LandChunk = function(width, height, maxHeight, scale,x,y){
 	this._indexCount = 0;
 	this._texturecoordsBuffer = null;
 	
-	this._bumpTexture = null;
+	this._diffuseTexture = null;
     this._data = null;
     
     this._frame = 0.0;
@@ -604,7 +604,7 @@ LandChunk.prototype.getProgram = function(){
 };
 
 LandChunk.prototype.loadTextures = function(resources) {
-    this._bumpTexture = resources.getTexture('/textures/testbump.jpg');
+    this._diffuseTexture = resources.getTexture('/textures/cartoonterrain.jpg');
 };
 
 LandChunk.prototype.setData = function(data) {
@@ -651,11 +651,11 @@ LandChunk.prototype.upload = function(context) {
 
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     
-    gl.uniform3f(gl.getUniformLocation(program, "uLightPosition"), 0.0, 1000.0, 0); // this._playerPosition[0], this._playerPosition[1], this._playerPosition[2]);
+    gl.uniform3fv(gl.getUniformLocation(program, "uLightPosition"), this._playerPosition);
 	  
 	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, this._bumpTexture.get());
-	gl.uniform1i(gl.getUniformLocation(program, 'uBumpSampler'), 0); 
+	gl.bindTexture(gl.TEXTURE_2D, this._diffuseTexture.get());
+	gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0); 
 
 };
 

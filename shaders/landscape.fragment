@@ -3,9 +3,13 @@ precision highp float;
 #endif
 
 varying vec2 vTexCoords;
+varying vec3 vNormal;
+varying float vDistance;
+uniform sampler2D uSampler;
 
 bool isEdge(float value) {
-    if(floor(mod(value,10.0) * 2.0) == 0.0) { return true; }
+    return false;
+    if(floor(mod(value,10.0) * 5.0) == 0.0) { return true; }
     return false;
 }
 
@@ -13,10 +17,12 @@ void main(void) {
     float x = vTexCoords.x * 100.0;
     float y = vTexCoords.y * 100.0;
 
+    vec4 grid = vec4(1,1,1,1);
     if(isEdge(x) || isEdge(y)) {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        grid = vec4(0.4, 0.4, 0.4, 1.0);
     }
-    else {
-        gl_FragColor = vec4(0.0, 0.8, 0.0, 1.0);
-    }
+
+    gl_FragColor = texture2D(uSampler, vec2(vTexCoords.s, vTexCoords.t));
+    gl_FragColor *= grid;
+    gl_FragColor.g *= (vNormal.y * vNormal.y); // Want it a little darker k?
 }

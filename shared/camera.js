@@ -15,7 +15,7 @@ Camera.prototype.setLocation = function(location){
 
 Camera.prototype.getProjectionMatrix = function(gl) {
 	var projectionMatrix = mat4.create();
-	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 1024.0, projectionMatrix);
+	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 1.0, 5000.0, projectionMatrix);
 	return projectionMatrix;
 };
 

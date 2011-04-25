@@ -21,7 +21,7 @@ parseQueryStringAndGenerateData = function(req, res, callback)
     var query = querystring.parse(req.url);
         
         
-    if(cache[req.url] && !query.ft) { console.log('cache hit'); callback(cache[req.url]); return; }
+    if(cache[req.url] && query.ft != "true") { console.log('cache hit'); callback(cache[req.url]); return; }
 	var chunk = {};
 
 
@@ -80,7 +80,6 @@ generateTerrainData = function(width, height, maxHeight, scale, startX, startY, 
     for(var y = 0 ; y < height ; y++ ) {
         for(var x = 0 ; x < width ; x++ ) {
         	var index = (x + y * width);
-    		vertexNormals[index] = vec3.create();
     
     		var vertexIndex = index * 3;
     		var colourIndex = index * 4;
@@ -90,9 +89,9 @@ generateTerrainData = function(width, height, maxHeight, scale, startX, startY, 
     		vertices[vertexIndex+1] = heightMap[index];
     		vertices[vertexIndex+2] = (startY + y) * scale;
             
-            vertexNormals[vertexIndex] = 0;
-    		vertexNormals[vertexIndex+1] = 0;
-    		vertexNormals[vertexIndex+2] = 0;
+            vertexNormals[vertexIndex] = 0.0;
+    		vertexNormals[vertexIndex+1] = 0.0;
+    		vertexNormals[vertexIndex+2] = 0.0;
     
     		texturecoords[texcoordsIndex] = x / width;
     		texturecoords[texcoordsIndex+1] = y / height;
@@ -154,10 +153,10 @@ generateTerrainData = function(width, height, maxHeight, scale, startX, startY, 
         var b = vec3.create([vertices[vTwo], vertices[vTwo+1], vertices[vTwo+2]]);
         var c = vec3.create([vertices[vThree], vertices[vThree+1], vertices[vThree+2]]);
         
-        var ab = vec3.create();
-        var ac = vec3.create();
-        var cross = vec3.create();
-        var normal = vec3.create();
+        var ab = vec3.create([0,0,0]);
+        var ac = vec3.create([0,0,0]);
+        var cross = vec3.create([0,0,0]);
+        var normal = vec3.create([0,0,0]);
         
         vec3.subtract(a, b, ab);
         vec3.subtract(a, c, ac);
@@ -169,14 +168,15 @@ generateTerrainData = function(width, height, maxHeight, scale, startX, startY, 
         // Rather than do complicated logic to sort this out, it's gonna be easier to just check the y direction
         // And invert the normal for the 'odd' faces
         if(normal[1] < 0){
-            vec3.subtract(zeroVector, normal, zeroVector);
+            vec3.negate(normal);
         }
-        
+            
         for(var x = 0; x < 3 ; x++){
-             vertexNormals[vOne + x] += normal[x];
-             vertexNormals[vTwo + x] += normal[x];
-             vertexNormals[vThree + x] += normal[x];             
-        }
+            vertexNormals[vOne + x] += normal[x];
+            vertexNormals[vTwo + x] +=  normal[x];
+            vertexNormals[vThree + x] += normal[x];   
+        }     
+        
                 
         i++;
     }
