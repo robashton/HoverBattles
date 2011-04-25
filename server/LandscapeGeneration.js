@@ -51,10 +51,10 @@ createTerrainChunk = function(width, height, startX, startY, scale, maxHeight) {
 
 	return {
 		heights: heightMap,
-    	colours: data.colours,
+    	normals: data.normals,
         vertices: data.vertices,
         indices: data.indices,
-        texturecoords: data.texturecoords  
+        texturecoords: data.texturecoords
 	};
 };
 
@@ -62,7 +62,7 @@ generateTerrainData = function(width, height, maxHeight, scale, startX, startY, 
     
     var indexCount = (height - 1) * width * 2;
     var vertices = new Array(width* height * 3);
-    var vertexNormals = new Array(width * height);
+    var vertexNormals = new Array(width * height * 3);
     var texturecoords = new Array(width * height * 2);
     var colours = new Array(width * height * 4);
     var indices = new Array(indexCount);
@@ -79,6 +79,10 @@ generateTerrainData = function(width, height, maxHeight, scale, startX, startY, 
     		vertices[vertexIndex] = (startX + x) * scale;
     		vertices[vertexIndex+1] = heightMap[index];
     		vertices[vertexIndex+2] = (startY + y) * scale;
+            
+            vertexNormals[vertexIndex] = 0;
+    		vertexNormals[vertexIndex+1] = 0;
+    		vertexNormals[vertexIndex+2] = 0;
     
     		texturecoords[texcoordsIndex] = x / width;
     		texturecoords[texcoordsIndex+1] = y / height;
@@ -123,6 +127,7 @@ generateTerrainData = function(width, height, maxHeight, scale, startX, startY, 
     AC=C-A;
     N=normalize(AB cross AC); */
     
+    
     // Now calculate the face normals
     i = 0;
     var zeroVector = vec3.create([0,0,0]);
@@ -155,40 +160,19 @@ generateTerrainData = function(width, height, maxHeight, scale, startX, startY, 
         // And invert the normal for the 'odd' faces
         if(normal[1] < 0){
             vec3.subtract(zeroVector, normal, zeroVector);
-        }     
+        }
         
-        // We add the face normal to all corresponding vertex normals
-        vec3.add(vertexNormals[iOne], normal);
-        vec3.add(vertexNormals[iTwo], normal);
-        vec3.add(vertexNormals[iThree], normal);
-        
+        for(var x = 0; x < 3 ; x++){
+             vertexNormals[vOne + x] += normal[x];
+             vertexNormals[vTwo + x] += normal[x];
+             vertexNormals[vThree + x] += normal[x];             
+        }
+                
         i++;
     }
-    
-    // And now, finally we can calculate the vertex normals by normalising the contents
-    // Of those arrays - we'll set colours at this point too, by calculating the dot product between
-    // An imaginary scene light (always coming in from above and to the side) and the vertex normal
-    
-    
-    var light = vec3.create([0, 0.8, 0.2]);
-    for(var y = 0 ; y < height ; y++ ) {
-        for(var x = 0 ; x < width ; x++ ) {
-            var index = x + y * width;
-            var colourIndex = index * 4;
-            var normal = vec3.create();
-            vec3.normalize(vertexNormals[index], normal);
-            
-            var shading = 1.0; // vec3.dot(light, normal);
-            
-            //   console.log(normal);
-            colours[colourIndex++] = shading;
-            colours[colourIndex++] = shading;       
-            colours[colourIndex++] = shading;
-            colours[colourIndex] = 1.0;
-        }
-    }
+
     return {
-      colours: colours,
+      normals: vertexNormals,
       vertices: vertices,
       indices: indices,
       texturecoords: texturecoords     

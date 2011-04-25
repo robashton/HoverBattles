@@ -14,7 +14,7 @@ var ChaseCamera = {
      vec3.subtract(this.position, cameraTrail, cameraTrail);
      this._scene.camera.location = cameraTrail;
      
-     var terrainHeightAtCameraLocation = terrain.getHeightAt(this._scene.camera.location[0], 
+     var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(this._scene.camera.location[0], 
                                                              this._scene.camera.location[2]);
                             
      var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, this.position[1] + 15);

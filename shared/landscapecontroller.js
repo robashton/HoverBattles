@@ -96,15 +96,11 @@ LandscapeController.prototype.doLogic = function() {
   
   if(light) {
       var lightPosition = light.position;
-      
-      var viewDirection = vec3.create();
-      vec3.subtract(this.app.scene.camera.lookAt, this.app.scene.camera.location, viewDirection);
-      vec3.normalize(viewDirection);
-      
+
       for(i in this._chunks){
        var chunk = this._chunks[i];
        chunk._model._playerPosition = lightPosition;
-       chunk._model._viewDirection = viewDirection;
+       chunk._model._cameraPosition = this.app.scene.camera.location;
       }
   }
     

@@ -10,7 +10,7 @@
                 
                 var app = new blah.Application('game');             
                 app.init(function() {
-                    app.scene.camera.setLocation([200, 300, 0]);
+                    app.scene.camera.setLocation([0, 350, 1]);
                     app.scene.camera.lookAt = vec3.create([0,0,0]);
                     
                     var entity = {
@@ -34,14 +34,30 @@
                                 0.0, 1.0
                         	 ],
                             rotationAmount: 0.01,
+                            lightAmount: vec3.create([1.0, 0, 1.0]),
             				indices: [0, 1, 2, 0, 2, 3],
                             position: vec3.create(0,0,0),
                             setScene: function(scene){ entity.scene = scene; },
                             getId: function() { return "testQuad"; },
-                            doLogic: function() { entity.rotation += entity.rotationAmount; }, //if(entity.rotation > 0.5 || entity.rotation < -0.5) entity.rotationAmount = -entity.rotationAmount; },
+                            light: vec3.create([0, 10, 0]),
+                            doLogic: function() 
+                            { 
+                                entity.rotation += entity.rotationAmount; 
+                                if(entity.rotation > 0.5 || entity.rotation < -0.5) entity.rotationAmount = -entity.rotationAmount;
+                                
+                                vec3.add(entity.light, entity.lightAmount);
+                                
+                                for(var i = 0; i < 3 ; i++){
+                                    if(entity.light[i] > 200 || entity.light[i] < -200){
+                                        entity.lightAmount[i] = -entity.lightAmount[i];    
+                                    }
+                                }
+                                
+                                
+                            },
                             render: function(context) {                               
                                 var gl = context.gl;
-                                var program = context.setActiveProgram("wip");
+                                var program = context.setActiveProgram("specular");
                                 
                                 var viewMatrix = entity.scene.camera.getViewMatrix();
                             	var projectionMatrix = entity.scene.camera.getProjectionMatrix(gl);
@@ -55,7 +71,7 @@
                                 
                                 var normalMatrix = mat3.create();
                                 mat4.toInverseMat3(worldMatrix, normalMatrix);
-                                mat3.transpose(normalMatrix);
+                                // mat3.transpose(normalMatrix);
                                 
                                 gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
                             	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
@@ -64,7 +80,7 @@
                                 
                                 var cameraPosition = vec3.create(entity.scene.camera.location);
                                 
-                                gl.uniform3f(gl.getUniformLocation(program, "uLightPosition"), 0, 200, 0);                                 
+                                gl.uniform3f(gl.getUniformLocation(program, "uLightPosition"), entity.light[0], entity.light[1], entity.light[2]);                                 
                                 gl.uniform3f(gl.getUniformLocation(program, "uCameraPosition"), cameraPosition[0], cameraPosition[1], cameraPosition[2]);
                                                                 
                                 gl.bindBuffer(gl.ARRAY_BUFFER, entity.vertexBuffer);

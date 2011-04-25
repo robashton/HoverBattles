@@ -1,6 +1,6 @@
 var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
-var mat3 = require('./glmatrix').mat4;
+var mat3 = require('./glmatrix').mat3;
 
 function cloneObject(obj) {
     var clone = {};
@@ -74,12 +74,13 @@ Entity.prototype.render = function(context){
     mat4.rotateY(worldMatrix, this.rotationY);
     
     var modelViewMatrix = mat4.create();
-    mat4.multiply(worldMatrix,viewMatrix, modelViewMatrix);
+    mat4.multiply(viewMatrix, worldMatrix, modelViewMatrix);
     
     var normalMatrix = mat3.create();
-    mat4.toInverseMat3(worldMatrix, normalMatrix);
+    mat3.identity(normalMatrix);
+    mat4.toInverseMat3(modelViewMatrix, normalMatrix);
     mat3.transpose(normalMatrix);
-
+    
 	var program = context.setActiveProgram(this._model.getProgram());
     
 	this._model.upload(context);
@@ -87,7 +88,7 @@ Entity.prototype.render = function(context){
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
-    gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormal"), false, normalMatrix);
+    gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormalMatrix"), false, normalMatrix);
 
 	this._model.render(context);
 };

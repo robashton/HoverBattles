@@ -4,15 +4,15 @@ precision highp float;
 
 varying vec2 vTextureCoords;
 varying vec3 vNormal;
-varying vec3 vVectorFromLight;
+varying vec3 vVectorToLight;
 uniform sampler2D uSampler;
 
 void main(void) {
   vec3 normal  = normalize(vNormal);
-  vec3 vector = normalize(vVectorFromLight);
+  vec3 vector = normalize(vVectorToLight);
 
   vec4 colour =  texture2D(uSampler, vec2(vTextureCoords.s, vTextureCoords.t));
-  float diffuse = clamp(dot(vector, normal), 0.0, 1.0);
+  float diffuse = max(dot(normal, vector), 0.0);
   vec4 lightColour = vec4(colour.rgb * 0.8 * diffuse, 0.5);
   vec4 ambientColour = vec4(colour.rgb * 0.2, 0.5);
   gl_FragColor = lightColour + ambientColour;

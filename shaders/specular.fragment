@@ -5,17 +5,19 @@ precision highp float;
 varying vec2 vTextureCoord;
 varying vec3 vDirectionToLight;
 varying vec3 vHalfNormal;
+varying vec3 vNormal;
 
 uniform sampler2D uBumpSampler;
 
 void main(void) {
 
     // Sample the texture to get our new normal in texture space
-  //  vec3 bumpNormal = (texture2D(uBumpSampler, vTextureCoord.st)).rgb * 2.0 - 1.0;
+    vec3 bumpNormal = (texture2D(uBumpSampler, vTextureCoord.st)).rgb * 2.0 - 1.0;
 
+    vec3 diffuse = clamp(dot(bumpNormal, vDirectionToLight), 0.0, 1.0) * vec3(1.0, 1.0, 1.0);
+    float specularComponent = clamp(dot(bumpNormal, normalize(vHalfNormal)), 0.0, 1.0);
 
- //   float diffuse = dot(bumpNormal, vDirectionToLight);
-  //  float specular = pow(dot(bumpNormal, vHalfNormal), 2.0);    
-  //  float light = diffuse + specular;
-    gl_FragColor =  vec4(1.0, 1.0,1.0, 1.0); 
+    vec3 specular = pow(specularComponent, 64.0) * vec3(0.4,0.4,0.9);    
+    vec3 light = diffuse + specular;
+    gl_FragColor =  vec4(light, 1.0); 
 }

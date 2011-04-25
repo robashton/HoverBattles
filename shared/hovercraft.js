@@ -41,7 +41,7 @@ var Hovercraft = {
         var terrain = this._scene.getEntity("terrain");
         vec3.add(this.position, this._velocity);
                      
-        var terrainHeight =  terrain.getHeightAt(this.position[0], this.position[2]);  
+        var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(this.position[0], this.position[2]);  
         var heightDelta = this.position[1] - terrainHeight;
         
         if(heightDelta < 0) {

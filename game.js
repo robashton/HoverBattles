@@ -91,7 +91,7 @@ var ChaseCamera = {
      vec3.subtract(this.position, cameraTrail, cameraTrail);
      this._scene.camera.location = cameraTrail;
      
-     var terrainHeightAtCameraLocation = terrain.getHeightAt(this._scene.camera.location[0], 
+     var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(this._scene.camera.location[0], 
                                                              this._scene.camera.location[2]);
                             
      var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, this.position[1] + 15);
@@ -316,7 +316,7 @@ DefaultTextureLoader.prototype.load = function(path, callback) {
 
 exports.DefaultTextureLoader = DefaultTextureLoader;}, "entity": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
-var mat3 = require('./glmatrix').mat4;
+var mat3 = require('./glmatrix').mat3;
 
 function cloneObject(obj) {
     var clone = {};
@@ -390,12 +390,13 @@ Entity.prototype.render = function(context){
     mat4.rotateY(worldMatrix, this.rotationY);
     
     var modelViewMatrix = mat4.create();
-    mat4.multiply(worldMatrix,viewMatrix, modelViewMatrix);
+    mat4.multiply(viewMatrix, worldMatrix, modelViewMatrix);
     
     var normalMatrix = mat3.create();
-    mat4.toInverseMat3(worldMatrix, normalMatrix);
+    mat3.identity(normalMatrix);
+    mat4.toInverseMat3(modelViewMatrix, normalMatrix);
     mat3.transpose(normalMatrix);
-
+    
 	var program = context.setActiveProgram(this._model.getProgram());
     
 	this._model.upload(context);
@@ -403,7 +404,7 @@ Entity.prototype.render = function(context){
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
-    gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormal"), false, normalMatrix);
+    gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormalMatrix"), false, normalMatrix);
 
 	this._model.render(context);
 };
@@ -490,7 +491,7 @@ var Hovercraft = {
         var terrain = this._scene.getEntity("terrain");
         vec3.add(this.position, this._velocity);
                      
-        var terrainHeight =  terrain.getHeightAt(this.position[0], this.position[2]);  
+        var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(this.position[0], this.position[2]);  
         var heightDelta = this.position[1] - terrainHeight;
         
         if(heightDelta < 0) {
@@ -586,6 +587,7 @@ var LandChunk = function(width, height, maxHeight, scale,x,y){
 
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
+    this._normalBuffer = null;
 	this._indexCount = 0;
 	this._texturecoordsBuffer = null;
 	
@@ -594,11 +596,11 @@ var LandChunk = function(width, height, maxHeight, scale,x,y){
     
     this._frame = 0.0;
     this._playerPosition = vec3.create();
-    this._viewDirection = vec3.create();
+    this._cameraPosition = vec3.create();
 };
 
 LandChunk.prototype.getProgram = function(){
-    return "wip";
+    return "terrain2";
 };
 
 LandChunk.prototype.loadTextures = function(resources) {
@@ -614,8 +616,12 @@ LandChunk.prototype.activate = function(context) {
   	 
 	this._vertexBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.vertices), gl.STATIC_DRAW)
-
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.vertices), gl.STATIC_DRAW);
+    
+    this._normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.normals), gl.STATIC_DRAW);
+    
 	this._texturecoordsBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.texturecoords), gl.STATIC_DRAW)
@@ -634,6 +640,10 @@ LandChunk.prototype.upload = function(context) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
 	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
+    
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
+	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aNormal'), 3, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aNormal'));
 		
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
 	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoord'), 2, gl.FLOAT, false, 0, 0);
@@ -641,8 +651,7 @@ LandChunk.prototype.upload = function(context) {
 
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     
-    gl.uniform3f(gl.getUniformLocation(program, "vLight"), false, this._playerPosition[0], this._playerPosition[1], this._playerPosition[2]);
-    gl.uniform3f(gl.getUniformLocation(program, "vViewDirection"), false, this._viewDirection[0], this._viewDirection[1], this._viewDirection[2]);
+    gl.uniform3f(gl.getUniformLocation(program, "uLightPosition"), 0.0, 1000.0, 0); // this._playerPosition[0], this._playerPosition[1], this._playerPosition[2]);
 	  
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, this._bumpTexture.get());
@@ -823,15 +832,11 @@ LandscapeController.prototype.doLogic = function() {
   
   if(light) {
       var lightPosition = light.position;
-      
-      var viewDirection = vec3.create();
-      vec3.subtract(this.app.scene.camera.lookAt, this.app.scene.camera.location, viewDirection);
-      vec3.normalize(viewDirection);
-      
+
       for(i in this._chunks){
        var chunk = this._chunks[i];
        chunk._model._playerPosition = lightPosition;
-       chunk._model._viewDirection = viewDirection;
+       chunk._model._cameraPosition = this.app.scene.camera.location;
       }
   }
     
