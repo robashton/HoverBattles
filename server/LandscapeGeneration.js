@@ -2,16 +2,14 @@ path = require('path');
 fs = require('fs');
 querystring = require('querystring');
 vec3 = require('../shared/glmatrix').vec3;
+gzip = require('gzip');
 
 handle = function(req, res) {
 	parseQueryStringAndGenerateData(req, res, function(model) {
         res.setHeader("Content-Type", "text/javascript");
+        res.setHeader("Content-Encoding", "gzip");
 		res.writeHead(200);
-        res.write('var blah = blah || {};');
-        res.write('blah.Land = blah.Land || {};');
-        res.write('blah.Land["' + req.url + '"] = ');
-		res.write(JSON.stringify(model));
-        res.write(';');
+        res.write(model);
 		res.end();
 	});
 };
@@ -20,9 +18,12 @@ var cache = {};
 
 parseQueryStringAndGenerateData = function(req, res, callback)
 { 
-    if(cache[req.url]) { callback(cache[req.url]); return; }
+    var query = querystring.parse(req.url);
+        
+        
+    if(cache[req.url] && !query.ft) { console.log('cache hit'); callback(cache[req.url]); return; }
 	var chunk = {};
-	var query = querystring.parse(req.url);
+
 
     var maxHeight = parseInt(query.maxheight);
     var width = parseInt(query.width);
@@ -32,8 +33,17 @@ parseQueryStringAndGenerateData = function(req, res, callback)
     var scale = parseInt(query.scale);
     
     var data = createTerrainChunk(width, height, startX, startY, scale, maxHeight);
-    cache[req.url] = data;
-    callback(data);
+    
+    var model = 'var blah = blah || {};' +
+        'blah.Land = blah.Land || {};' +
+        'blah.Land["' + req.url + '"] = ' +
+        JSON.stringify(data) + ';'
+    
+    gzip(model, function(err, zippeddata) {
+        cache[req.url] = zippeddata;
+        callback(zippeddata);    
+    });
+
 };
 
 

@@ -2,30 +2,21 @@
 precision highp float;
 #endif
 
-varying vec4 vColour;
-varying vec2 vTextureCoords;
-varying float distanceFromPlayer;
+varying vec2 vTexCoords;
 
-uniform sampler2D uDiffuseSampler;
-uniform sampler2D uDetailSampler;
-
-uniform float time;
+bool isEdge(float value) {
+    if(floor(mod(value,10.0) * 2.0) == 0.0) { return true; }
+    return false;
+}
 
 void main(void) {    
-    float amount = (sin(time * 0.01) + 1.0) / 2.0;
+    float x = vTexCoords.x * 100.0;
+    float y = vTexCoords.y * 100.0;
 
-    float red = clamp(amount, 0.3, 0.8);
-    float blue = clamp(1.0 - amount, 0.3, 0.8);
-    
-    vec4 color = texture2D(uDiffuseSampler, vTextureCoords.st);
-    vec4 detail = texture2D(uDetailSampler, vTextureCoords.st * 5.0 + time * 0.01);
-
-    float adjuster = clamp(distanceFromPlayer / 20.0, 0.0, 1.0);
-
-    color.rgb *= detail.rgb;
-    color.rgb *= vColour.rgb;
-    color.rgb *= vec3(red, 0.0, blue);
-    color.g +=  vec3(adjuster,adjuster,adjuster);
-
-   gl_FragColor = color * 3.0;
+    if(isEdge(x) || isEdge(y)) {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+    else {
+        gl_FragColor = vec4(0.0, 0.8, 0.0, 1.0);
+    }
 }

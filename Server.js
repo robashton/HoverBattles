@@ -11,24 +11,23 @@ ServerApp = require('./server/application').ServerApp;
 ServerCommunication = require('./server/communication').ServerCommunication;
 LandscapeController = require('./shared/landscapecontroller').LandscapeController;
 
-/*
-*/
 var pkg = stitch.createPackage({
   paths: ['./shared']
 });
 
 
-pkg.compile(function (err, source){
-  fs.writeFile('game.js', source, function (err) {
-    if (err) throw err;
-    console.log('Compiled game.js');
-  })
-});
-
 ROOT = path.dirname(__filename);
 SHADERDIR = path.join(ROOT, "shaders");
 
 server = http.createServer(function(req, res){ 
+    var query = querystring.parse(req.url);
+    if(query.build){     
+        pkg.compile(function (err, source){
+          fs.writeFile('game.js', source, function (err) {
+            if (err) throw err;
+          })
+        });
+    }
 
 	paperboy
 	.deliver(ROOT, req, res)

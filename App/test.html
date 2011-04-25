@@ -71,7 +71,7 @@
                                 
                                 var normalMatrix = mat3.create();
                                 mat4.toInverseMat3(worldMatrix, normalMatrix);
-                                // mat3.transpose(normalMatrix);
+                                mat3.transpose(normalMatrix);
                                 
                                 gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
                             	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);

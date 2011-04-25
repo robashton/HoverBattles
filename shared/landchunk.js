@@ -24,7 +24,7 @@ var LandChunk = function(width, height, maxHeight, scale,x,y){
 };
 
 LandChunk.prototype.getProgram = function(){
-    return "terrain2";
+    return "landscape";
 };
 
 LandChunk.prototype.loadTextures = function(resources) {
