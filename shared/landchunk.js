@@ -28,7 +28,7 @@ LandChunk.prototype.getProgram = function(){
 };
 
 LandChunk.prototype.loadTextures = function(resources) {
-    this._diffuseTexture = resources.getTexture('/textures/cartoonterrain.jpg');
+    this._diffuseTexture = resources.getTexture('/data/textures/cartoonterrain.jpg');
 };
 
 LandChunk.prototype.setData = function(data) {

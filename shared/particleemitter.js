@@ -51,7 +51,7 @@ ParticleEmitter.prototype.createBuffers = function(){
   this.createConstantBuffers(gl);
   this.createVariableBuffers(gl); 
 
-  this.texture = this.app.resources.getTexture('/textures/particle.png');
+  this.texture = this.app.resources.getTexture('/data/textures/particle.png');
   
 };
 

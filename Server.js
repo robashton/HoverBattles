@@ -33,7 +33,7 @@ server = http.createServer(function(req, res){
               fs.writeFile('game.js', source, function (err) {
                 if (err) throw err;
                 res.writeHead(200, "Content-Type: text/plain");
-                res.write('Done');
+                res.write('var done = true;');
                 res.end();
               })
             });

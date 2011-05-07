@@ -1,6 +1,5 @@
 vec3 = require('../shared/glmatrix').vec3;
 
-
 var Sphere = function(radius, centre) {
   this.radius = radius;
   this.centre = centre;

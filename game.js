@@ -284,15 +284,17 @@ DefaultModelLoader.prototype.load = function(path, callback) {
     var model = new Model();
     var name = path.substr(0, path.length - 3);
     var loader = this;
-    LazyLoad.js('/models/' + path, function () {
-        model.setData({
-             vertices: BlenderExport[name].vertices,
-             indices: BlenderExport[name].indices,
-             texCoords: BlenderExport[name].texCoords,
-             normals: BlenderExport[name].normals,
-             texture: loader._resources.getTexture("/textures/" + name + ".jpg")
+    
+    $.get('/data/models/' + path, function(data) {
+      var modelData = JSON.parse(data);
+      model.setData({
+             vertices: modelData.vertices,
+             indices: modelData.indices,
+             texCoords: modelData.texCoords,
+             normals: modelData.normals,
+             texture: loader._resources.getTexture("/data/textures/" + name + ".jpg")
          });
-         callback();
+         callback();      
     });
     
     return model;
@@ -616,7 +618,7 @@ LandChunk.prototype.getProgram = function(){
 };
 
 LandChunk.prototype.loadTextures = function(resources) {
-    this._diffuseTexture = resources.getTexture('/textures/cartoonterrain.jpg');
+    this._diffuseTexture = resources.getTexture('/data/textures/cartoonterrain.jpg');
 };
 
 LandChunk.prototype.setData = function(data) {
@@ -1104,7 +1106,7 @@ ParticleEmitter.prototype.createBuffers = function(){
   this.createConstantBuffers(gl);
   this.createVariableBuffers(gl); 
 
-  this.texture = this.app.resources.getTexture('/textures/particle.png');
+  this.texture = this.app.resources.getTexture('/data/textures/particle.png');
   
 };
 
