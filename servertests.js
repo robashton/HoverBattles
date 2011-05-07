@@ -8,6 +8,7 @@ var ServerLandChunkModelLoader = require('./server/serverlandchunkloader').Serve
 var LandscapeController = require('./shared/landscapecontroller').LandscapeController;
 var ServerApp = require('./server/application').ServerApp;
 var Bounding = require('./maths/bounding');
+var mat4 = require('./shared/glmatrix').mat4;
 
 
 exports["A Hovercraft can be boot-strapped with an application and all that jazz"] = function(test){
@@ -94,3 +95,29 @@ exports["Two spheres that don't overlap don't test as overlapping"] = function(t
   test.deepEqual([1,0,0], result.direction, "They don't overlap with a correct direction vector");
   test.done();
 };
+
+exports["A transformed sphere doesn't overlap with its parent"] = function(test) {
+    
+  var sphereOne = new Bounding.Sphere(5.0, [0,0,0]);
+  var sphereTwo = sphereOne.translate([11,0,0]);
+  
+  var result = sphereOne.intersectSphere(sphereTwo);
+  
+  test.ok(result.distance > 0.0, "They don't overlap");
+  test.deepEqual([1,0,0], result.direction, "They don't overlap with a correct direction vector");
+  test.done();
+};
+
+exports["A transformed sphere can overlap with its parent"] = function(test) {
+    
+  var sphereOne = new Bounding.Sphere(5.0, [0,0,0]);
+  var sphereTwo = sphereOne.translate([2,0,0]);
+  console.log(sphereTwo.centre)
+    
+  var result = sphereOne.intersectSphere(sphereTwo);
+  
+  test.ok(result.distance < 0.0, "They overlap");
+  test.deepEqual([1,0,0], result.direction, "They overlap with a correct direction vector");
+  test.done();
+};
+

@@ -1,4 +1,5 @@
 vec3 = require('../shared/glmatrix').vec3;
+mat4 = require('../shared/glmatrix').mat4;
 
 var Sphere = function(radius, centre) {
   this.radius = radius;
@@ -46,6 +47,14 @@ Sphere.prototype.intersectSphere = function(other) {
         distance: distanceBetweenSpheres - totalRadius,
         direction: vec3.normalize(difference)
     }
+};
+
+Sphere.prototype.translate = function(vector) {
+   var newCentre = vec3.create([0,0,0]);
+   newCentre[0] = this.centre[0] + vector[0];
+   newCentre[1] = this.centre[1] + vector[1];
+   newCentre[2] = this.centre[2] + vector[2];   
+   return new Sphere(this.radius, newCentre);   
 };
 
 
