@@ -573,7 +573,19 @@ HovercraftFactory.prototype.create = function(id) {
   return entity;
 };
 
-exports.HovercraftFactory = HovercraftFactory;}, "keyboard": function(exports, require, module) {
+exports.HovercraftFactory = HovercraftFactory;}, "intersection": function(exports, require, module) {var Frustum = function(left, right, bottom, top, near, far) {
+  this.left = left;
+  this.right = right;
+  this.bottom = bottom;
+  this.top = top;
+  this.near = near;
+  this.far = far;
+};
+
+var AABB = function(min, max) {
+    this.min = min;
+    this.max = max;    
+};}, "keyboard": function(exports, require, module) {
 exports.KeyboardStates = KeyboardStates;}, "landchunk": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 

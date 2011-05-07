@@ -4,7 +4,10 @@
 // Also, so much code is dependent on webgl and assets from the server that it's just too much effort to
 // think about splitting out at all
 
-$(document).ready(function(){$app(function(){
+$(document).ready(function(){
+
+LazyLoad.js('/Build', function(){ 
+    $app(function(){
     module("End to end tests");
  
     asyncTest("We can bootstrap an application around the canvas with a valid context", function(){
@@ -397,32 +400,6 @@ $(document).ready(function(){$app(function(){
         
     });
     
-    
-    test("When doing a collision check between entities that are colliding with physics (sorta)", function() {
-
-        var entityOne = {
-            getMin: function() { return vec3.create([0, 0, 0]); },
-            getMax: function() { return vec3.create([10, 10, 10]); },
-            position: vec3.create([0,0,0]),
-            _velocity: vec3.create([1,1,1])
-        };
-        
-        var entityTwo = {
-            getMin: function() { return vec3.create([0, 0, 0]); },
-            getMax: function() { return vec3.create([10, 10, 10]); },
-            position: vec3.create([5,5,5]),
-            _velocity: vec3.create([-1,-1,-1])
-        };
-         
-        var collisionManager = new CollisionManager();
-        collisionManager.processPair(entityOne, entityTwo);
-        
-        same(entityOne.position, vec3.create(-5,-5,-5), "Entity one bounced out correctly");
-        same(entityTwo.position, vec3.create(10,10,10), "Entity two bounced out correctly");
-        same(entityOne._velocity, vec3.create(-1,-1,-1), "Entity one reversed velocity correctly");
-        same(entityTwo._velocity, vec3.create(1,1,1), "Entity two reversed velocity correctly");
-    });
-    
     module("Multiplayer tests");
         
     
@@ -455,7 +432,8 @@ $(document).ready(function(){$app(function(){
                      start();
                  }
             }, 300);      
-         })});        
+         }); });        
     });
- 
+});
+
 }); });

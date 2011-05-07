@@ -15,30 +15,30 @@ var pkg = stitch.createPackage({
   paths: ['./shared']
 });
 
-    pkg.compile(function (err, source){
-      fs.writeFile('game.js', source, function (err) {
-        if (err) throw err;
-        console.log("rewrote file");
-      })
-    });
-
-
 ROOT = path.dirname(__filename);
 SHADERDIR = path.join(ROOT, "shaders");
 
 server = http.createServer(function(req, res){ 
     var query = querystring.parse(req.url);
 
-
-
 	paperboy
 	.deliver(ROOT, req, res)
 	.addHeader('Cache-Control', 'no-cache')
 	.otherwise(function(){
-
-		console.log(req.url);
-
-		if(req.url.indexOf("/Landscape&") == 0) {
+        
+        console.log(req.url);
+        
+        if(req.url.indexOf("/Build") == 0){ 
+            pkg.compile(function (err, source){
+              fs.writeFile('game.js', source, function (err) {
+                if (err) throw err;
+                res.writeHead(200, "Content-Type: text/plain");
+                res.write('Done');
+                res.end();
+              })
+            });
+        }
+		else if(req.url.indexOf("/Landscape&") == 0) {
 			landscapeHandle(req, res);
 		}
 		else if(req.url.indexOf("/Shaders.js") == 0) {
@@ -50,7 +50,6 @@ server = http.createServer(function(req, res){
 			res.write("Not found and all that");
 			res.end();
 		}
-
 	});
 });
 server.listen(1220);
