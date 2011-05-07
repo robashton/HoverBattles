@@ -379,27 +379,7 @@ LazyLoad.js('/Build', function(){
         });        
     });    
     
-    
-    test("When creating a default model", function() {
-       var model = new Model({
-            vertices: [
-                0, 0, 0,
-                1, 1, 1,
-                2, 2, 2,
-                -1,-1,-1,
-                -2,-2,-2
-            ]
-       });
-           
-        var min = model.min;
-        var max = model.max;
-        
-        // I'll be calculating this as part of model post-processing after exporting from blender
-        same(min, vec3.create([-2,-2,-2]), "Model calculates its own min");
-        same(max, vec3.create([2, 2, 2]), "Model calculates its own max");
-        
-    });
-    
+
     module("Multiplayer tests");
         
     

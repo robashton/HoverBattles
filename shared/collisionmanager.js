@@ -13,8 +13,7 @@ CollisionManager.prototype.processPair = function(entityOne, entityTwo) {
   
   var results = sphereOne.intersectSphere(sphereTwo);
   
-  if(results.distance > 0) return;
-  
+  if(results.distance > 0) return;  
 
   var distanceToMoveEntityOne = vec3.create([0,0,0]);
   var distanceToMoveEntityTwo = vec3.create([0,0,0]);
@@ -23,8 +22,7 @@ CollisionManager.prototype.processPair = function(entityOne, entityTwo) {
   vec3.scale(results.direction, -(results.distance / 2.0), distanceToMoveEntityTwo);
     
   vec3.add(entityOne.position, distanceToMoveEntityOne);
-  vec3.add(entityTwo.position, distanceToMoveEntityTwo);
-  
+  vec3.add(entityTwo.position, distanceToMoveEntityTwo);  
 };
 
 

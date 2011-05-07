@@ -4,6 +4,9 @@ var mat4 = require('./glmatrix').mat4;
 var Hovercraft = {
     _velocity: vec3.create([0.01,0,0.01]),
     _decay: 0.97,
+    getSphere: function() {
+        return this._model.boundingSphere.translate(this.position);
+    },
     impulseForward: function() {
         var amount = 0.08;
         var accelerationZ = (-amount) * Math.cos(this.rotationY);

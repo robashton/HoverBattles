@@ -1,4 +1,4 @@
-bounding = require('../maths/bounding');
+bounding = require('../shared/bounding');
 fs = require('fs');
 path = require('path');
 
@@ -34,8 +34,8 @@ fs.readdir(MODELSOURCEDIR, function(err, files){
 });
 
 processModel = function(model){  
-  model.Box = bounding.Box.Create(model.vertices);
-  model.Sphere = bounding.Sphere.Create(model.vertices,  model.Box);
+  model.box = bounding.Box.Create(model.vertices);
+  model.sphere = bounding.Sphere.Create(model.vertices,  model.box);
 
   
   console.log('Calculated sphere: ' + JSON.stringify(model.Sphere));

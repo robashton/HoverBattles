@@ -8,7 +8,7 @@ var ServerModelLoader = require('./server/servermodelloader').ServerModelLoader;
 var ServerLandChunkModelLoader = require('./server/serverlandchunkloader').ServerLandChunkModelLoader;
 var LandscapeController = require('./shared/landscapecontroller').LandscapeController;
 var ServerApp = require('./server/application').ServerApp;
-var Bounding = require('./maths/bounding');
+var Bounding = require('./shared/bounding');
 var mat4 = require('./shared/glmatrix').mat4;
 var CollisionManager = require('./shared/collisionmanager').CollisionManager;
 

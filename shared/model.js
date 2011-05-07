@@ -1,5 +1,7 @@
 var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
+var bounding = require('./bounding');
+
 
 var Model = function(data){
     this._programName = "default";
@@ -20,6 +22,10 @@ Model.prototype.setData = function(data) {
     this._texCoords = data.texCoords;
     this._normals = data.normals;
     this._texture = data.texture;
+    
+    if(data.sphere){
+        this.boundingSphere = new bounding.Sphere(data.sphere.radius, data.sphere.centre);
+    }
     this._hasData = true;
     if(this._texCoords) { this._programName = "texture"; }
     else if( this._colours ) { this._programName = "colour"; }

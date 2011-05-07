@@ -1,12 +1,12 @@
 var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var Camera = require('./camera').Camera;
-var CollisionManager = require('./CollisionManager').CollisionManager;
+var CollisionManager = require('./collisionmanager').CollisionManager;
 
 var Scene = function(){
     this._entities = {};
     this.camera = new Camera();
-    this.collision = new CollisionManager();
+    this.collisionManager = new CollisionManager();
 };
 
 Scene.prototype.getEntity = function(id) {
@@ -24,8 +24,21 @@ Scene.prototype.removeEntity = function(entity) {
 };
 
 Scene.prototype.doLogic = function() {
-    for(i in this._entities){
+    for(i in this._entities){ 
         this._entities[i].doLogic();
+    }
+    
+    for(i in this._entities){ 
+        for(j in this._entities){ 
+            if(i === j) continue;
+            
+            // Note: I know this is sub-optimal
+            // When it becomes an issue I'll go all DoD on its ass
+            // But not until then
+            var entityOne = this._entities[i];
+            var entityTwo = this._entities[j];
+            this.collisionManager.processPair(entityOne, entityTwo);            
+        }
     }
 };
 

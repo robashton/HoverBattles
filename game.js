@@ -48,7 +48,85 @@
     };
   }
   return this.require.define;
-}).call(this)({"camera": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+}).call(this)({"bounding": function(exports, require, module) {vec3 = require('./glmatrix').vec3;
+mat4 = require('./glmatrix').mat4;
+
+var Sphere = function(radius, centre) {
+  this.radius = radius;
+  this.centre = centre;
+};
+
+var Box = function(min, max) {
+    this.min = min;
+    this.max = max;
+};
+
+Sphere.Create = function(vertices, box) {
+   var centre = vec3.create([0,0,0]);
+   centre[0] = (box.min[0] + box.max[0]) / 2.0;
+   centre[1] = (box.min[1] + box.max[1]) / 2.0;
+   centre[2] = (box.min[2] + box.max[2]) / 2.0;
+   
+   var radiusSquared = 0.0;
+   
+  for(var i = 0 ; i < vertices.length / 3 ; i++){
+    var index = i * 3;
+    var difference = 
+        [   vertices[index] - centre[0], 
+            vertices[index+1] - centre[1],
+            vertices[index+2] - centre[2]
+        ];
+    var magnitudeSquared =  difference[0] * difference[0] + 
+                            difference[1] * difference[1] +
+                            difference[2] * difference[2];
+                            
+    if(radiusSquared < magnitudeSquared) radiusSquared = magnitudeSquared;
+  }   
+    
+  return new Sphere(Math.sqrt(radiusSquared), centre);    
+};
+
+
+Sphere.prototype.intersectSphere = function(other) {
+    var totalRadius = other.radius + this.radius;
+    var difference = vec3.create([0,0,0]);    
+    vec3.subtract(other.centre, this.centre, difference);    
+    var distanceBetweenSpheres = vec3.length(difference);
+                            
+    return {
+        distance: distanceBetweenSpheres - totalRadius,
+        direction: vec3.normalize(difference)
+    }
+};
+
+Sphere.prototype.translate = function(vector) {
+   var newCentre = vec3.create([0,0,0]);
+   newCentre[0] = this.centre[0] + vector[0];
+   newCentre[1] = this.centre[1] + vector[1];
+   newCentre[2] = this.centre[2] + vector[2];   
+   return new Sphere(this.radius, newCentre);   
+};
+
+
+Box.Create = function(vertices) {   
+    var min = vec3.create([999,999,999]);
+    var max = vec3.create([-999,-999,-999]);
+   for(var i = 0 ; i < vertices.length / 3 ; i++){
+       var index = i * 3;
+       
+       min[0] = Math.min(vertices[index], min[0]);
+       min[1] = Math.min(vertices[index+1], min[1]);
+       min[2] = Math.min(vertices[index+2], min[2]);
+       
+       max[0] = Math.max(vertices[index], max[0]);
+       max[1] = Math.max(vertices[index+1], max[1]);
+       max[2] = Math.max(vertices[index+2], max[2]);       
+   }   
+  return new Box(min, max);  
+};
+
+exports.Box = Box;
+exports.Sphere = Sphere;}, "camera": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
 
@@ -110,18 +188,20 @@ exports.ChaseCamera = ChaseCamera;}, "clipping": function(exports, require, modu
     for(var i = 0 ; i < 3 ; i++){
         if(this.position[i] < this._min[i]) {
             this.position[i] = this._min[i];
-            this._velocity[i] = 0; //-this._velocity[i];
+            this._velocity[i] = 0;
         }
         else if(this.position[i] > this._max[i]) {
             this.position[i] = this._max[i];
-            this._velocity[i] = 0; //-this._velocity[i];    
+            this._velocity[i] = 0;
         }
     }
   }
     
 };
 
-exports.Clipping = Clipping;}, "collisionmanager": function(exports, require, module) {CollisionManager = function(){
+exports.Clipping = Clipping;}, "collisionmanager": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+
+CollisionManager = function(){
     
 };
 
@@ -129,11 +209,21 @@ CollisionManager.prototype.processPair = function(entityOne, entityTwo) {
   if(entityOne._velocity == null || entityTwo._velocity == null) { return; }
   if(entityOne.position == null || entityTwo.position == null) { return; }
 
-  // For simplicity, we'll actually do a sphere check here cos we can probably get away with that
-  // rather than enter the complexity of having to deal with AABB rotation and all that
-  //var objectOneBoundingSphere = entityOne.
+  var sphereOne = entityOne.getSphere();
+  var sphereTwo = entityTwo.getSphere();
   
+  var results = sphereOne.intersectSphere(sphereTwo);
   
+  if(results.distance > 0) return;  
+
+  var distanceToMoveEntityOne = vec3.create([0,0,0]);
+  var distanceToMoveEntityTwo = vec3.create([0,0,0]);
+  
+  vec3.scale(results.direction, (results.distance / 2.0), distanceToMoveEntityOne);
+  vec3.scale(results.direction, -(results.distance / 2.0), distanceToMoveEntityTwo);
+    
+  vec3.add(entityOne.position, distanceToMoveEntityOne);
+  vec3.add(entityTwo.position, distanceToMoveEntityTwo);  
 };
 
 
@@ -451,6 +541,9 @@ var mat4 = require('./glmatrix').mat4;
 var Hovercraft = {
     _velocity: vec3.create([0.01,0,0.01]),
     _decay: 0.97,
+    getSphere: function() {
+        return this._model.boundingSphere.translate(this.position);
+    },
     impulseForward: function() {
         var amount = 0.08;
         var accelerationZ = (-amount) * Math.cos(this.rotationY);
@@ -564,8 +657,8 @@ HovercraftFactory.prototype.create = function(id) {
   entity.setModel(model); 
   entity.attach(Hovercraft);
   
-  entity.attach(Clipping);
-  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
+ // entity.attach(Clipping);
+//  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
   return entity;
 };
 
@@ -853,6 +946,8 @@ exports.LandscapeController = LandscapeController;
 
 exports.LazyLoad = LazyLoad;}, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
+var bounding = require('./bounding');
+
 
 var Model = function(data){
     this._programName = "default";
@@ -873,6 +968,10 @@ Model.prototype.setData = function(data) {
     this._texCoords = data.texCoords;
     this._normals = data.normals;
     this._texture = data.texture;
+    
+    if(data.sphere){
+        this.boundingSphere = new bounding.Sphere(data.sphere.radius, data.sphere.centre);
+    }
     this._hasData = true;
     if(this._texCoords) { this._programName = "texture"; }
     else if( this._colours ) { this._programName = "colour"; }
@@ -1356,12 +1455,13 @@ ResourceManager.prototype.getModel = function(path) {
 
 exports.ResourceManager = ResourceManager;}, "scene": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
-
 var Camera = require('./camera').Camera;
+var CollisionManager = require('./collisionmanager').CollisionManager;
 
 var Scene = function(){
     this._entities = {};
     this.camera = new Camera();
+    this.collisionManager = new CollisionManager();
 };
 
 Scene.prototype.getEntity = function(id) {
@@ -1379,8 +1479,21 @@ Scene.prototype.removeEntity = function(entity) {
 };
 
 Scene.prototype.doLogic = function() {
-    for(i in this._entities){
+    for(i in this._entities){ 
         this._entities[i].doLogic();
+    }
+    
+    for(i in this._entities){ 
+        for(j in this._entities){ 
+            if(i === j) continue;
+            
+            // Note: I know this is sub-optimal
+            // When it becomes an issue I'll go all DoD on its ass
+            // But not until then
+            var entityOne = this._entities[i];
+            var entityTwo = this._entities[j];
+            this.collisionManager.processPair(entityOne, entityTwo);            
+        }
     }
 };
 
