@@ -35,6 +35,20 @@ Sphere.Create = function(vertices, box) {
   return new Sphere(Math.sqrt(radiusSquared), centre);    
 };
 
+
+Sphere.prototype.intersectSphere = function(other) {
+    var totalRadius = other.radius + this.radius;
+    var difference = vec3.create([0,0,0]);    
+    vec3.subtract(other.centre, this.centre, difference);    
+    var distanceBetweenSpheres = vec3.length(difference);
+                            
+    return {
+        distance: distanceBetweenSpheres - totalRadius,
+        direction: vec3.normalize(difference)
+    }
+};
+
+
 Box.Create = function(vertices) {   
     var min = vec3.create([999,999,999]);
     var max = vec3.create([-999,-999,-999]);

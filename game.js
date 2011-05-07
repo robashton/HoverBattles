@@ -287,13 +287,8 @@ DefaultModelLoader.prototype.load = function(path, callback) {
     
     $.get('/data/models/' + path, function(data) {
       var modelData = JSON.parse(data);
-      model.setData({
-             vertices: modelData.vertices,
-             indices: modelData.indices,
-             texCoords: modelData.texCoords,
-             normals: modelData.normals,
-             texture: loader._resources.getTexture("/data/textures/" + name + ".jpg")
-         });
+      modelData.texture =  loader._resources.getTexture("/data/textures/" + name + ".jpg");
+      model.setData(modelData);
          callback();      
     });
     
@@ -557,7 +552,7 @@ document.onkeyup = function(event) {
 
 exports.HovercraftController = HovercraftController;}, "hovercraftfactory": function(exports, require, module) {var Entity = require('./entity').Entity;
 var Hovercraft = require('./hovercraft').Hovercraft;
-var ModelBounding = require('./modelbounding').ModelBounding;
+var Clipping = require('./clipping').Clipping;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -566,28 +561,15 @@ var HovercraftFactory = function(app){
 HovercraftFactory.prototype.create = function(id) {
   var model = this._app.resources.getModel("Hovercraft.js");
   var entity = new Entity(id);
-  entity.setModel(model);
-  entity.attach(ModelBounding);
-  //entity.attach(Clipping);
+  entity.setModel(model); 
   entity.attach(Hovercraft);
   
-  //entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
+  entity.attach(Clipping);
+  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
   return entity;
 };
 
-exports.HovercraftFactory = HovercraftFactory;}, "intersection": function(exports, require, module) {var Frustum = function(left, right, bottom, top, near, far) {
-  this.left = left;
-  this.right = right;
-  this.bottom = bottom;
-  this.top = top;
-  this.near = near;
-  this.far = far;
-};
-
-var AABB = function(min, max) {
-    this.min = min;
-    this.max = max;    
-};}, "keyboard": function(exports, require, module) {
+exports.HovercraftFactory = HovercraftFactory;}, "keyboard": function(exports, require, module) {
 exports.KeyboardStates = KeyboardStates;}, "landchunk": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
@@ -881,7 +863,6 @@ var Model = function(data){
 	this._colourBuffer = null;
     this._textureBuffer = null;
     this._normalBuffer = null;
-
     this._hasData = false;
 };
 
@@ -895,28 +876,6 @@ Model.prototype.setData = function(data) {
     this._hasData = true;
     if(this._texCoords) { this._programName = "texture"; }
     else if( this._colours ) { this._programName = "colour"; }
-    
-    this.calculateBounds();
-};
-
-Model.prototype.calculateBounds = function() {
-    min = vec3.create([999,999,999]);
-    max = vec3.create([-999,-999,-999]);
-    
-   for(var i = 0 ; i < this._vertices.length / 3 ; i++){
-       var index = i * 3;
-       
-       min[0] = Math.min(this._vertices[index], min[0]);
-       min[1] = Math.min(this._vertices[index+1], min[1]);
-       min[2] = Math.min(this._vertices[index+2], min[2]);
-       
-       max[0] = Math.max(this._vertices[index], max[0]);
-       max[1] = Math.max(this._vertices[index+1], max[1]);
-       max[2] = Math.max(this._vertices[index+2], max[2]);       
-   }
-   
-   this.min = min;
-   this.max = max;
 };
 
 Model.prototype.getProgram = function() {
@@ -1046,14 +1005,7 @@ Model.Quad = function()
 
 exports.Model = Model;
 
-}, "modelbounding": function(exports, require, module) {ModelBounding = {
-  getMin: function() {
-    return this._model.min;
-  },
-  getMax: function() {
-    return this._model.max;
-  }    
-};}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
+}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;
     this.capacity = capacity;

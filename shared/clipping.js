@@ -8,11 +8,11 @@ var Clipping = {
     for(var i = 0 ; i < 3 ; i++){
         if(this.position[i] < this._min[i]) {
             this.position[i] = this._min[i];
-            this._velocity[i] = 0; //-this._velocity[i];
+            this._velocity[i] = 0;
         }
         else if(this.position[i] > this._max[i]) {
             this.position[i] = this._max[i];
-            this._velocity[i] = 0; //-this._velocity[i];    
+            this._velocity[i] = 0;
         }
     }
   }
