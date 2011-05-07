@@ -1,11 +1,12 @@
 var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
-
 var Camera = require('./camera').Camera;
+var CollisionManager = require('./CollisionManager').CollisionManager;
 
 var Scene = function(){
     this._entities = {};
     this.camera = new Camera();
+    this.collision = new CollisionManager();
 };
 
 Scene.prototype.getEntity = function(id) {

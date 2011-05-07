@@ -3,12 +3,14 @@ var Scene = require('./shared/scene').Scene;
 var ResourceManager = require('./shared/resources').ResourceManager;
 var Controller = require('./shared/controller').Controller;
 var Model = require('./shared/model').Model;
+var Entity = require('./shared/entity').Entity;
 var ServerModelLoader = require('./server/servermodelloader').ServerModelLoader;
 var ServerLandChunkModelLoader = require('./server/serverlandchunkloader').ServerLandChunkModelLoader;
 var LandscapeController = require('./shared/landscapecontroller').LandscapeController;
 var ServerApp = require('./server/application').ServerApp;
 var Bounding = require('./maths/bounding');
 var mat4 = require('./shared/glmatrix').mat4;
+var CollisionManager = require('./shared/collisionmanager').CollisionManager;
 
 
 exports["A Hovercraft can be boot-strapped with an application and all that jazz"] = function(test){
@@ -121,3 +123,33 @@ exports["A transformed sphere can overlap with its parent"] = function(test) {
   test.done();
 };
 
+exports["Two colliding entities can be pulled apart by the collision manager"] = function(test){
+  var entityOne = new Entity("one");
+  var entityTwo = new Entity("two");
+  var manager = new CollisionManager();
+  
+  entityOne.attach(
+      {
+        position: [0,0,0],
+        _velocity: [0,0,0],
+        getSphere: function(){
+            return new Bounding.Sphere(5.0, [0,0,0]);   
+        }
+      });
+  entityTwo.attach(
+      {
+        position: [5,0,0],
+        _velocity: [0,0,0],
+        getSphere: function(){
+            return new Bounding.Sphere(5.0, [5,0,0]);   
+        }
+      });
+      
+      
+  manager.processPair(entityOne, entityTwo);
+  
+  test.ok(entityOne.position[0] < -2.0 && entityOne.position[0] > -3.0 , "The first entity is moved by half the distance");
+  test.ok(entityTwo.position[0] > 7.0 && entityTwo.position[0] < 8.0, "The second entity is moved by half the distance");
+  
+  test.done();
+};
