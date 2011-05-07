@@ -133,24 +133,29 @@ var mat4 = require('./glmatrix').mat4;
 var Camera = function(location){
     this.location = location || vec3.create();
     this.lookAt = vec3.create();
+    this.width = 800;
+    this.height = 600;
     this.up = vec3.create([0,1,0]);
+    this.projMatrix = mat4.create();
+    this.viewMatrix = mat4.create();
 };
-
 
 Camera.prototype.setLocation = function(location){
 	this.location = location;
 };
 
-Camera.prototype.getProjectionMatrix = function(gl) {
-	var projectionMatrix = mat4.create();
-	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 1.0, 5000.0, projectionMatrix);
-	return projectionMatrix;
+
+Camera.prototype.updateMatrices = function(){
+	mat4.perspective(45, this.width / this.height, 1.0, 5000.0, this.projMatrix);
+    mat4.lookAt(this.location, this.lookAt, this.up, this.viewMatrix);
+};
+
+Camera.prototype.getProjectionMatrix = function() {
+    return this.projMatrix;
 };
 
 Camera.prototype.getViewMatrix = function(){ 	
-    var viewMatrix = mat4.create();
-    mat4.lookAt(this.location, this.lookAt, this.up, viewMatrix);
-	return viewMatrix;	
+    return this.viewMatrix;
 };
 
 exports.Camera = Camera;}, "chasecamera": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
@@ -469,7 +474,7 @@ Entity.prototype.render = function(context){
 	var gl = context.gl;
 
 	var viewMatrix = this._scene.camera.getViewMatrix();
-	var projectionMatrix = this._scene.camera.getProjectionMatrix(gl);
+	var projectionMatrix = this._scene.camera.getProjectionMatrix();
     
 	var worldMatrix = mat4.create();
     mat4.identity(worldMatrix);
@@ -497,7 +502,16 @@ Entity.prototype.render = function(context){
 };
 
 exports.Entity = Entity;
-}, "glmatrix": function(exports, require, module) {// glMatrix v0.9.5
+}, "frustum": function(exports, require, module) {Frustrum = function(camera) {
+ this.camera = camera;
+ this.left = vec4.create([0,0,0,0]);
+ this.right = vec4.create([0,0,0,0]);
+ this.top = vec4.create([0,0,0,0]);
+ this.bottom = vec4.create([0,0,0,0]);
+ this.near = vec4.create([0,0,0,0]);
+ this.far = vec4.create([0,0,0,0]);
+ this.update();
+};}, "glmatrix": function(exports, require, module) {// glMatrix v0.9.5
 glMatrixArrayType=typeof Float32Array!="undefined"?Float32Array:typeof WebGLFloatArray!="undefined"?WebGLFloatArray:Array;var vec3={};vec3.create=function(a){var b=new glMatrixArrayType(3);if(a){b[0]=a[0];b[1]=a[1];b[2]=a[2]}return b};vec3.set=function(a,b){b[0]=a[0];b[1]=a[1];b[2]=a[2];return b};vec3.add=function(a,b,c){if(!c||a==c){a[0]+=b[0];a[1]+=b[1];a[2]+=b[2];return a}c[0]=a[0]+b[0];c[1]=a[1]+b[1];c[2]=a[2]+b[2];return c};
 vec3.subtract=function(a,b,c){if(!c||a==c){a[0]-=b[0];a[1]-=b[1];a[2]-=b[2];return a}c[0]=a[0]-b[0];c[1]=a[1]-b[1];c[2]=a[2]-b[2];return c};vec3.negate=function(a,b){b||(b=a);b[0]=-a[0];b[1]=-a[1];b[2]=-a[2];return b};vec3.scale=function(a,b,c){if(!c||a==c){a[0]*=b;a[1]*=b;a[2]*=b;return a}c[0]=a[0]*b;c[1]=a[1]*b;c[2]=a[2]*b;return c};
 vec3.normalize=function(a,b){b||(b=a);var c=a[0],d=a[1],e=a[2],g=Math.sqrt(c*c+d*d+e*e);if(g){if(g==1){b[0]=c;b[1]=d;b[2]=e;return b}}else{b[0]=0;b[1]=0;b[2]=0;return b}g=1/g;b[0]=c*g;b[1]=d*g;b[2]=e*g;return b};vec3.cross=function(a,b,c){c||(c=a);var d=a[0],e=a[1];a=a[2];var g=b[0],f=b[1];b=b[2];c[0]=e*b-a*f;c[1]=a*g-d*b;c[2]=d*f-e*g;return c};vec3.length=function(a){var b=a[0],c=a[1];a=a[2];return Math.sqrt(b*b+c*c+a*a)};vec3.dot=function(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]};
@@ -1502,6 +1516,11 @@ Scene.prototype.render = function(context){
 
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
  	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    
+    // Yuck yuck yuck
+    this.camera.width = gl.viewportWidth;
+    this.camera.height = gl.viewportHeight;
+    this.camera.updateMatrices();
 
 	for(var i in this._entities) {
 		var entity = this._entities[i];

@@ -66,7 +66,7 @@ Entity.prototype.render = function(context){
 	var gl = context.gl;
 
 	var viewMatrix = this._scene.camera.getViewMatrix();
-	var projectionMatrix = this._scene.camera.getProjectionMatrix(gl);
+	var projectionMatrix = this._scene.camera.getProjectionMatrix();
     
 	var worldMatrix = mat4.create();
     mat4.identity(worldMatrix);

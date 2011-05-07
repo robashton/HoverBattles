@@ -11,7 +11,7 @@ var ServerApp = require('./server/application').ServerApp;
 var Bounding = require('./shared/bounding');
 var mat4 = require('./shared/glmatrix').mat4;
 var CollisionManager = require('./shared/collisionmanager').CollisionManager;
-
+Frustum = require('./shared/frustum').Frustum;
 
 exports["A Hovercraft can be boot-strapped with an application and all that jazz"] = function(test){
     
@@ -152,4 +152,24 @@ exports["Two colliding entities can be pulled apart by the collision manager"] =
   test.ok(entityTwo.position[0] > 7.0 && entityTwo.position[0] < 8.0, "The second entity is moved by half the distance");
   
   test.done();
+};
+
+exports["Frustum can be tested against a sphere that intersects that frustum"] = function(test) {
+    var frustum = Frustum.Create(-250, 250, 250, -250, 0.1, 1024.0);
+    var sphere = new Bounding.Sphere(500.0, [0, 0, 5]);
+    
+    var result = frustum.intersectSphere(sphere);
+  
+    test.ok(result === true);
+    test.done();
+};
+
+exports["Frustum can be tested against a sphere that doesn't intersect that frustum"] = function(test) {
+    var frustum = Frustum.Create(-250, 250, 250, -250, 0.1, 1024.0);
+    var sphere = new Bounding.Sphere(5.0, [0, 0, 50]);
+    
+    var result = frustum.intersectSphere(sphere);
+  
+    test.ok(result === false);
+    test.done();
 };
