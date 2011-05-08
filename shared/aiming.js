@@ -1,15 +1,36 @@
 var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var Frustum = require('./frustum').Frustum;
+var MissileFactory = require('./missilefactory').MissileFactory;
+
 
 var Aiming = {
     currentTarget: null,
     targetsInSight: {},
     aimingIndicator: null,
     beingTracked: false,
+    missile: null,
     
     doLogic: function() {        
         this.determineTarget();
+        this.controlFiring();
+    },
+    
+    controlFiring: function() {
+        if(!this.currentTarget || this.missile) return;
+        var timeSinceLocking = new Date() - this.currentTarget.trackingStart;        
+        if(timeSinceLocking < 5000) return;        
+        this.currentTarget.state = TargetStates.LOCKED;
+        this.fire();
+    },
+    
+    fire: function() {
+        var app = this._scene.app;
+        var missileFactory = new MissileFactory(app);
+        var missile = missileFactory.create(this.currentTarget.entity);
+        this._scene.addEntity(missile);
+        this.missile = missile;
+        console.log("Fired");
     },
     
     determineTarget: function() {             
@@ -42,7 +63,7 @@ var Aiming = {
             {
                 this.notifyNotAimingAt(entity);
             }
-        }   
+        } 
     },
     notifyAimingAt: function(entity) {
         var id = entity.getId();
@@ -56,15 +77,25 @@ var Aiming = {
         if(this.targetsInSight[id]) delete this.targetsInSight[id];
         
         // Find a new target if necessary
-        if(entity === this.currentTarget){
-            this.currentTarget = null;
-            this.findNewTarget();
-            
-            if(this.isPlayer) {
-              entity.notifyNotBeingTracked();  
-            }
+        if(this.currentTarget && entity === this.currentTarget.entity){
+            this.clearTarget();
         }
     },    
+    
+    clearTarget: function() {
+        this.currentTarget = null;
+        this.findNewTarget();
+        
+        if(this.missile) {
+            this.missile.notifyLockLost();
+            this.missile = null;
+        }
+        
+        if(this.isPlayer) {
+          entity.notifyNotBeingTracked();  
+        }
+    },
+    
     findNewTarget: function() {
         for(i in this.targetsInSight) {
             assignNewTarget(this.targetsInSight[i]);
@@ -74,7 +105,8 @@ var Aiming = {
     assignNewTarget: function(entity) {
         this.currentTarget = {
             entity: entity,
-            state: TargetStates.LOCKING
+            state: TargetStates.LOCKING,
+            trackingStart: new Date()
         };
         
         if(this.isPlayer) {

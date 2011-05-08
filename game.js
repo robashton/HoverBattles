@@ -51,14 +51,38 @@
 }).call(this)({"aiming": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var Frustum = require('./frustum').Frustum;
+var MissileFactory = require('./missilefactory').MissileFactory;
+
 
 var Aiming = {
     currentTarget: null,
     targetsInSight: {},
     aimingIndicator: null,
+    beingTracked: false,
+    missile: null,
+    
     doLogic: function() {        
         this.determineTarget();
+        this.controlFiring();
     },
+    
+    controlFiring: function() {
+        if(!this.currentTarget || this.missile) return;
+        var timeSinceLocking = new Date() - this.currentTarget.trackingStart;        
+        if(timeSinceLocking < 5000) return;        
+        this.currentTarget.state = TargetStates.LOCKED;
+        this.fire();
+    },
+    
+    fire: function() {
+        var app = this._scene.app;
+        var missileFactory = new MissileFactory(app);
+        var missile = missileFactory.create(this.currentTarget.entity);
+        this._scene.addEntity(missile);
+        this.missile = missile;
+        console.log("Fired");
+    },
+    
     determineTarget: function() {             
         for(var i in this._scene._entities){
             var entity = this._scene._entities[i];
@@ -89,7 +113,7 @@ var Aiming = {
             {
                 this.notifyNotAimingAt(entity);
             }
-        }   
+        } 
     },
     notifyAimingAt: function(entity) {
         var id = entity.getId();
@@ -103,11 +127,25 @@ var Aiming = {
         if(this.targetsInSight[id]) delete this.targetsInSight[id];
         
         // Find a new target if necessary
-        if(entity === this.currentTarget){
-            this.currentTarget = null;
-            this.findNewTarget();
+        if(this.currentTarget && entity === this.currentTarget.entity){
+            this.clearTarget();
         }
     },    
+    
+    clearTarget: function() {
+        this.currentTarget = null;
+        this.findNewTarget();
+        
+        if(this.missile) {
+            this.missile.notifyLockLost();
+            this.missile = null;
+        }
+        
+        if(this.isPlayer) {
+          entity.notifyNotBeingTracked();  
+        }
+    },
+    
     findNewTarget: function() {
         for(i in this.targetsInSight) {
             assignNewTarget(this.targetsInSight[i]);
@@ -117,8 +155,20 @@ var Aiming = {
     assignNewTarget: function(entity) {
         this.currentTarget = {
             entity: entity,
-            state: TargetStates.LOCKING
+            state: TargetStates.LOCKING,
+            trackingStart: new Date()
         };
+        
+        if(this.isPlayer) {
+          entity.notifyBeingLocked();  
+        }
+    },    
+    notifyBeingTracked: function() {
+       this.beingTracked = true;
+        
+    },
+    notifyNotBeingTracked: function() {
+        this.beingTracked = false;   
     }
 };
 
@@ -470,9 +520,7 @@ DefaultModelLoader.prototype.load = function(path, callback) {
       model.setData(data);
          callback();      
     });
-    
-  //  setTimeout(function() { callback(); }, 100);
-    
+        
     return model;
 };
 
@@ -497,6 +545,7 @@ var mat4 = require('./glmatrix').mat4;
 var mat3 = require('./glmatrix').mat3;
 
 function cloneObject(obj) {
+    if(obj === null) return null;
     var clone = {};
     for(var i in obj) {
         if(typeof(obj[i])=="object")
@@ -2933,14 +2982,41 @@ exports.LandscapeController = LandscapeController;
     };
 };
 
-exports.LazyLoad = LazyLoad;}, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+exports.LazyLoad = LazyLoad;}, "missile": function(exports, require, module) {Missile = 
+{
+    target: null,    
+    setTarget: function(target) {
+        this.target = target;    
+    },
+    doLogic: function() {
+        
+    }, 
+    notifyLockLost: function() {
+     this.target = null;   
+    }
+};
+
+exports.Missile = Missile;}, "missilefactory": function(exports, require, module) {Entity = require('./entity').Entity;
+Missile = require('./missile').Missile;
+
+var MissileFactory = function(app) {
+    this.app = app;
+};
+
+MissileFactory.prototype.create = function(target) {
+  var entity = new Entity("missile-" + new Date());
+  entity.attach(Missile);
+  return entity;
+};
+
+exports.MissileFactory = MissileFactory;}, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var bounding = require('./bounding');
 
 
 var Model = function(data){
     this._programName = "default";
-        
+    
     if(data) { this.setData(data); }
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
@@ -3447,8 +3523,9 @@ var mat4 = require('./glmatrix').mat4;
 var Camera = require('./camera').Camera;
 var CollisionManager = require('./collisionmanager').CollisionManager;
 
-var Scene = function(){
+var Scene = function(app){
     this._entities = {};
+    this.app = app;
     this.camera = new Camera();
     this.collisionManager = new CollisionManager();
 };
@@ -3502,8 +3579,7 @@ Scene.prototype.render = function(context){
         
         if(entity.getSphere){
             if(!this.camera.frustum.intersectSphere(entity.getSphere())){
-                console.log("Wtf culling");
-                continue;   
+                continue;
             }
         }
         

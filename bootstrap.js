@@ -51,7 +51,7 @@ blah.Application.prototype.init = function(finishedCallback){
 
 blah.Application.prototype.go = function(context) {
     this.context = context;
-    this.scene = new Scene();
+    this.scene = new Scene(this);
     this.resources = new ResourceManager(this);
     
     this.resources.setTextureLoader(new DefaultTextureLoader(app));

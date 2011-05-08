@@ -3,8 +3,9 @@ var mat4 = require('./glmatrix').mat4;
 var Camera = require('./camera').Camera;
 var CollisionManager = require('./collisionmanager').CollisionManager;
 
-var Scene = function(){
+var Scene = function(app){
     this._entities = {};
+    this.app = app;
     this.camera = new Camera();
     this.collisionManager = new CollisionManager();
 };
@@ -58,8 +59,7 @@ Scene.prototype.render = function(context){
         
         if(entity.getSphere){
             if(!this.camera.frustum.intersectSphere(entity.getSphere())){
-                console.log("Wtf culling");
-                continue;   
+                continue;
             }
         }
         

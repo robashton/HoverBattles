@@ -3,6 +3,7 @@ var mat4 = require('./glmatrix').mat4;
 var mat3 = require('./glmatrix').mat3;
 
 function cloneObject(obj) {
+    if(obj === null) return null;
     var clone = {};
     for(var i in obj) {
         if(typeof(obj[i])=="object")

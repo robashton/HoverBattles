@@ -5,7 +5,7 @@ var bounding = require('./bounding');
 
 var Model = function(data){
     this._programName = "default";
-        
+    
     if(data) { this.setData(data); }
 	this._vertexBuffer = null;
 	this._indexBuffer = null;

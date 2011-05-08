@@ -18,9 +18,7 @@ DefaultModelLoader.prototype.load = function(path, callback) {
       model.setData(data);
          callback();      
     });
-    
-  //  setTimeout(function() { callback(); }, 100);
-    
+        
     return model;
 };
 

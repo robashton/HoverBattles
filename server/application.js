@@ -7,7 +7,7 @@ ServerLandChunkModelLoader = require('./serverlandchunkloader').ServerLandChunkM
 
 ServerApp = function(){
   this.resources = new ResourceManager(this);
-  this.scene = new Scene();
+  this.scene = new Scene(this);
   this.controller = new Controller(this.scene);
   this.resources.addModelLoader(new ServerModelLoader());
   this.resources.addModelLoader(new ServerLandChunkModelLoader(this.resources));
