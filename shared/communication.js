@@ -45,6 +45,7 @@ ClientCommunication.prototype._start = function(data) {
     this.craft.attach(ChaseCamera);
     this.craft.position = data.position;
     this.craft._velocity = data.velocity;
+    this.craft.player = true;
     
     // Let's look at this a bit
     var craft = this.craft;

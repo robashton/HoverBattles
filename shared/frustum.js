@@ -87,7 +87,6 @@ Frustum.prototype.intersectSphere = function(sphere) {
                         plane[2] * sphere.centre[2] +
                         plane[3];
                         
-      debug[i] = plane;
       if(distance <= -sphere.radius) return false;
     }
     return true;

@@ -22,10 +22,13 @@
                     setInterval(function() {  app.tick(); }, 1000 / 30); 
                     
                     setInterval(function() {
+                        
+                        var debugWindow = $('#debug');
+                        debugWindow.html('');
                         for(i in debug){
-                            $('#' + i).text('' + debug[i]);    
+                            debugWindow.append('<li>' + i + ': ' + debug[i] + '</li>');
                         }
-                    }, 10);
+                    }, 20);
                 });
 			});
 
@@ -39,13 +42,8 @@
 		</canvas>
         
         <div style="float: left;">
-            <ul>
-                <li id="left"></li>
-                <li id="right"></li>
-                <li id="top"></li>
-                <li id="bottom"></li>
-                <li id="near"></li>
-                <li id="far"></li>
+            <ul id="debug">
+
             </ul>
         </div>
         

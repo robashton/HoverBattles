@@ -48,7 +48,74 @@
     };
   }
   return this.require.define;
-}).call(this)({"bounding": function(exports, require, module) {vec3 = require('./glmatrix').vec3;
+}).call(this)({"aiming": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+var mat4 = require('./glmatrix').mat4;
+var Frustum = require('./frustum').Frustum;
+
+var Aiming = {
+    aimingFrustum: new Frustum(mat4.perspective(30, 4/3, 1.0, 250.0)),
+    doLogic: function() {
+        
+        this.recomposeFrustum();
+        this.determineTarget();
+    }, 
+    recomposeFrustum: function(){
+        
+        var lookAt = [0,0,1,0];
+        var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
+        mat4.rotateY(lookAtTransform, -this.rotationY);
+        mat4.multiplyVec4(lookAtTransform, lookAt);
+        
+        vec3.add(lookAt, this.position);
+        
+        var transform = mat4.lookAt(this.position, lookAt, [0,1,0]);
+  //      var invertPosition = vec3.create(this.position);
+  //     vec3.negate(invertPosition);
+  //      mat4.translate(transform, invertPosition);
+      
+        this.aimingFrustum.setTransform(transform);
+    },
+    determineTarget: function(){
+             
+        for(var i in this._scene._entities){
+            var entity = this._scene._entities[i];
+            if(entity === this) continue;
+            if(!entity.getSphere) continue;
+            
+            
+            // Get a vector to the other entity
+            var vectorToOtherEntity = vec3.create([0,0,0]);
+            vec3.subtract(entity.position, this.position, vectorToOtherEntity);
+            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);
+            
+            vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
+            
+            // Get the direction we're aiming in
+            var vectorOfAim = [0,0,-1,1];
+            var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
+            mat4.identity(lookAtTransform);
+            mat4.rotateY(lookAtTransform, this.rotationY);
+            mat4.multiplyVec4(lookAtTransform, vectorOfAim);
+            
+            var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);
+            
+            if(quotient > 0.75 && distanceToOtherEntity < 250) 
+            {
+                if(this.player) {
+                    debug['Aimed at'] = '' + i;
+                }
+            }
+            else  
+            {
+                if(this.player) {
+                    debug['Aimed at'] = '' + ' with ' + quotient;
+                }
+            }
+        }   
+    }
+};
+
+exports.Aiming = Aiming;}, "bounding": function(exports, require, module) {vec3 = require('./glmatrix').vec3;
 mat4 = require('./glmatrix').mat4;
 
 var Sphere = function(radius, centre) {
@@ -280,6 +347,7 @@ ClientCommunication.prototype._start = function(data) {
     this.craft.attach(ChaseCamera);
     this.craft.position = data.position;
     this.craft._velocity = data.velocity;
+    this.craft.player = true;
     
     // Let's look at this a bit
     var craft = this.craft;
@@ -577,46 +645,6 @@ Frustum.prototype.extractPlanes = function() {
     this.planes.far[2] = transformedMatrix[11] - transformedMatrix[10];
     this.planes.far[3] = transformedMatrix[15] - transformedMatrix[14];
     
-    /*
-    
-    
-    // Left plane
-    this.planes.left[0] = transformedMatrix[12] + transformedMatrix[0];
-    this.planes.left[1] = transformedMatrix[13] + transformedMatrix[1];
-    this.planes.left[2] = transformedMatrix[14] + transformedMatrix[2];
-    this.planes.left[3] = transformedMatrix[15] + transformedMatrix[3];
- 
-    // Right plane
-    this.planes.right[0] = transformedMatrix[12] - transformedMatrix[0];
-    this.planes.right[1] = transformedMatrix[13] - transformedMatrix[1];
-    this.planes.right[2] = transformedMatrix[14] - transformedMatrix[2];
-    this.planes.right[3] = transformedMatrix[15] - transformedMatrix[3];
- 
-    // Top plane
-    this.planes.top[0] = transformedMatrix[12] - transformedMatrix[4];
-    this.planes.top[1] = transformedMatrix[13] - transformedMatrix[5];
-    this.planes.top[2] = transformedMatrix[14] - transformedMatrix[6];
-    this.planes.top[3] = transformedMatrix[15] - transformedMatrix[7];
- 
-    // Bottom plane
-    this.planes.bottom[0] = transformedMatrix[12] + transformedMatrix[4];
-    this.planes.bottom[1] = transformedMatrix[13] + transformedMatrix[5];
-    this.planes.bottom[2] = transformedMatrix[14] + transformedMatrix[6];
-    this.planes.bottom[3] = transformedMatrix[15] + transformedMatrix[7];
- 
-    // Near plane
-    this.planes.near[0] = transformedMatrix[12] + transformedMatrix[8];
-    this.planes.near[1] = transformedMatrix[13] + transformedMatrix[9];
-    this.planes.near[2] = transformedMatrix[14] + transformedMatrix[10];
-    this.planes.near[3] = transformedMatrix[15] + transformedMatrix[11];
- 
-    // Far plane
-    this.planes.far[0] = transformedMatrix[12] - transformedMatrix[8];
-    this.planes.far[1] = transformedMatrix[13] - transformedMatrix[9];
-    this.planes.far[2] = transformedMatrix[14] - transformedMatrix[10];
-    this.planes.far[3] = transformedMatrix[15] - transformedMatrix[11];  
-    */
-    
     for(i in this.planes){
         var plane = this.planes[i];
         var length = vec3.length(plane);
@@ -635,7 +663,6 @@ Frustum.prototype.intersectSphere = function(sphere) {
                         plane[2] * sphere.centre[2] +
                         plane[3];
                         
-      debug[i] = plane;
       if(distance <= -sphere.radius) return false;
     }
     return true;
@@ -2591,6 +2618,7 @@ document.onkeyup = function(event) {
 exports.HovercraftController = HovercraftController;}, "hovercraftfactory": function(exports, require, module) {var Entity = require('./entity').Entity;
 var Hovercraft = require('./hovercraft').Hovercraft;
 var Clipping = require('./clipping').Clipping;
+var Aiming = require('./aiming').Aiming;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -2599,8 +2627,10 @@ var HovercraftFactory = function(app){
 HovercraftFactory.prototype.create = function(id) {
   var model = this._app.resources.getModel("Hovercraft.js");
   var entity = new Entity(id);
+  
   entity.setModel(model); 
   entity.attach(Hovercraft);
+  entity.attach(Aiming);
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
