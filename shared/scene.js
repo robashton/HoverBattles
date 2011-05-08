@@ -58,7 +58,8 @@ Scene.prototype.render = function(context){
         
         if(entity.getSphere){
             if(!this.camera.frustum.intersectSphere(entity.getSphere())){
-             continue;   
+                console.log("Wtf culling");
+                continue;   
             }
         }
         
