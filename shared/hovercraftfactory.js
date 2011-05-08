@@ -8,7 +8,7 @@ var HovercraftFactory = function(app){
 };
 
 HovercraftFactory.prototype.create = function(id) {
-  var model = this._app.resources.getModel("Hovercraft.js");
+  var model = this._app.resources.getModel("Hovercraft.json");
   var entity = new Entity(id);
   
   entity.setModel(model); 

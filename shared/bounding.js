@@ -46,7 +46,7 @@ Sphere.prototype.intersectSphere = function(other) {
     return {
         distance: distanceBetweenSpheres - totalRadius,
         direction: vec3.normalize(difference)
-    }
+    };
 };
 
 Sphere.prototype.translate = function(vector) {

@@ -55,21 +55,20 @@ var Frustum = require('./frustum').Frustum;
 var Aiming = {
     currentTarget: null,
     targetsInSight: {},
+    aimingIndicator: null,
     doLogic: function() {        
         this.determineTarget();
     },
-    determineTarget: function(){
-             
+    determineTarget: function() {             
         for(var i in this._scene._entities){
             var entity = this._scene._entities[i];
             if(entity === this) continue;
-            if(!entity.getSphere) continue;
+            if(!entity.determineTarget) continue;
                         
             // Get a vector to the other entity
             var vectorToOtherEntity = vec3.create([0,0,0]);
             vec3.subtract(entity.position, this.position, vectorToOtherEntity);
-            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);
-            
+            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
             vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
             
             // Get the direction we're aiming in
@@ -108,8 +107,7 @@ var Aiming = {
             this.currentTarget = null;
             this.findNewTarget();
         }
-    },
-    
+    },    
     findNewTarget: function() {
         for(i in this.targetsInSight) {
             assignNewTarget(this.targetsInSight[i]);
@@ -178,7 +176,7 @@ Sphere.prototype.intersectSphere = function(other) {
     return {
         distance: distanceBetweenSpheres - totalRadius,
         direction: vec3.normalize(difference)
-    }
+    };
 };
 
 Sphere.prototype.translate = function(vector) {
@@ -459,20 +457,21 @@ var DefaultModelLoader = function(resources){
 };
 
 DefaultModelLoader.prototype.handles = function(path){
-  return path.indexOf('.js') > -1;  
+  return path.indexOf('.json') > -1;  
 };
 
 DefaultModelLoader.prototype.load = function(path, callback) {
     var model = new Model();
-    var name = path.substr(0, path.length - 3);
+    var name = path.substr(0, path.length - 5);
     var loader = this;
     
-    $.get('/data/models/' + path, function(data) {
-      var modelData = JSON.parse(data);
-      modelData.texture =  loader._resources.getTexture("/data/textures/" + name + ".jpg");
-      model.setData(modelData);
+    $.getJSON('/data/models/' + path, function(data) {
+      data.texture =  loader._resources.getTexture("/data/textures/" + name + ".jpg");
+      model.setData(data);
          callback();      
     });
+    
+  //  setTimeout(function() { callback(); }, 100);
     
     return model;
 };
@@ -2640,7 +2639,7 @@ var HovercraftFactory = function(app){
 };
 
 HovercraftFactory.prototype.create = function(id) {
-  var model = this._app.resources.getModel("Hovercraft.js");
+  var model = this._app.resources.getModel("Hovercraft.json");
   var entity = new Entity(id);
   
   entity.setModel(model); 

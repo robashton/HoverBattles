@@ -19,7 +19,7 @@ fs.readdir(MODELSOURCEDIR, function(err, files){
            
            var modelData = JSON.stringify(model);
               
-           var pathToNewFile = path.join(MODELDESTDIR, modelName + '.js');
+           var pathToNewFile = path.join(MODELDESTDIR, modelName + '.json');
            fs.writeFile(pathToNewFile, modelData, function (err) {
                
                if(err){
@@ -38,6 +38,6 @@ processModel = function(model){
   model.sphere = bounding.Sphere.Create(model.vertices,  model.box);
 
   
-  console.log('Calculated sphere: ' + JSON.stringify(model.Sphere));
-  console.log('Calculated Box: ' + JSON.stringify(model.Box));
+  console.log('Calculated sphere: ' + JSON.stringify(model.sphere));
+  console.log('Calculated Box: ' + JSON.stringify(model.box));
 };

@@ -5,12 +5,12 @@ var ServerModelLoader = function(){
 };
 
 ServerModelLoader.prototype.handles = function(path){
-  return path.indexOf('.js') > -1;  
+  return path.indexOf('.json') > -1;  
 };
 
 ServerModelLoader.prototype.load = function(path, callback) {
     var model = new Model();
-    var name = path.substr(0, path.length - 3);
+    var name = path.substr(0, path.length - 5);
     var loader = this;
     
     fs.readFile('./data/models/' + path, function(err, data) {        

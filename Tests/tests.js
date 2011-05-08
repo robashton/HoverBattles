@@ -119,7 +119,7 @@ LazyLoad.js('/Build', function(){
             resources.setTextureLoader(new DefaultTextureLoader(app));
             resources.addModelLoader(new DefaultModelLoader(resources));
             
-            var model = resources.getModel("Hovercraft.js");
+            var model = resources.getModel("Hovercraft.json");
             var texture = resources.getTexture("/data/textures/hovercraft.jpg");
             
             ok(model != null, "Model was loaded");
@@ -133,7 +133,7 @@ LazyLoad.js('/Build', function(){
             var resources = new ResourceManager(app);
             resources.setTextureLoader(new DefaultTextureLoader(app));
             var loader = new DefaultModelLoader(resources);
-            var model = loader.load('Hovercraft.js', function(){
+            var model = loader.load('Hovercraft.json', function(){
                 ok(true, "Model finished loading from server");
                 ok(model._texture, "Model has texture");
                 start();
@@ -204,7 +204,7 @@ LazyLoad.js('/Build', function(){
         var app = new blah.Application('gameCanvas');
         app.init(function() {      
             
-            var model = app.resources.getModel("Hovercraft.js");
+            var model = app.resources.getModel("Hovercraft.json");
             var texture = app.resources.getTexture("/data/textures/hovercraft.jpg");
             
             app.resources.onAllAssetsLoaded(function(){
@@ -218,7 +218,7 @@ LazyLoad.js('/Build', function(){
     asyncTest("A loaded model can be rendered with a context", function(){
         var app = new blah.Application('gameCanvas');
         app.init(function() {       
-            var model = app.resources.getModel("Hovercraft.js");
+            var model = app.resources.getModel("Hovercraft.json");
             var texture = app.resources.getTexture("/data/textures/hovercraft.jpg");
             
             app.resources.onAllAssetsLoaded(function(){

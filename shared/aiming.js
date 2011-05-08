@@ -5,21 +5,20 @@ var Frustum = require('./frustum').Frustum;
 var Aiming = {
     currentTarget: null,
     targetsInSight: {},
+    aimingIndicator: null,
     doLogic: function() {        
         this.determineTarget();
     },
-    determineTarget: function(){
-             
+    determineTarget: function() {             
         for(var i in this._scene._entities){
             var entity = this._scene._entities[i];
             if(entity === this) continue;
-            if(!entity.getSphere) continue;
+            if(!entity.determineTarget) continue;
                         
             // Get a vector to the other entity
             var vectorToOtherEntity = vec3.create([0,0,0]);
             vec3.subtract(entity.position, this.position, vectorToOtherEntity);
-            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);
-            
+            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
             vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
             
             // Get the direction we're aiming in
@@ -58,8 +57,7 @@ var Aiming = {
             this.currentTarget = null;
             this.findNewTarget();
         }
-    },
-    
+    },    
     findNewTarget: function() {
         for(i in this.targetsInSight) {
             assignNewTarget(this.targetsInSight[i]);
