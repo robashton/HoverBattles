@@ -1,4 +1,12 @@
-var KeyCodes = {S:83,X:88, W: 87, D: 68, A: 65, Space: 32};
+var KeyCodes = {
+    S:83,
+    X:88, 
+    W: 87, 
+    D: 68, 
+    A: 65, 
+    Space: 32,
+    RCTRL: 17
+};
 var KeyboardStates = {};
 
 
@@ -30,6 +38,13 @@ HovercraftController.prototype.processInput = function(){
     if(KeyboardStates[KeyCodes.Space]) {
         this.entity.impulseUp();
         this.server.sendMessage('message', { method: 'impulseUp' });
+    }
+    
+    if(KeyboardStates[KeyCodes.RCTRL]) {
+       if(this.entity.canFire())
+       {
+            this.server.sendMessage('request_fire', {});
+       }
     }
 };
 

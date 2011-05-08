@@ -11,6 +11,11 @@ var Aiming = {
     beingTracked: false,
     missile: null,
     
+    canFire: function() {
+      return this.currentTarget && 
+      this.currentTarget.state === TargetStates.LOCKED;  
+    },
+    
     doLogic: function() {        
         this.determineTarget();
         this.controlFiring();
@@ -23,6 +28,9 @@ var Aiming = {
         this.currentTarget.state = TargetStates.LOCKED;
     },
     
+    notifyMissileFired: function(missile) {
+      this.missile = missile;
+    },    
     determineTarget: function() {             
         for(var i in this._scene._entities){
             var entity = this._scene._entities[i];

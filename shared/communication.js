@@ -109,5 +109,4 @@ ClientCommunication.prototype._sync = function(data) {
 };
 
 
-
 exports.ClientCommunication = ClientCommunication;

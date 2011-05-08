@@ -61,6 +61,11 @@ var Aiming = {
     beingTracked: false,
     missile: null,
     
+    canFire: function() {
+      return this.currentTarget && 
+      this.currentTarget.state === TargetStates.LOCKED;  
+    },
+    
     doLogic: function() {        
         this.determineTarget();
         this.controlFiring();
@@ -71,18 +76,11 @@ var Aiming = {
         var timeSinceLocking = new Date() - this.currentTarget.trackingStart;        
         if(timeSinceLocking < 5000) return;        
         this.currentTarget.state = TargetStates.LOCKED;
-        this.fire();
     },
     
-    fire: function() {
-        var app = this._scene.app;
-        var missileFactory = new MissileFactory(app);
-        var missile = missileFactory.create(this.currentTarget.entity);
-        this._scene.addEntity(missile);
-        this.missile = missile;
-        console.log("Fired");
-    },
-    
+    notifyMissileFired: function(missile) {
+      this.missile = missile;
+    },    
     determineTarget: function() {             
         for(var i in this._scene._entities){
             var entity = this._scene._entities[i];
@@ -472,7 +470,6 @@ ClientCommunication.prototype._sync = function(data) {
     entity.position = data.position;
     entity._velocity = data.velocity;
 };
-
 
 
 exports.ClientCommunication = ClientCommunication;}, "controller": function(exports, require, module) {var Controller = function(scene) {
@@ -2635,7 +2632,15 @@ var Hovercraft = {
 exports.Hovercraft = Hovercraft;
          
 
-}, "hovercraftcontroller": function(exports, require, module) {var KeyCodes = {S:83,X:88, W: 87, D: 68, A: 65, Space: 32};
+}, "hovercraftcontroller": function(exports, require, module) {var KeyCodes = {
+    S:83,
+    X:88, 
+    W: 87, 
+    D: 68, 
+    A: 65, 
+    Space: 32,
+    RCTRL: 17
+};
 var KeyboardStates = {};
 
 
@@ -2667,6 +2672,13 @@ HovercraftController.prototype.processInput = function(){
     if(KeyboardStates[KeyCodes.Space]) {
         this.entity.impulseUp();
         this.server.sendMessage('message', { method: 'impulseUp' });
+    }
+    
+    if(KeyboardStates[KeyCodes.RCTRL]) {
+       if(this.entity.canFire())
+       {
+            this.server.sendMessage('request_fire', {});
+       }
     }
 };
 

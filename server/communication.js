@@ -105,16 +105,30 @@ ServerCommunication.prototype._ready = function(socket, data) {
     socket);
 };
 
+ServerCommunication.prototype._request_fire = function(socket, data) {
+    var craft = socket.craft;
+    if(!socket.missile && craft.canFire()){
+       
+       // Create a missile  
+       // Tell the craft a missile has been created       
+       // Tell the client that it can go ahead and do exactly the same       
+       // Tell all attached clients that this event has taken place (AGH)
+       var missileFactory = new MissileFactory(this.app);
+       var missile = missileFactory.create(craft);
+       socket.missile = missile;
+       this.sendMessage(socket, 'confirm_fire', {});
+      // this.broadcast('fire', { 
+    }
+    else
+    {        
+        // Tell the client no, it can't have a missile
+        this.sendMessage(socket, 'reject_fire', {});    
+    }
+};
+
 ServerCommunication.prototype._message = function(socket, data){
     var method = socket.craft[data.method];
     method.call(socket.craft);
-
-    // And force an update
-    this.broadcast('sync', {
-         id: socket.sessionId,
-         position: socket.craft.position,
-         velocity: socket.craft._velocity
-    });
 };
 
 
