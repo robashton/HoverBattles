@@ -21,16 +21,6 @@ var Aiming = {
         var timeSinceLocking = new Date() - this.currentTarget.trackingStart;        
         if(timeSinceLocking < 5000) return;        
         this.currentTarget.state = TargetStates.LOCKED;
-        this.fire();
-    },
-    
-    fire: function() {
-        var app = this._scene.app;
-        var missileFactory = new MissileFactory(app);
-        var missile = missileFactory.create(this.currentTarget.entity);
-        this._scene.addEntity(missile);
-        this.missile = missile;
-        console.log("Fired");
     },
     
     determineTarget: function() {             
