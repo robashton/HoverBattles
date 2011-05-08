@@ -96,7 +96,7 @@ var Aiming = {
     
     findNewTarget: function() {
         for(i in this.targetsInSight) {
-            assignNewTarget(this.targetsInSight[i]);
+            this.assignNewTarget(this.targetsInSight[i]);
             break;
         }        
     },    
