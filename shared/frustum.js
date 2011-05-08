@@ -1,4 +1,5 @@
 mat4 = require('./glmatrix').mat4;
+debug = require('./debug');
 
 var Frustum = function(projectionMatrix) {   
  this.projection = projectionMatrix;
@@ -29,11 +30,51 @@ Frustum.prototype.setTransform = function(transform) {
 
 Frustum.prototype.extractPlanes = function() {
     var transformedMatrix = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
-    mat4.multiply(this.projection, this.transform, transformedMatrix);
+    mat4.multiply(this.projection, this.transform,transformedMatrix);
+    
+    
+    // Left plane
+    this.planes.left[0] = transformedMatrix[3] + transformedMatrix[0];
+    this.planes.left[1] = transformedMatrix[7] + transformedMatrix[4];
+    this.planes.left[2] = transformedMatrix[11] + transformedMatrix[8];
+    this.planes.left[3] = transformedMatrix[15] + transformedMatrix[12];
+ 
+    // Right plane
+    this.planes.right[0] = transformedMatrix[3] - transformedMatrix[0];
+    this.planes.right[1] = transformedMatrix[7] - transformedMatrix[4];
+    this.planes.right[2] = transformedMatrix[11] - transformedMatrix[8];
+    this.planes.right[3] = transformedMatrix[15] - transformedMatrix[12];
+ 
+    // Top plane
+    this.planes.top[0] = transformedMatrix[3] - transformedMatrix[1];
+    this.planes.top[1] = transformedMatrix[7] - transformedMatrix[5];
+    this.planes.top[2] = transformedMatrix[11] - transformedMatrix[9];
+    this.planes.top[3] = transformedMatrix[15] - transformedMatrix[13];
+ 
+    // Bottom plane
+    this.planes.bottom[0] = transformedMatrix[3] + transformedMatrix[1];
+    this.planes.bottom[1] = transformedMatrix[7] + transformedMatrix[5];
+    this.planes.bottom[2] = transformedMatrix[11] + transformedMatrix[9];
+    this.planes.bottom[3] = transformedMatrix[15] + transformedMatrix[13];
+ 
+    // Near plane
+    this.planes.near[0] = transformedMatrix[3] + transformedMatrix[2];
+    this.planes.near[1] = transformedMatrix[7] + transformedMatrix[6];
+    this.planes.near[2] = transformedMatrix[11] + transformedMatrix[10];
+    this.planes.near[3] = transformedMatrix[15] + transformedMatrix[14];
+ 
+    // Far plane
+    this.planes.far[0] = transformedMatrix[3] - transformedMatrix[2];
+    this.planes.far[1] = transformedMatrix[7] - transformedMatrix[6];
+    this.planes.far[2] = transformedMatrix[11] - transformedMatrix[10];
+    this.planes.far[3] = transformedMatrix[15] - transformedMatrix[14];
+    
+    /*
+    
     
     // Left plane
     this.planes.left[0] = transformedMatrix[12] + transformedMatrix[0];
-    this.planes.left[1]= transformedMatrix[13] + transformedMatrix[1];
+    this.planes.left[1] = transformedMatrix[13] + transformedMatrix[1];
     this.planes.left[2] = transformedMatrix[14] + transformedMatrix[2];
     this.planes.left[3] = transformedMatrix[15] + transformedMatrix[3];
  
@@ -65,15 +106,17 @@ Frustum.prototype.extractPlanes = function() {
     this.planes.far[0] = transformedMatrix[12] - transformedMatrix[8];
     this.planes.far[1] = transformedMatrix[13] - transformedMatrix[9];
     this.planes.far[2] = transformedMatrix[14] - transformedMatrix[10];
-    this.planes.far[3] = transformedMatrix[15] - transformedMatrix[11];    
+    this.planes.far[3] = transformedMatrix[15] - transformedMatrix[11];  
+    */
     
-    // vec3 should ignore the W component
-    vec3.normalize(this.planes.left);
-    vec3.normalize(this.planes.right);
-    vec3.normalize(this.planes.top);
-    vec3.normalize(this.planes.bottom);
-    vec3.normalize(this.planes.near);
-    vec3.normalize(this.planes.far);
+    for(i in this.planes){
+        var plane = this.planes[i];
+        var length = vec3.length(plane);
+        plane[0] /= length;
+        plane[1] /= length;
+        plane[2] /= length;
+        plane[3] /= length;     
+    }
 };
 
 Frustum.prototype.intersectSphere = function(sphere) {
@@ -81,9 +124,11 @@ Frustum.prototype.intersectSphere = function(sphere) {
         var plane = this.planes[i];        
         var distance =  plane[0] * sphere.centre[0] +
                         plane[1] * sphere.centre[1] + 
-                        plane[2] * sphere.centre[2] + 
-                        + plane[3];
-      if(distance + sphere.radius < 0) return false;
+                        plane[2] * sphere.centre[2] +
+                        plane[3];
+                        
+      debug[i] = plane;
+      if(distance <= -sphere.radius) return false;
     }
     return true;
 };

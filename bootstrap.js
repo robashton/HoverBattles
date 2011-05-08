@@ -28,7 +28,7 @@ $app = function(callback){
             ClientCommunication = require('communication').ClientCommunication;
             ParticleEmitter = require('particleemitter').ParticleEmitter;
             CollisionManager = require('collisionmanager').CollisionManager;
-             
+            debug = require('debug');
             vec3 = require('../glmatrix').vec3;
             mat3 = require('../glmatrix').mat3;
             quat4 = require('../glmatrix').quat4;

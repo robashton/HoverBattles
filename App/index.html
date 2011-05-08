@@ -19,7 +19,13 @@
                         setInterval(function() {  app.render(); }, 1000 / 30);
                     });
                     
-                    setInterval(function() {  app.tick(); }, 1000 / 30);                    
+                    setInterval(function() {  app.tick(); }, 1000 / 30); 
+                    
+                    setInterval(function() {
+                        for(i in debug){
+                            $('#' + i).text('' + debug[i]);    
+                        }
+                    }, 10);
                 });
 			});
 
@@ -29,9 +35,24 @@
 		<h1>HOVERBATTLES!!!</h1>
 		<p>WASD to move around, space to jump</p>
     	<p>FFS be patient, it'll all be white for a while and then there will be colour and stuff.</p>
-		<canvas id="game" style="border: none;" width="750" height="500">
-
+		<canvas id="game" style="border: none; float: left;" width="750" height="500" >
 		</canvas>
+        
+        <div style="float: left;">
+            <ul>
+                <li id="left"></li>
+                <li id="right"></li>
+                <li id="top"></li>
+                <li id="bottom"></li>
+                <li id="near"></li>
+                <li id="far"></li>
+            </ul>
+        </div>
+        
+        
+        
+        <div style="clear: both;"></div>
+        
           <p>Clearly I need some proper assets, and things aren't going to be quite so messed up in actual version, but hey - check out my shaders being given the appropriate information!</p>
 	      <p>I do have multiplayer though, and look - determinative resource loading!!</p>
     </body>

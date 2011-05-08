@@ -55,6 +55,13 @@ Scene.prototype.render = function(context){
 
 	for(var i in this._entities) {
 		var entity = this._entities[i];
+        
+        if(entity.getSphere){
+            if(!this.camera.frustum.intersectSphere(entity.getSphere())){
+             continue;   
+            }
+        }
+        
 		entity.render(context);
 	}  
 };

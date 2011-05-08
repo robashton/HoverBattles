@@ -1,5 +1,6 @@
 var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
+var Frustum = require('./frustum').Frustum;
 
 var Camera = function(location){
     this.location = location || vec3.create();
@@ -17,7 +18,9 @@ Camera.prototype.setLocation = function(location) {
 
 Camera.prototype.updateMatrices = function(){
 	mat4.perspective(45, this.width / this.height, 1.0, 5000.0, this.projMatrix);
-    mat4.lookAt(this.location, this.lookAt, this.up, this.viewMatrix);    
+    mat4.lookAt(this.location, this.lookAt, this.up, this.viewMatrix); 
+    this.frustum = new Frustum(this.projMatrix);
+    this.frustum.setTransform(this.viewMatrix);
 };
 
 Camera.prototype.getProjectionMatrix = function() {
