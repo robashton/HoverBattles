@@ -129,6 +129,14 @@ ServerCommunication.prototype._request_fire = function(socket, data) {
 ServerCommunication.prototype._message = function(socket, data){
     var method = socket.craft[data.method];
     method.call(socket.craft);
+    
+    // And force an update
+    this.broadcast('sync', {
+        id: socket.sessionId,	
+        position: socket.craft.position,
+        velocity: socket.craft._velocity
+   }, 
+   socket);
 };
 
 
