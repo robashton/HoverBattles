@@ -146,7 +146,7 @@ var Aiming = {
     
     findNewTarget: function() {
         for(i in this.targetsInSight) {
-            assignNewTarget(this.targetsInSight[i]);
+            this.assignNewTarget(this.targetsInSight[i]);
             break;
         }        
     },    
@@ -406,8 +406,7 @@ ClientCommunication.prototype._start = function(data) {
     this.craft = this._hovercraftFactory.create(data.id);    
     this.controller = new HovercraftController(this.craft, this);
     this.craft.attach(ChaseCamera);
-    this.craft.position = data.position;
-    this.craft._velocity = data.velocity;
+    this.craft.recvSync(data.sync);
     this.craft.player = true;
     
     // Let's look at this a bit
@@ -441,8 +440,7 @@ ClientCommunication.prototype._start = function(data) {
 
 ClientCommunication.prototype._addplayer = function(data) {
     var craft = this._hovercraftFactory.create(data.id);
-    craft.position = data.position;
-    craft._velocity = data.velocity;
+    craft.recvSync(data.sync);
     
     craft.emitter = new ParticleEmitter(data.id + 'trail', 1000, this.app,
     {
@@ -467,8 +465,7 @@ ClientCommunication.prototype._removeplayer = function(data) {
 
 ClientCommunication.prototype._sync = function(data) {
     var entity = this.app.scene.getEntity(data.id);
-    entity.position = data.position;
-    entity._velocity = data.velocity;
+    entity.recvSync(data.sync);
 };
 
 
@@ -583,6 +580,22 @@ Entity.prototype.attach = function(component) {
               newLogic.call(this);
             };
         }
+        else if(i == "sendSync"){
+            var newSendSync = component[i];
+            var oldSendSync = this[i];
+            this[i] = function(sync) {
+              newSendSync.call(this, sync);
+              oldSendSync.call(this, sync);
+            };
+        }
+        else if(i == "recvSync") {
+            var newRecvSync = component[i];
+            var oldRecvSync = this[i];
+            this[i] = function(sync) {
+              newRecvSync.call(this, sync);
+              oldRecvSync.call(this, sync);
+            };
+        }
         else {
             if(typeof component[i] == "object"){
                 this[i] = cloneObject(component[i]);
@@ -599,6 +612,16 @@ Entity.prototype.doLogic = function() { };
 
 Entity.prototype.setScene = function(scene) {
 	this._scene = scene;
+};
+
+Entity.prototype.sendSync = function(sync) {
+  sync.position = this.position;
+  sync.rotationY = this.rotationY;
+};
+
+Entity.prototype.recvSync = function(sync) {
+  this.position = sync.position;
+  this.rotationY = sync.rotationY;
 };
 
 Entity.prototype.render = function(context){
@@ -2624,8 +2647,15 @@ var Hovercraft = {
                this._velocity[1] += (10.0 - heightDelta) * 0.03;
          }
          this._velocity[1] -= 0.025;              
-         vec3.scale(this._velocity, this._decay);    
-         
+         vec3.scale(this._velocity, this._decay);
+    },
+    
+    sendSync: function(sync) {
+      sync.velocity = this._velocity;
+    },
+    
+    recvSync: function(sync) {
+      this._velocity = sync.velocity;
     }
 }
          

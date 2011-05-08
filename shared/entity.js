@@ -44,6 +44,22 @@ Entity.prototype.attach = function(component) {
               newLogic.call(this);
             };
         }
+        else if(i == "sendSync"){
+            var newSendSync = component[i];
+            var oldSendSync = this[i];
+            this[i] = function(sync) {
+              newSendSync.call(this, sync);
+              oldSendSync.call(this, sync);
+            };
+        }
+        else if(i == "recvSync") {
+            var newRecvSync = component[i];
+            var oldRecvSync = this[i];
+            this[i] = function(sync) {
+              newRecvSync.call(this, sync);
+              oldRecvSync.call(this, sync);
+            };
+        }
         else {
             if(typeof component[i] == "object"){
                 this[i] = cloneObject(component[i]);
@@ -60,6 +76,16 @@ Entity.prototype.doLogic = function() { };
 
 Entity.prototype.setScene = function(scene) {
 	this._scene = scene;
+};
+
+Entity.prototype.sendSync = function(sync) {
+  sync.position = this.position;
+  sync.rotationY = this.rotationY;
+};
+
+Entity.prototype.recvSync = function(sync) {
+  this.position = sync.position;
+  this.rotationY = sync.rotationY;
 };
 
 Entity.prototype.render = function(context){

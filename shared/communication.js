@@ -43,8 +43,7 @@ ClientCommunication.prototype._start = function(data) {
     this.craft = this._hovercraftFactory.create(data.id);    
     this.controller = new HovercraftController(this.craft, this);
     this.craft.attach(ChaseCamera);
-    this.craft.position = data.position;
-    this.craft._velocity = data.velocity;
+    this.craft.recvSync(data.sync);
     this.craft.player = true;
     
     // Let's look at this a bit
@@ -78,8 +77,7 @@ ClientCommunication.prototype._start = function(data) {
 
 ClientCommunication.prototype._addplayer = function(data) {
     var craft = this._hovercraftFactory.create(data.id);
-    craft.position = data.position;
-    craft._velocity = data.velocity;
+    craft.recvSync(data.sync);
     
     craft.emitter = new ParticleEmitter(data.id + 'trail', 1000, this.app,
     {
@@ -104,8 +102,7 @@ ClientCommunication.prototype._removeplayer = function(data) {
 
 ClientCommunication.prototype._sync = function(data) {
     var entity = this.app.scene.getEntity(data.id);
-    entity.position = data.position;
-    entity._velocity = data.velocity;
+    entity.recvSync(data.sync);
 };
 
 

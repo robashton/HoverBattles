@@ -20,10 +20,11 @@ ServerCommunication.prototype.onConnection = function(socket){
 ServerCommunication.prototype.synchronise = function(){
     for(i in this.liveClients){
      var client = this.liveClients[i];
+     var sync = {};
+     client.craft.sendSync(sync);
      this.broadcast('sync', {
          id: client.sessionId,
-         position: client.craft.position,
-         velocity: client.craft._velocity
+         sync: sync
      });
     }
 };
@@ -40,6 +41,10 @@ ServerCommunication.prototype.dispatchMessage = function(socket, msg) {
 };
 
 ServerCommunication.prototype.sendMessage = function(socket, command, data){
+  console.log({
+     command: command,
+     data: data
+  });
   socket.send({
       command: command,
       data: data      
@@ -74,12 +79,15 @@ ServerCommunication.prototype._ready = function(socket, data) {
     
     console.log(socket.craft.position);
     this.app.scene.addEntity(socket.craft);
+    
+    var sync = {};
+    socket.craft.sendSync(sync);
+    console.log(socket.craft.position);
 
     // Tell the player to create its own craft
     this.sendMessage(socket, 'start', {
        id: socket.sessionId,
-       position: socket.craft.position,
-       velocity: socket.craft._velocity
+       sync: sync
     });
     
     // Tell the player about the rest of the scene
@@ -87,20 +95,23 @@ ServerCommunication.prototype._ready = function(socket, data) {
         var client = this.liveClients[i];
         if(client == socket) continue;
         
+        var sync = {};
+        client.craft.sendSync(sync);
+        
         this.sendMessage(socket, 'addplayer', {
            id: client.sessionId,
-           position: client.craft.position,
-           velocity: client.craft._velocity
+           sync: sync
         });
     }
     
     this.liveClients[socket.sessionId] = socket;
 
     // Tell everybody else that this player has joined the party
+    var sync = {};
+    socket.craft.sendSync(sync);
     this.broadcast('addplayer', {
        id: socket.sessionId,
-       position: socket.craft.position,
-       velocity: socket.craft._velocity
+       sync: sync
     },
     socket);
 };
@@ -122,21 +133,16 @@ ServerCommunication.prototype._request_fire = function(socket, data) {
     else
     {        
         // Tell the client no, it can't have a missile
-        this.sendMessage(socket, 'reject_fire', {});    
+        this.sendMessage(socket, 'reject_fire', {});
     }
 };
 
 ServerCommunication.prototype._message = function(socket, data){
     var method = socket.craft[data.method];
     method.call(socket.craft);
-    
-    // And force an update
-    this.broadcast('sync', {
-        id: socket.sessionId,	
-        position: socket.craft.position,
-        velocity: socket.craft._velocity
-   }, 
-   socket);
+    var sync = {};
+    socket.craft.sendSync(sync);
+    this.broadcast('sync', { id: socket.sessionId, sync: sync }, socket);
 };
 
 
