@@ -2674,12 +2674,13 @@ HovercraftController.prototype.processInput = function(){
         this.server.sendMessage('message', { method: 'impulseUp' });
     }
     
+    /*
     if(KeyboardStates[KeyCodes.RCTRL]) {
        if(this.entity.canFire())
        {
             this.server.sendMessage('request_fire', {});
        }
-    }
+    } */
 };
 
 document.onkeydown = function(event) { 
