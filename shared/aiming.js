@@ -6,9 +6,12 @@ var Aiming = {
     currentTarget: null,
     targetsInSight: {},
     aimingIndicator: null,
+    beingTracked: false,
+    
     doLogic: function() {        
         this.determineTarget();
     },
+    
     determineTarget: function() {             
         for(var i in this._scene._entities){
             var entity = this._scene._entities[i];
@@ -56,6 +59,10 @@ var Aiming = {
         if(entity === this.currentTarget){
             this.currentTarget = null;
             this.findNewTarget();
+            
+            if(this.isPlayer) {
+              entity.notifyNotBeingTracked();  
+            }
         }
     },    
     findNewTarget: function() {
@@ -69,6 +76,17 @@ var Aiming = {
             entity: entity,
             state: TargetStates.LOCKING
         };
+        
+        if(this.isPlayer) {
+          entity.notifyBeingLocked();  
+        }
+    },    
+    notifyBeingTracked: function() {
+       this.beingTracked = true;
+        
+    },
+    notifyNotBeingTracked: function() {
+        this.beingTracked = false;   
     }
 };
 
