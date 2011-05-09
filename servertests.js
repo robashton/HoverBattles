@@ -13,6 +13,7 @@ var mat4 = require('./shared/glmatrix').mat4;
 var CollisionManager = require('./shared/collisionmanager').CollisionManager;
 Frustum = require('./shared/frustum').Frustum;
 var debug= require('./shared/debug');
+var MessageDispatcher = require('./shared/messagedispatcher').MessageDispatcher;
 
 exports["A Hovercraft can be boot-strapped with an application and all that jazz"] = function(test){
     
@@ -183,4 +184,38 @@ exports["Frustum can be tested against a sphere that doesn't intersect that frus
   
     test.ok(result === false);
     test.done();
+};
+
+
+exports["Message dispatcher can dispatch messages to the right receiver"] = function(test) {
+  var dispatcher = new MessageDispatcher();
+  var oneReceived = '';
+  var twoReceived = '';
+  
+  var receiver1 = {
+    _one: function(data) {
+        oneReceived = data.message;
+    }
+  };
+  var receiver2 = {
+    _two: function(data) {
+       twoReceived = data.message
+    }
+  };
+  dispatcher.addReceiver(receiver1);
+  dispatcher.addReceiver(receiver2);
+  
+  dispatcher.dispatch({
+     command: 'one',
+     data: {message: '1'}
+  });
+  
+ dispatcher.dispatch({
+     command: 'two',
+     data: {message: '2'}
+  });
+  
+  test.ok(oneReceived === '1');
+  test.ok(twoReceived === '2');
+  test.done();    
 };
