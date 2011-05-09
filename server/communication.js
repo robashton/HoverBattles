@@ -133,7 +133,7 @@ ServerCommunication.prototype._message = function(socket, data){
     var method = socket.craft[data.method];
     method.call(socket.craft);
     var sync = socket.craft.getSync();
-    this.broadcast('sync', { id: socket.sessionId, sync: sync });
+    this.broadcast('sync', { id: socket.sessionId, sync: sync }, socket);
 };
 
 
