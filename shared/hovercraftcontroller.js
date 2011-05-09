@@ -7,11 +7,11 @@ var KeyCodes = {
     Space: 32,
     RCTRL: 17
 };
-var KeyboardStates = {};
 
+KeyboardStates = {};
 
-var HovercraftController = function(entity, server){
-  this.entity = entity;
+var HovercraftController = function(targetId, server){
+  this.targetId = targetId;
   this.server = server;
   
   var controller = this;
@@ -20,33 +20,20 @@ var HovercraftController = function(entity, server){
 
 HovercraftController.prototype.processInput = function(){
   if(KeyboardStates[KeyCodes.W]) {
-        this.entity.impulseForward();
-        this.server.sendMessage('message', { method: 'impulseForward' });
+        this.server.sendMessage('impulseForward', { id: this.targetId });
 	} 
     else if(KeyboardStates[KeyCodes.S]) {
-        this.entity.impulseBackward();
-        this.server.sendMessage('message', { method: 'impulseBackward' });
+        this.server.sendMessage('impulseBackward', { id: this.targetId });
 	}    
 	if(KeyboardStates[KeyCodes.D]) {
-        this.entity.impulseRight();
-        this.server.sendMessage('message', { method: 'impulseRight' });
+        this.server.sendMessage('impulseRight', { id: this.targetId });
 	}
     else if(KeyboardStates[KeyCodes.A]) {
-        this.entity.impulseLeft();
-        this.server.sendMessage('message', { method: 'impulseLeft' });
+        this.server.sendMessage('impulseLeft', { id: this.targetId });
 	}
     if(KeyboardStates[KeyCodes.Space]) {
-        this.entity.impulseUp();
-        this.server.sendMessage('message', { method: 'impulseUp' });
+        this.server.sendMessage('impulseUp', { id: this.targetId });
     }
-    
-    /*
-    if(KeyboardStates[KeyCodes.RCTRL]) {
-       if(this.entity.canFire())
-       {
-            this.server.sendMessage('request_fire', {});
-       }
-    } */
 };
 
 document.onkeydown = function(event) { 

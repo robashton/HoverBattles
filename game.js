@@ -365,13 +365,21 @@ exports.CollisionManager = CollisionManager;}, "communication": function(exports
 var HovercraftController = require('./hovercraftcontroller').HovercraftController;
 var ChaseCamera = require('./chasecamera').ChaseCamera;
 
+var MessageDispatcher = require('./messagedispatcher').MessageDispatcher;
+var ClientGameReceiver = require('./network/clientgamereceiver').ClientGameReceiver;
+var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
+
 ClientCommunication = function(app){
     this.app = app;
     this.started = false;
     this.socket = new io.Socket();
     this.hookSocketEvents();    
     this.socket.connect(); 
-    this._hovercraftFactory = new HovercraftFactory(app);
+    
+    // Set up our messengers!!
+    this.dispatcher = new MessageDispatcher();
+    this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
+    this.dispatcher.addReceiver(new EntityReceiver(this.app));
 };
 
 ClientCommunication.prototype.hookSocketEvents = function() {
@@ -390,84 +398,18 @@ ClientCommunication.prototype.onDisconnected = function() {
 };
 
 ClientCommunication.prototype.dispatchMessage = function(msg) {
-    var handler = this['_' + msg.command];
-    handler.call(this, msg.data);  
+    this.dispatcher.dispatch(msg);
 };
 
 ClientCommunication.prototype.sendMessage = function(command, data){
-  this.socket.send({
-      command: command,
-      data: data      
-  });
+  var msg = { command: command, data: data };
+  
+  // To ourselves
+  this.dispatchMessage(msg);
+  
+  // To the server
+  this.socket.send(msg);
 };
-
-ClientCommunication.prototype._start = function(data) {
-    this.started = true;
-    this.craft = this._hovercraftFactory.create(data.id);    
-    this.controller = new HovercraftController(this.craft, this);
-    this.craft.attach(ChaseCamera);
-    this.craft.setSync(data.sync);
-    this.craft.player = true;
-    
-    // Let's look at this a bit
-    var craft = this.craft;
-    var emitter = new ParticleEmitter(data.id + 'trail', 1000, this.app,
-    {
-        maxsize: 100,
-        maxlifetime: 0.2,
-        rate: 50,
-        scatter: vec3.create([1.0, 0.001, 1.0]),
-        track: function(){
-            this.position = vec3.create(craft.position);
-        }
-    });
-    
-    var light = {
-      doLogic: function(){
-          light.position = light.craft.position;
-      },
-      setScene: function(scene) {},
-      render: function(context) {},
-      getId: function() { return "light"; }     
-    };
-    
-    light.craft = craft;
-    
-    this.app.scene.addEntity(light);
-    this.app.scene.addEntity(emitter);    
-    this.app.scene.addEntity(this.craft);    
-};
-
-ClientCommunication.prototype._addplayer = function(data) {
-    var craft = this._hovercraftFactory.create(data.id);
-    craft.setSync(data.sync);
-    
-    craft.emitter = new ParticleEmitter(data.id + 'trail', 1000, this.app,
-    {
-        maxsize: 100,
-        maxlifetime: 0.2,
-        rate: 50,
-        scatter: vec3.create([1.0, 0.001, 1.0]),
-        track: function(){
-            this.position = vec3.create(craft.position);
-        }
-    });
-    
-    this.app.scene.addEntity(craft.emitter);    
-    this.app.scene.addEntity(craft);
-};
-
-ClientCommunication.prototype._removeplayer = function(data) {
-    var craft = this.app.scene.getEntity(data.id);
-    this.app.scene.removeEntity(craft.emitter);
-    this.app.scene.removeEntity(craft);
-};
-
-ClientCommunication.prototype._sync = function(data) {
-    var entity = this.app.scene.getEntity(data.id);
-    entity.setSync(data.sync);
-};
-
 
 exports.ClientCommunication = ClientCommunication;}, "controller": function(exports, require, module) {var Controller = function(scene) {
   this.scene = scene;
@@ -2677,11 +2619,11 @@ exports.Hovercraft = Hovercraft;
     Space: 32,
     RCTRL: 17
 };
-var KeyboardStates = {};
 
+KeyboardStates = {};
 
-var HovercraftController = function(entity, server){
-  this.entity = entity;
+var HovercraftController = function(targetId, server){
+  this.targetId = targetId;
   this.server = server;
   
   var controller = this;
@@ -2690,28 +2632,20 @@ var HovercraftController = function(entity, server){
 
 HovercraftController.prototype.processInput = function(){
   if(KeyboardStates[KeyCodes.W]) {
-        this.server.sendMessage('message', { method: 'impulseForward' });
+        this.server.sendMessage('impulseForward', { id: this.targetId });
 	} 
     else if(KeyboardStates[KeyCodes.S]) {
-        this.server.sendMessage('message', { method: 'impulseBackward' });
+        this.server.sendMessage('impulseBackward', { id: this.targetId });
 	}    
 	if(KeyboardStates[KeyCodes.D]) {
-        this.server.sendMessage('message', { method: 'impulseRight' });
+        this.server.sendMessage('impulseRight', { id: this.targetId });
 	}
     else if(KeyboardStates[KeyCodes.A]) {
-        this.server.sendMessage('message', { method: 'impulseLeft' });
+        this.server.sendMessage('impulseLeft', { id: this.targetId });
 	}
     if(KeyboardStates[KeyCodes.Space]) {
-        this.server.sendMessage('message', { method: 'impulseUp' });
+        this.server.sendMessage('impulseUp', { id: this.targetId });
     }
-    
-    /*
-    if(KeyboardStates[KeyCodes.RCTRL]) {
-       if(this.entity.canFire())
-       {
-            this.server.sendMessage('request_fire', {});
-       }
-    } */
 };
 
 document.onkeydown = function(event) { 
@@ -3026,7 +2960,29 @@ exports.LandscapeController = LandscapeController;
     };
 };
 
-exports.LazyLoad = LazyLoad;}, "missile": function(exports, require, module) {Missile = 
+exports.LazyLoad = LazyLoad;}, "messagedispatcher": function(exports, require, module) {MessageDispatcher = function() {
+  this.routeTable = {};
+  this.receivers = [];
+};
+
+MessageDispatcher.prototype.addReceiver = function(receiver){
+    for(var i in receiver){
+     if(i.indexOf('_') !== 0) continue;
+        this.routeTable[i.substr(1)] = receiver;     
+    }
+};
+
+MessageDispatcher.prototype.dispatch = function(message) {
+  var receiver = this.routeTable[message.command];
+  if(!receiver){
+   console.log('Receiver not found for message: ' + message.command);
+   return;
+  }
+  var method = receiver['_' + message.command];
+  method.call(receiver, message.data);  
+};
+
+exports.MessageDispatcher = MessageDispatcher;}, "missile": function(exports, require, module) {Missile = 
 {
     target: null,    
     setTarget: function(target) {
@@ -3213,7 +3169,97 @@ Model.Quad = function()
 
 exports.Model = Model;
 
-}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
+}, "network/clientgamereceiver": function(exports, require, module) {ClientGameReceiver = function(app, server) {
+  this.app = app;
+  this.server = server;
+  this.started = false;
+  this.craft = null;
+  this.hovercraftFactory = new HovercraftFactory(app);
+};
+
+ClientGameReceiver.prototype.attachEmitterToCraft = function(craft) {
+    var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, this.app,
+    {
+        maxsize: 100,
+        maxlifetime: 0.2,
+        rate: 50,
+        scatter: vec3.create([1.0, 0.001, 1.0]),
+        track: function(){
+            this.position = vec3.create(craft.position);
+        }
+    });
+    craft.emitter = emitter;
+    this.app.scene.addEntity(emitter);
+};
+
+ClientGameReceiver.prototype.removeCraftEmitter = function(craft) {
+    this.app.scene.removeEntity(craft.emitter);
+};
+
+ClientGameReceiver.prototype._start = function(data) {
+    this.started = true;
+    this.craft = this.hovercraftFactory.create(data.id);   
+    this.controller = new HovercraftController(data.id, this.server);
+    this.craft.attach(ChaseCamera);
+    this.craft.setSync(data.sync);
+    this.craft.player = true;
+    this.app.scene.addEntity(this.craft);
+    this.attachEmitterToCraft(this.craft);
+};
+
+ClientGameReceiver.prototype._addplayer = function(data) {
+    var craft = this.hovercraftFactory.create(data.id);
+    craft.setSync(data.sync);
+    this.app.scene.addEntity(craft);
+    this.attachEmitterToCraft(craft);
+};
+
+ClientGameReceiver.prototype._removeplayer = function(data) {
+    var craft = this.app.scene.getEntity(data.id);
+    this.removeCraftEmitter(craft);
+    this.app.scene.removeEntity(craft);
+};
+
+ClientGameReceiver.prototype._sync = function(data) {
+    var entity = this.app.scene.getEntity(data.id);
+    entity.setSync(data.sync);
+};
+
+
+exports.ClientGameReceiver = ClientGameReceiver;}, "network/entityreceiver": function(exports, require, module) {EntityReceiver = function(app) {
+    this.app = app;
+};
+
+EntityReceiver.prototype._impulseUp = function(data) {
+    var entity = this.getEntity(data.id);
+    entity.impulseUp();
+};
+
+EntityReceiver.prototype._impulseForward = function(data) {
+    var entity = this.getEntity(data.id);
+    entity.impulseForward();
+};
+
+EntityReceiver.prototype._impulseBackward = function(data) {
+    var entity = this.getEntity(data.id);
+    entity.impulseBackward();
+};
+
+EntityReceiver.prototype._impulseLeft = function(data) {
+    var entity = this.getEntity(data.id);
+    entity.impulseLeft();
+};
+
+EntityReceiver.prototype._impulseRight = function(data) {
+    var entity = this.getEntity(data.id);
+    entity.impulseRight();
+};
+
+EntityReceiver.prototype.getEntity = function(id) {
+  return this.app.scene.getEntity(id);
+};
+
+exports.EntityReceiver = EntityReceiver;}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;
     this.capacity = capacity;
