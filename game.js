@@ -406,7 +406,7 @@ ClientCommunication.prototype._start = function(data) {
     this.craft = this._hovercraftFactory.create(data.id);    
     this.controller = new HovercraftController(this.craft, this);
     this.craft.attach(ChaseCamera);
-    this.craft.recvSync(data.sync);
+    this.craft.setSync(data.sync);
     this.craft.player = true;
     
     // Let's look at this a bit
@@ -440,7 +440,7 @@ ClientCommunication.prototype._start = function(data) {
 
 ClientCommunication.prototype._addplayer = function(data) {
     var craft = this._hovercraftFactory.create(data.id);
-    craft.recvSync(data.sync);
+    craft.setSync(data.sync);
     
     craft.emitter = new ParticleEmitter(data.id + 'trail', 1000, this.app,
     {
@@ -465,7 +465,7 @@ ClientCommunication.prototype._removeplayer = function(data) {
 
 ClientCommunication.prototype._sync = function(data) {
     var entity = this.app.scene.getEntity(data.id);
-    entity.recvSync(data.sync);
+    entity.setSync(data.sync);
 };
 
 
@@ -580,7 +580,7 @@ Entity.prototype.attach = function(component) {
               newLogic.call(this);
             };
         }
-        else if(i == "sendSync"){
+        else if(i == "updateSync"){
             var newSendSync = component[i];
             var oldSendSync = this[i];
             this[i] = function(sync) {
@@ -588,7 +588,7 @@ Entity.prototype.attach = function(component) {
               oldSendSync.call(this, sync);
             };
         }
-        else if(i == "recvSync") {
+        else if(i == "setSync") {
             var newRecvSync = component[i];
             var oldRecvSync = this[i];
             this[i] = function(sync) {
@@ -614,12 +614,18 @@ Entity.prototype.setScene = function(scene) {
 	this._scene = scene;
 };
 
-Entity.prototype.sendSync = function(sync) {
+Entity.prototype.getSync = function() {
+  var sync = {};
+  this.updateSync(sync);
+  return sync;
+};
+
+Entity.prototype.updateSync = function(sync) {
   sync.position = this.position;
   sync.rotationY = this.rotationY;
 };
 
-Entity.prototype.recvSync = function(sync) {
+Entity.prototype.setSync = function(sync) {
   this.position = sync.position;
   this.rotationY = sync.rotationY;
 };
@@ -2613,15 +2619,15 @@ var Hovercraft = {
         var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
         vec3.add(this._velocity, acceleration);
     },
-    impulseLeft: function(amount) {
+    impulseLeft: function() {
         var amount = 0.05;
         this.rotationY += amount;
     },
-    impulseRight: function(amount) {
+    impulseRight: function() {
         var amount = 0.05;
         this.rotationY -= amount;
     },
-    impulseUp: function(amount) {
+    impulseUp: function() {
         var amount = 0.25;
         var terrain = this._scene.getEntity("terrain");
         
@@ -2650,11 +2656,11 @@ var Hovercraft = {
          vec3.scale(this._velocity, this._decay);
     },
     
-    sendSync: function(sync) {
+    updateSync: function(sync) {
       sync.velocity = this._velocity;
     },
     
-    recvSync: function(sync) {
+    setSync: function(sync) {
       this._velocity = sync.velocity;
     }
 }
@@ -2684,23 +2690,18 @@ var HovercraftController = function(entity, server){
 
 HovercraftController.prototype.processInput = function(){
   if(KeyboardStates[KeyCodes.W]) {
-	    this.entity.impulseForward();
         this.server.sendMessage('message', { method: 'impulseForward' });
 	} 
     else if(KeyboardStates[KeyCodes.S]) {
-    	this.entity.impulseBackward();
         this.server.sendMessage('message', { method: 'impulseBackward' });
 	}    
 	if(KeyboardStates[KeyCodes.D]) {
-    	this.entity.impulseRight();
         this.server.sendMessage('message', { method: 'impulseRight' });
 	}
     else if(KeyboardStates[KeyCodes.A]) {
-        this.entity.impulseLeft();
         this.server.sendMessage('message', { method: 'impulseLeft' });
 	}
     if(KeyboardStates[KeyCodes.Space]) {
-        this.entity.impulseUp();
         this.server.sendMessage('message', { method: 'impulseUp' });
     }
     

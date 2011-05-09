@@ -44,7 +44,7 @@ Entity.prototype.attach = function(component) {
               newLogic.call(this);
             };
         }
-        else if(i == "sendSync"){
+        else if(i == "updateSync"){
             var newSendSync = component[i];
             var oldSendSync = this[i];
             this[i] = function(sync) {
@@ -52,7 +52,7 @@ Entity.prototype.attach = function(component) {
               oldSendSync.call(this, sync);
             };
         }
-        else if(i == "recvSync") {
+        else if(i == "setSync") {
             var newRecvSync = component[i];
             var oldRecvSync = this[i];
             this[i] = function(sync) {
@@ -78,12 +78,18 @@ Entity.prototype.setScene = function(scene) {
 	this._scene = scene;
 };
 
-Entity.prototype.sendSync = function(sync) {
+Entity.prototype.getSync = function() {
+  var sync = {};
+  this.updateSync(sync);
+  return sync;
+};
+
+Entity.prototype.updateSync = function(sync) {
   sync.position = this.position;
   sync.rotationY = this.rotationY;
 };
 
-Entity.prototype.recvSync = function(sync) {
+Entity.prototype.setSync = function(sync) {
   this.position = sync.position;
   this.rotationY = sync.rotationY;
 };

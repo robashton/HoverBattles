@@ -58,11 +58,11 @@ var Hovercraft = {
          vec3.scale(this._velocity, this._decay);
     },
     
-    sendSync: function(sync) {
+    updateSync: function(sync) {
       sync.velocity = this._velocity;
     },
     
-    recvSync: function(sync) {
+    setSync: function(sync) {
       this._velocity = sync.velocity;
     }
 }

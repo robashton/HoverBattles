@@ -20,23 +20,18 @@ var HovercraftController = function(entity, server){
 
 HovercraftController.prototype.processInput = function(){
   if(KeyboardStates[KeyCodes.W]) {
-	    this.entity.impulseForward();
         this.server.sendMessage('message', { method: 'impulseForward' });
 	} 
     else if(KeyboardStates[KeyCodes.S]) {
-    	this.entity.impulseBackward();
         this.server.sendMessage('message', { method: 'impulseBackward' });
 	}    
 	if(KeyboardStates[KeyCodes.D]) {
-    	this.entity.impulseRight();
         this.server.sendMessage('message', { method: 'impulseRight' });
 	}
     else if(KeyboardStates[KeyCodes.A]) {
-        this.entity.impulseLeft();
         this.server.sendMessage('message', { method: 'impulseLeft' });
 	}
     if(KeyboardStates[KeyCodes.Space]) {
-        this.entity.impulseUp();
         this.server.sendMessage('message', { method: 'impulseUp' });
     }
     

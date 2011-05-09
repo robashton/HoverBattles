@@ -20,8 +20,7 @@ ServerCommunication.prototype.onConnection = function(socket){
 ServerCommunication.prototype.synchronise = function(){
     for(i in this.liveClients){
      var client = this.liveClients[i];
-     var sync = {};
-     client.craft.sendSync(sync);
+     var sync = client.craft.getSync();
      this.broadcast('sync', {
          id: client.sessionId,
          sync: sync
@@ -77,12 +76,8 @@ ServerCommunication.prototype._ready = function(socket, data) {
     var factory = new HovercraftFactory(this.app);
     socket.craft = factory.create(socket.sessionId);
     
-    console.log(socket.craft.position);
-    this.app.scene.addEntity(socket.craft);
-    
-    var sync = {};
-    socket.craft.sendSync(sync);
-    console.log(socket.craft.position);
+    this.app.scene.addEntity(socket.craft);    
+    var sync = socket.craft.getSync();
 
     // Tell the player to create its own craft
     this.sendMessage(socket, 'start', {
@@ -95,9 +90,7 @@ ServerCommunication.prototype._ready = function(socket, data) {
         var client = this.liveClients[i];
         if(client == socket) continue;
         
-        var sync = {};
-        client.craft.sendSync(sync);
-        
+        var sync = client.craft.getSync();        
         this.sendMessage(socket, 'addplayer', {
            id: client.sessionId,
            sync: sync
@@ -107,8 +100,7 @@ ServerCommunication.prototype._ready = function(socket, data) {
     this.liveClients[socket.sessionId] = socket;
 
     // Tell everybody else that this player has joined the party
-    var sync = {};
-    socket.craft.sendSync(sync);
+    var sync = socket.craft.getSync();
     this.broadcast('addplayer', {
        id: socket.sessionId,
        sync: sync
@@ -131,7 +123,7 @@ ServerCommunication.prototype._request_fire = function(socket, data) {
       // this.broadcast('fire', { 
     }
     else
-    {        
+    {
         // Tell the client no, it can't have a missile
         this.sendMessage(socket, 'reject_fire', {});
     }
@@ -140,9 +132,8 @@ ServerCommunication.prototype._request_fire = function(socket, data) {
 ServerCommunication.prototype._message = function(socket, data){
     var method = socket.craft[data.method];
     method.call(socket.craft);
-    var sync = {};
-    socket.craft.sendSync(sync);
-    this.broadcast('sync', { id: socket.sessionId, sync: sync }, socket);
+    var sync = socket.craft.getSync();
+    this.broadcast('sync', { id: socket.sessionId, sync: sync });
 };
 
 
