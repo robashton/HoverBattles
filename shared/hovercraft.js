@@ -4,9 +4,59 @@ var mat4 = require('./glmatrix').mat4;
 var Hovercraft = {
     _velocity: vec3.create([0.01,0,0.01]),
     _decay: 0.97,
+    
+    _left: false,
+    _right: false,
+    _jump: false,
+    _forward: false,
+    _backward: false,
+    
     getSphere: function() {
         return this._model.boundingSphere.translate(this.position);
     },
+    
+    startForward: function() {
+      this._forward = true;  
+    },
+    
+    cancelForward: function() {
+      this._forward  = false;  
+    },
+    
+    startLeft: function() {
+        this._left = true;
+    },
+    
+    cancelLeft: function() {
+        this._left = false;
+    },
+    
+    startRight: function() {
+      this._right = true;  
+    },
+    
+    cancelRight: function() {
+        this._right = false;
+    },
+    
+    startBackward: function() {
+        this._backward = true;
+    },
+    
+    cancelBackward:  function() {
+        this._backward = false;
+    },
+    
+    startUp: function() {
+        this._jump = true;
+    },
+    
+    cancelUp: function() {
+        this._jump = false;
+    },
+    
+    
+    
     impulseForward: function() {
         var amount = 0.08;
         var accelerationZ = (-amount) * Math.cos(this.rotationY);
@@ -40,7 +90,30 @@ var Hovercraft = {
             this._velocity[1] += amount;
         }
     },
+    
+    processInput: function() {
+        if(this._left) {
+            this.impulseLeft();
+        }
+        else if(this._right) {
+            this.impulseRight();
+        }
+        
+        if(this._forward) {
+            this.impulseForward();
+        } 
+        else if( this._backward) {
+            this.impulseBackward();
+        };
+        
+        if(this._jump) {
+         this.impulseUp();   
+        }
+    },
+    
     doLogic: function() {
+        this.processInput();
+        
         var terrain = this._scene.getEntity("terrain");
         vec3.add(this.position, this._velocity);
                      
