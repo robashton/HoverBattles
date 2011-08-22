@@ -9,9 +9,8 @@ var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 ClientCommunication = function(app){
     this.app = app;
     this.started = false;
-    this.socket = new io.Socket();
-    this.hookSocketEvents();    
-    this.socket.connect(); 
+    this.socket = io.connect();
+    this.hookSocketEvents();
     
     // Set up our messengers!!
     this.dispatcher = new MessageDispatcher();
@@ -27,7 +26,7 @@ ClientCommunication.prototype.hookSocketEvents = function() {
 };
 
 ClientCommunication.prototype.onConnected = function() {
-  this.sendMessage('ready');  
+  this.sendMessage('ready');
 };
 
 ClientCommunication.prototype.onDisconnected = function() {
@@ -45,7 +44,7 @@ ClientCommunication.prototype.sendMessage = function(command, data){
   this.dispatchMessage(msg);
   
   // To the server
-  this.socket.send(msg);
+  this.socket.json.send(msg);
 };
 
 exports.ClientCommunication = ClientCommunication;

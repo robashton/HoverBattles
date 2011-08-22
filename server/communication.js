@@ -7,7 +7,7 @@ EntityReceiver = require('../shared/network/entityreceiver').EntityReceiver;
 ServerCommunication = function(app, server){
   this.server = server;
   this.app = app;
-  this.socket = io.listen(server); 
+  this.socket = io.listen(server).sockets; 
   this.clients = {};
   this.liveClients = {};
   
@@ -20,7 +20,7 @@ ServerCommunication = function(app, server){
 };
 
 ServerCommunication.prototype.onConnection = function(socket){
-    this.clients[socket.sessionId] = socket;
+    this.clients[socket.id] = socket;
     this.hookClientEvents(socket);
 };
 
@@ -29,7 +29,7 @@ ServerCommunication.prototype.synchronise = function(){
      var client = this.liveClients[i];
      var sync = client.craft.getSync();
      this.broadcast('sync', {
-         id: client.sessionId,
+         id: client.id,
          sync: sync
      });
     }
@@ -43,13 +43,13 @@ ServerCommunication.prototype.hookClientEvents = function(socket) {
 
 ServerCommunication.prototype.dispatchMessage = function(socket, msg) {
     msg.data = msg.data || {};
-    msg.data.source = socket.sessionId;
+    msg.data.source = socket.id;
     this.dispatcher.dispatch(msg);
     this.broadcast(msg.command, msg.data, socket);
 };
 
 ServerCommunication.prototype.sendMessage = function(socket, command, data){
-  socket.send({
+  socket.json.send({
       command: command,
       data: data      
   });
@@ -64,15 +64,15 @@ ServerCommunication.prototype.broadcast = function(command, data, from) {
 
 ServerCommunication.prototype.unhookClient = function(socket) {
     this.removePlayer(socket);
-    delete this.clients[socket.sessionId];  
-    delete this.liveClients[socket.sessionId];
+    delete this.clients[socket.id];  
+    delete this.liveClients[socket.id];
 };
 
 ServerCommunication.prototype.removePlayer = function(socket) {
     if(socket.craft){
        this.app.scene.removeEntity(socket.craft); 
     }
-    this.broadcast('removeplayer', { id: socket.sessionId}, socket);
+    this.broadcast('removeplayer', { id: socket.id}, socket);
 };
 
 ServerCommunication.prototype._ready = function( data) {
@@ -85,7 +85,7 @@ ServerCommunication.prototype._ready = function( data) {
 
     // Tell the player to create its own craft
     this.sendMessage(socket, 'start', {
-       id: socket.sessionId,
+       id: socket.id,
        sync: sync
     });
     
@@ -96,17 +96,17 @@ ServerCommunication.prototype._ready = function( data) {
         
         var sync = client.craft.getSync();        
         this.sendMessage(socket, 'addplayer', {
-           id: client.sessionId,
+           id: client.id,
            sync: sync
         });
     }
     
-    this.liveClients[socket.sessionId] = socket;
+    this.liveClients[socket.id] = socket;
 
     // Tell everybody else that this player has joined the party
     var sync = socket.craft.getSync();
     this.broadcast('addplayer', {
-       id: socket.sessionId,
+       id: socket.id,
        sync: sync
     },
     socket);

@@ -18,6 +18,12 @@ var pkg = stitch.createPackage({
 ROOT = path.dirname(__filename);
 SHADERDIR = path.join(ROOT, "shaders");
 
+pkg.compile(function (err, source){
+  fs.writeFile('game.js', source, function (err) {
+    if (err) throw err;
+  })
+});
+
 server = http.createServer(function(req, res){ 
     var query = querystring.parse(req.url);
 
@@ -26,19 +32,7 @@ server = http.createServer(function(req, res){
 	.addHeader('Cache-Control', 'no-cache')
 	.otherwise(function(){
         
-        console.log(req.url);
-        
-        if(req.url.indexOf("/Build") == 0){ 
-            pkg.compile(function (err, source){
-              fs.writeFile('game.js', source, function (err) {
-                if (err) throw err;
-                res.writeHead(200, "Content-Type: text/plain");
-                res.write('var done = true;');
-                res.end();
-              })
-            });
-        }
-		else if(req.url.indexOf("/Landscape&") == 0) {
+		if(req.url.indexOf("/Landscape&") == 0) {
 			landscapeHandle(req, res);
 		}
 		else if(req.url.indexOf("/Shaders.js") == 0) {

@@ -372,9 +372,8 @@ var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 ClientCommunication = function(app){
     this.app = app;
     this.started = false;
-    this.socket = new io.Socket();
-    this.hookSocketEvents();    
-    this.socket.connect(); 
+    this.socket = io.connect();
+    this.hookSocketEvents();
     
     // Set up our messengers!!
     this.dispatcher = new MessageDispatcher();
@@ -390,7 +389,7 @@ ClientCommunication.prototype.hookSocketEvents = function() {
 };
 
 ClientCommunication.prototype.onConnected = function() {
-  this.sendMessage('ready');  
+  this.sendMessage('ready');
 };
 
 ClientCommunication.prototype.onDisconnected = function() {
@@ -408,7 +407,7 @@ ClientCommunication.prototype.sendMessage = function(command, data){
   this.dispatchMessage(msg);
   
   // To the server
-  this.socket.send(msg);
+  this.socket.json.send(msg);
 };
 
 exports.ClientCommunication = ClientCommunication;}, "controller": function(exports, require, module) {var Controller = function(scene) {
@@ -2544,9 +2543,59 @@ var mat4 = require('./glmatrix').mat4;
 var Hovercraft = {
     _velocity: vec3.create([0.01,0,0.01]),
     _decay: 0.97,
+    
+    _left: false,
+    _right: false,
+    _jump: false,
+    _forward: false,
+    _backward: false,
+    
     getSphere: function() {
         return this._model.boundingSphere.translate(this.position);
     },
+    
+    startForward: function() {
+      this._forward = true;  
+    },
+    
+    cancelForward: function() {
+      this._forward  = false;  
+    },
+    
+    startLeft: function() {
+        this._left = true;
+    },
+    
+    cancelLeft: function() {
+        this._left = false;
+    },
+    
+    startRight: function() {
+      this._right = true;  
+    },
+    
+    cancelRight: function() {
+        this._right = false;
+    },
+    
+    startBackward: function() {
+        this._backward = true;
+    },
+    
+    cancelBackward:  function() {
+        this._backward = false;
+    },
+    
+    startUp: function() {
+        this._jump = true;
+    },
+    
+    cancelUp: function() {
+        this._jump = false;
+    },
+    
+    
+    
     impulseForward: function() {
         var amount = 0.08;
         var accelerationZ = (-amount) * Math.cos(this.rotationY);
@@ -2580,7 +2629,30 @@ var Hovercraft = {
             this._velocity[1] += amount;
         }
     },
+    
+    processInput: function() {
+        if(this._left) {
+            this.impulseLeft();
+        }
+        else if(this._right) {
+            this.impulseRight();
+        }
+        
+        if(this._forward) {
+            this.impulseForward();
+        } 
+        else if( this._backward) {
+            this.impulseBackward();
+        };
+        
+        if(this._jump) {
+         this.impulseUp();   
+        }
+    },
+    
     doLogic: function() {
+        this.processInput();
+        
         var terrain = this._scene.getEntity("terrain");
         vec3.add(this.position, this._velocity);
                      
@@ -2626,26 +2698,52 @@ var HovercraftController = function(targetId, server){
   this.targetId = targetId;
   this.server = server;
   
+  this.forwards = false;
+  this.backward = false;
+  this.left = false;
+  this.right = false;
+  this.jump = false;
+  
   var controller = this;
   setInterval(function() { controller.processInput(); }, 1000 / 30);
+  
+  this.registerKeyboardMappings();
+  
 };
 
+HovercraftController.prototype.registerKeyboardMappings = function() {
+  this.keyboardMappings = {};
+  this.registerKeyboardMapping(KeyCodes.W, 'startForward', 'cancelForward');
+   this.registerKeyboardMapping(KeyCodes.S, 'startBackward', 'cancelBackward');
+    this.registerKeyboardMapping(KeyCodes.A, 'startLeft', 'cancelLeft');
+     this.registerKeyboardMapping(KeyCodes.D, 'startRight', 'cancelRight');
+      this.registerKeyboardMapping(KeyCodes.Space, 'startUp', 'cancelUp');
+};
+
+HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboardDown, onKeyboardUp){
+  this.keyboardMappings[code] = {
+    down: onKeyboardDown,
+    up: onKeyboardUp,
+    state: false
+  };
+}
+
 HovercraftController.prototype.processInput = function(){
-  if(KeyboardStates[KeyCodes.W]) {
-        this.server.sendMessage('impulseForward', { id: this.targetId });
-	} 
-    else if(KeyboardStates[KeyCodes.S]) {
-        this.server.sendMessage('impulseBackward', { id: this.targetId });
-	}    
-	if(KeyboardStates[KeyCodes.D]) {
-        this.server.sendMessage('impulseRight', { id: this.targetId });
-	}
-    else if(KeyboardStates[KeyCodes.A]) {
-        this.server.sendMessage('impulseLeft', { id: this.targetId });
-	}
-    if(KeyboardStates[KeyCodes.Space]) {
-        this.server.sendMessage('impulseUp', { id: this.targetId });
+  
+  for(var code in this.keyboardMappings){
+    var mapping = this.keyboardMappings[code];
+    
+    if(KeyboardStates[code] && !mapping.state){
+      this.server.sendMessage(mapping.down, { id: this.targetId});
+      mapping.state = true;
     }
+    else if(!KeyboardStates[code] && mapping.state){
+       this.server.sendMessage(mapping.up, { id: this.targetId});
+       mapping.state = false;
+    } 
+    
+  }
+    
 };
 
 document.onkeydown = function(event) { 
@@ -3169,6 +3267,29 @@ Model.Quad = function()
 
 exports.Model = Model;
 
+}, "network/clientbulletreceiver": function(exports, require, module) {var ClientBulletReceiver = function(app) {
+    this.app = app;    
+};
+
+ClientBulletReceiver.prototype._fire = function(data) {
+    // Do bugger all, this is the server's responsibility  
+};
+
+ClientBulletReceiver.prototype._createbullet = function(data) {
+    
+    // Get the entity that created this bullet (data.entityid)
+    
+    // Pass the sync data to that bullet
+    
+    // Add the bullet to the scene
+    
+};
+
+ClientBulletReceiver.prototype._destroybullet = function(data) {
+    
+    // Remove the bullet from the scene    
+};
+
 }, "network/clientgamereceiver": function(exports, require, module) {ClientGameReceiver = function(app, server) {
   this.app = app;
   this.server = server;
@@ -3230,29 +3351,55 @@ exports.ClientGameReceiver = ClientGameReceiver;}, "network/entityreceiver": fun
     this.app = app;
 };
 
-EntityReceiver.prototype._impulseUp = function(data) {
+EntityReceiver.prototype._startUp = function(data) {
     var entity = this.getEntity(data.id);
-    entity.impulseUp();
+    entity.startUp();
 };
 
-EntityReceiver.prototype._impulseForward = function(data) {
+EntityReceiver.prototype._cancelUp = function(data) {
     var entity = this.getEntity(data.id);
-    entity.impulseForward();
+    entity.cancelUp();
 };
 
-EntityReceiver.prototype._impulseBackward = function(data) {
+EntityReceiver.prototype._startForward = function(data) {
     var entity = this.getEntity(data.id);
-    entity.impulseBackward();
+    entity.startForward();
 };
 
-EntityReceiver.prototype._impulseLeft = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.impulseLeft();
+
+EntityReceiver.prototype._cancelForward = function(data) {
+  var entity = this.getEntity(data.id);
+  entity.cancelForward();
 };
 
-EntityReceiver.prototype._impulseRight = function(data) {
+EntityReceiver.prototype._startBackward = function(data) {
     var entity = this.getEntity(data.id);
-    entity.impulseRight();
+    entity.startBackward();
+};
+
+EntityReceiver.prototype._cancelBackward = function(data) {
+    var entity = this.getEntity(data.id);
+    entity.cancelBackward();
+};
+
+EntityReceiver.prototype._startLeft = function(data) {
+    var entity = this.getEntity(data.id);
+    entity.startLeft();
+};
+
+EntityReceiver.prototype._cancelLeft = function(data) {
+    var entity = this.getEntity(data.id);
+    entity.cancelLeft();
+};
+
+EntityReceiver.prototype._startRight = function(data) {
+    var entity = this.getEntity(data.id);
+    entity.startRight();
+};
+
+EntityReceiver.prototype._cancelRight = function(data) {
+    var entity = this.getEntity(data.id);
+    entity.cancelRight();
 };
 
 EntityReceiver.prototype.getEntity = function(id) {
