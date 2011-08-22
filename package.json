@@ -1,0 +1,10 @@
+{
+    "name": "HooverBattles",
+    "version": "0.0.1",
+    "dependencies": {
+        "socket.io": "0.7.9",
+	    "paperboy": "0.0.2",
+	    "stitch": "0.3.2",
+	    "gzip": "0.1.0"
+    }
+}
