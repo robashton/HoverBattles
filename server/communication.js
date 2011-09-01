@@ -3,6 +3,7 @@ HovercraftFactory = require('../shared/hovercraftfactory').HovercraftFactory;
 
 MessageDispatcher = require('../shared/messagedispatcher').MessageDispatcher;
 EntityReceiver = require('../shared/network/entityreceiver').EntityReceiver;
+var ProxyReceiver = require('./server/network/proxyreceiver').ProxyReceiver;
 
 ServerCommunication = function(app, server){
   this.server = server;
@@ -15,7 +16,8 @@ ServerCommunication = function(app, server){
   this.dispatcher = new MessageDispatcher();
   this.dispatcher.addReceiver(new EntityReceiver(this.app));
   this.dispatcher.addReceiver(this); // Will be refactored out
-  
+  this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
+	
   this.socket.on('connection', function(socket) { server.onConnection(socket); });
 };
 
@@ -45,7 +47,6 @@ ServerCommunication.prototype.dispatchMessage = function(socket, msg) {
     msg.data = msg.data || {};
     msg.data.source = socket.id;
     this.dispatcher.dispatch(msg);
-    this.broadcast(msg.command, msg.data, socket);
 };
 
 ServerCommunication.prototype.sendMessage = function(socket, command, data){

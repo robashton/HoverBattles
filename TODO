@@ -1,13 +1,9 @@
 - Limit the player to a pre-set grid (clipping, cba dealing with the resources)         [x]
 - Add a box of some sort to show the user that they can't go past that pre-set grid
 
-- Add multiplayer code so we can move a few players around in the world
-    - First up, the logic for our single player needs to run on the server
-    - Commands sent to the craft on client should also be sent to run on the server
-    - Server should update craft position/velocitu periodically
 
-- Add firing code (shift??)
-- Add the ability to jump to the hovercraft's controls (space??)
+- Add firing code (Automatic)
+
 
 - Look at unloading resources (whether it is necessary or not)
 - Make the terrain rendering a bit more sane
@@ -21,15 +17,24 @@
 
 - Write a basic state engine for the actual game
 - Add a loading screen, show percentage on the loading screen
-
-
-- Add a particle system
-    - Hovercraft should emit particles of some sort, probably slow decay, low gravity
-    - Hovercraft should be able to blow up, them be particles too
+- Hovercraft should be able to blow up, them be particles too
 
 - The game itself - add power-ups
 
 --------------------- WORK BELOW COMPLETED --------------------------
+
+
+- Add a particle system
+    - Hovercraft should emit particles of some sort, probably slow decay, low gravity
+
+- Add the ability to jump to the hovercraft's controls (space??)
+
+- Add multiplayer code so we can move a few players around in the world
+    - First up, the logic for our single player needs to run on the server
+    - Commands sent to the craft on client should also be sent to run on the server
+    - Server should update craft position/velocity periodically
+
+
 - Add a camera class that has the ability to 
 	- Be positioned																	     [x]
 	- Look at stuff																		 

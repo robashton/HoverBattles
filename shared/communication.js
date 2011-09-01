@@ -6,6 +6,7 @@ var MessageDispatcher = require('./messagedispatcher').MessageDispatcher;
 var ClientGameReceiver = require('./network/clientgamereceiver').ClientGameReceiver;
 var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 
+
 ClientCommunication = function(app){
     this.app = app;
     this.started = false;
