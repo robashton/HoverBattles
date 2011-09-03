@@ -122,34 +122,36 @@ var Targeting = {
 	
 };
 
-
-var TimedFiring = {
-	_ctor: function() {
-		this.addHandler('trackingTarget', this.onTrackingTarget);
-		this.addHandler('cancelledTrackingTarget', this.onCancelTrackingTarget);
-		this._trackingStartTime = null;
-		this._trackedTarget = null;
-	},
-	
-	onTrackingTarget: function(ev) {
-		this._trackingStartTime = new Date();
-		this._trackedTarget = ev.target;
-	},
-	
-	onCancelledTrackingTarget: function(ev) {
-		this._trackingStartTime = null;
-		this._trackedTarget = null;
-	},
-	
-	doLogic: function() {
-		if(!this._trackedTarget) return;
-		var currentTime = new Date();
-		var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
-		if(timeElapsedSinceStartedTracking > 3000) {
-			this.sendCommand('fireMissile', { target: this._trackedTarget});
-		}
-	}
+// This should only be executed on the server dudes, hopefully the communication stuff can deal with this up there
+var FiringController = function(entity, communication) {
+	this.entity = entity;
+	this.communication = communication;
+	entity.addHandler('trackingTarget', this.onTrackingTarget);
+	entity.addHandler('cancelledTrackingTarget', this.onCancelTrackingTarget);
+	entity.addHandler('tick', this.onTick);
+	this._trackingStartTime = null;
+	this._trackedTarget = null;
 };
+	
+FiringController.prototype.onTrackingTarget = function(ev) {
+	this._trackingStartTime = new Date();
+	this._trackedTarget = ev.target;
+};
+	
+FiringController.prototype.onCancelledTrackingTarget = function(ev) {
+	this._trackingStartTime = null;
+	this._trackedTarget = null;
+};
+	
+FiringController.prototype.onTick = function() {
+	if(!this._trackedTarget) return;
+	var currentTime = new Date();
+	var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
+	if(timeElapsedSinceStartedTracking > 3000) {
+		this.communication.sendMessage('fireMissile', { id: this.entity.getId(), targetid: this._trackedTarget.getId()});
+	}
+}
+
 
 
 var Aiming = {
@@ -275,7 +277,7 @@ var TargetStates = {
   LOCKED: 1
 };
 
-exports.TimedFiring = TimedFiring;
+exports.FiringController = FiringController;
 exports.Aiming = Aiming;
 exports.Tracking = Tracking;
 exports.Targeting = Targeting;
@@ -2813,9 +2815,9 @@ exports.Hovercraft = Hovercraft;
 
 KeyboardStates = {};
 
-var HovercraftController = function(targetId, server){
+var HovercraftController = function(targetId, scene){
   this.targetId = targetId;
-  this.server = server;
+  this.scene = scene;
   
   this.forwards = false;
   this.backward = false;
@@ -2853,7 +2855,7 @@ HovercraftController.prototype.processInput = function(){
     var mapping = this.keyboardMappings[code];
     
     if(KeyboardStates[code] && !mapping.state){
-      this.server.sendMessage(mapping.down, { id: this.targetId});
+      this.scene.sendCommand(mapping.down, { id: this.targetId});
       mapping.state = true;
     }
     else if(!KeyboardStates[code] && mapping.state){
@@ -3895,6 +3897,10 @@ var Scene = function(app){
     this.app = app;
     this.camera = new Camera();
     this.collisionManager = new CollisionManager();
+};
+
+Scene.prototype.sendCommand = function(commandName, data) {
+	
 };
 
 Scene.prototype.getEntity = function(id) {

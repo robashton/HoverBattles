@@ -5,7 +5,7 @@ $(document).ready(function() {
 	LazyLoad.js('/Build', function(){
 	
     	$app(function(){
-    		module("Aiming + Targeting");
+    		module("Targetting Entity Tests");
 
 			test("By default there is no selected target", function() {
 				var entity = new HovercraftEntityBuilder()
@@ -78,93 +78,106 @@ $(document).ready(function() {
 				entity.onTargetLost(oldTarget);
 				
 				ok(entity.hasCurrentTarget(), "There is a selected target");
-				ok(entity._currentTarget === newTarget, "The selected target is the oldest target available");
+				ok(entity.getCurrentTarget() === newTarget, "The selected target is the oldest target available");
 				ok(entity.shouldHaveRaisedEvent('cancelledTrackingTarget', { target: oldTarget }), "Event was raised to let listeners know old target has disappeared");
 				ok(entity.shouldHaveRaisedEvent('trackingTarget', { target: newTarget }), "Event was raised to let listeners know of new target");
 			});
 			
-			module("Firing"); 
+			module("Firing Controller Tests"); 
 			
 			asyncTest("After a target has been selected while time elapses", function() {
-				var target = {};
-				var entity = new HovercraftEntityBuilder()
-									.WithTestMethods()
-									.WithTimedFiring()						
-									.Get();
-				
-				entity.onTrackingTarget({ target: target});
+				var target = new HovercraftEntityBuilder()
+									.WithId('target').Get();
+				var controlled = new HovercraftEntityBuilder()
+									.WithId('controlled').Get();
+				var fakeServer = new FakeCommunication();				
+				var fireController = new FiringController(controlled, fakeServer);
+										
+				fireController.onTrackingTarget({ target: target});
 				
 				setTimeout(function() {
-					entity.doLogic();
-					ok(entity.shouldHaveSentCommand('fireMissile', {target: target}), "A firing request should be sent against that target");	
+					fireController.onTick();
+					ok(fakeServer.shouldHaveReceivedMessage('fireMissile', 
+								{ id: 'controlled', targetid: 'target'}), "A firing request should be sent against that target");	
 					start();				
 				}, 3500);		
 				
 			});
 			
 			asyncTest("If a target was selected and then unselected and time elapses", function() {
-				var entity =  new HovercraftEntityBuilder()
-									.WithTestMethods()
-									.WithTimedFiring()						
-									.Get();
-								
-				entity.onTrackingTarget({target: {}});
-				entity.onCancelledTrackingTarget({target: {}});
+				var controlled = new HovercraftEntityBuilder()
+									.WithId('controlled').Get();
+				var fakeServer = new FakeCommunication();
+				var fireController = new FiringController(controlled, fakeServer);
+
+				fireController.onTrackingTarget({target: {}});
+				fireController.onCancelledTrackingTarget({target: {}});
 				
 				setTimeout(function() {
-					entity.doLogic();
-					ok(!entity.shouldHaveSentCommand('fireMissile', {}), "No firing request should be sent");
+					fireController.onTick();
+					ok(!fakeServer.shouldHaveReceivedMessage('fireMissile', {}), "Firing controller should not send a firing message");
 					start();
 				}, 3500);			
 				
-			});
-			
+			});			
   		});
 	});
 	
 	var EntityTestHelperMethods = {
 		_ctor: function() {
-			this.raisedEvents = new Array();	
-			this.sentCommands = new Array();	
+			this.raisedEvents = new MessageCollection();
 		},
 		raiseEvent: function(eventName, data) {
-			this.raisedEvents.push({
-				messageName: eventName,
-				data: data
-			});
-		},
-		sendCommand: function(commandName, data) {
-			this.sentCommands.push({
-				messageName: commandName,
-				data: data
-			});
+			this.raisedEvents.add(eventName, data);
 		},
 		shouldHaveRaisedEvent: function(eventName, expectedData) {
-			return this.hasMessageInArray(this.raisedEvents, eventName, expectedData);
-		},
-		shouldHaveSentCommand: function(commandName, expectedData) {
-			return this.hasMessageInArray(this.sentCommands, commandName, expectedData);
-		},
-		hasMessageInArray: function(array, messageName, expectedData) {
-			for(var x = 0 ; x < array.length; x++){
-				var msg = array[x];
-				if(msg.messageName != messageName) continue;
-				for(var key in expectedData) {
-					if(msg.data[key] !== expectedData[key])
-					return false;
-				}
-				return true;
-			}
-			return false;	
+			return this.raisedEvents.hasMessage(eventName, expectedData);
 		}
 	};
+	
+	var MessageCollection = function() {
+		this.inner = [];
+	};
+	
+	MessageCollection.prototype.add = function(messageName, data) {
+		this.inner.push({
+			messageName: messageName,
+			data: data
+		});
+	};
+	
+	MessageCollection.prototype.hasMessage = function(messageName, expectedData) {
+		for(var x = 0 ; x < this.inner.length; x++){
+			var msg = this.inner[x];
+			if(msg.messageName != messageName) continue;
+			for(var key in expectedData) {
+				if(msg.data[key] !== expectedData[key])
+				return false;
+			}
+			return true;
+		}
+		return false;	
+	};
+	
+	var FakeCommunication = function() {
+		this.sentMessages = new MessageCollection();
+	};
+	
+	FakeCommunication.prototype.sendMessage = function(messageName, data) {
+		this.sentMessages.add(messageName, data);
+	};
+	
+	FakeCommunication.prototype.shouldHaveReceivedMessage = function(messageName, data) {
+		return this.sentMessages.hasMessage(messageName, data);
+	};
+	
 	
 	var HovercraftEntityBuilder = function() {
 		this.entity = new Entity();
 	};
 	
-	HovercraftEntityBuilder.prototype.WithTimedFiring = function() {
-		this.entity.attach(TimedFiring);
+	HovercraftEntityBuilder.prototype.WithId = function(id) {
+		this.entity.getId = function() { return id; };
 		return this;
 	};
 	

@@ -10,6 +10,10 @@ var Scene = function(app){
     this.collisionManager = new CollisionManager();
 };
 
+Scene.prototype.sendCommand = function(commandName, data) {
+	
+};
+
 Scene.prototype.getEntity = function(id) {
   return this._entities[id];  
 };
