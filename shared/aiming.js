@@ -24,13 +24,15 @@ var Targeting = {
 
 	_ctor: function(){ 
 		this._currentTarget = null;
+		this.addHandler('targetGained', this.onTargetGained);
+		this.addHandler('targetLost', this.onTargetLost);
 	},
 
-	_onTargetGained: function(target) {
+	onTargetGained: function(target) {
 		this.evaluateWhetherNewTargetIsRequired();
 	},
 	
-	_onTargetLost: function(target) {
+	onTargetLost: function(target) {
 		if(this._currentTarget === target)
 			this.deassignTarget();
 				
@@ -41,17 +43,21 @@ var Targeting = {
 		return this._currentTarget !== null;
 	},
 	
+	getCurrentTarget: function() {
+		return this._currentTarget;
+	},
+	
 	deassignTarget: function() {
 		var target = this._currentTarget;
 		this._currentTarget = null;
-		this.raiseEvent('targetLost', {
+		this.raiseEvent('cancelledTrackingTarget', {
 			target: target
 		});
 	},
 	
 	assignNewTarget: function(target) {
 		this._currentTarget = target;
-		this.raiseEvent('targetGained', {
+		this.raiseEvent('trackingTarget', {
 			target: target
 		});
 	},	
@@ -64,6 +70,35 @@ var Targeting = {
 		}	
 	}
 	
+};
+
+
+var TimedFiring = {
+	_ctor: function() {
+		this.addHandler('trackingTarget', this.onTrackingTarget);
+		this.addHandler('cancelledTrackingTarget', this.onCancelTrackingTarget);
+		this._trackingStartTime = null;
+		this._trackedTarget = null;
+	},
+	
+	onTrackingTarget: function(ev) {
+		this._trackingStartTime = new Date();
+		this._trackedTarget = ev.target;
+	},
+	
+	onCancelledTrackingTarget: function(ev) {
+		this._trackingStartTime = null;
+		this._trackedTarget = null;
+	},
+	
+	doLogic: function() {
+		if(!this._trackedTarget) return;
+		var currentTime = new Date();
+		var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
+		if(timeElapsedSinceStartedTracking > 3000) {
+			this.sendCommand('fireMissile', { target: this._trackedTarget});
+		}
+	}
 };
 
 
@@ -190,6 +225,7 @@ var TargetStates = {
   LOCKED: 1
 };
 
+exports.TimedFiring = TimedFiring;
 exports.Aiming = Aiming;
 exports.Tracking = Tracking;
 exports.Targeting = Targeting;

@@ -34,6 +34,7 @@ $app = function(callback){
             quat4 = require('../glmatrix').quat4;
             mat4 = require('../glmatrix').mat4;
 			Targeting = require('aiming').Targeting;
+			TimedFiring = require('aiming').TimedFiring;
             callback();
     });
 };

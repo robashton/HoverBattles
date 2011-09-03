@@ -32,6 +32,18 @@ Entity.prototype.getModel = function(){
 	return this._model;
 };
 
+Entity.prototype.addHandler = function() {
+	console.trace("Unimplemented method");
+};
+
+Entity.prototype.raiseEvent = function() {
+	console.trace("Unimplemented method");
+};
+
+Entity.prototype.sendCommand = function() {
+	console.trace("Unimplemented method");
+}
+
 Entity.prototype.attach = function(component) {
 	var ctor = null;
     for(i in component){
