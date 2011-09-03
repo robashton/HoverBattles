@@ -3,7 +3,7 @@ HovercraftFactory = require('../shared/hovercraftfactory').HovercraftFactory;
 
 MessageDispatcher = require('../shared/messagedispatcher').MessageDispatcher;
 EntityReceiver = require('../shared/network/entityreceiver').EntityReceiver;
-var ProxyReceiver = require('./server/network/proxyreceiver').ProxyReceiver;
+ProxyReceiver = require('./network/proxyreceiver').ProxyReceiver;
 
 ServerCommunication = function(app, server){
   this.server = server;
@@ -27,14 +27,14 @@ ServerCommunication.prototype.onConnection = function(socket){
 };
 
 ServerCommunication.prototype.synchronise = function(){
-    for(i in this.liveClients){
+  /*  for(i in this.liveClients){
      var client = this.liveClients[i];
      var sync = client.craft.getSync();
      this.broadcast('sync', {
          id: client.id,
          sync: sync
      });
-    }
+    }*/
 };
 
 ServerCommunication.prototype.hookClientEvents = function(socket) {
@@ -58,7 +58,7 @@ ServerCommunication.prototype.sendMessage = function(socket, command, data){
 
 ServerCommunication.prototype.broadcast = function(command, data, from) {
   for(i in this.liveClients){
-      if(from && this.liveClients[i] === from) continue;
+      if(from && this.liveClients[i].id === from) continue;
       this.sendMessage(this.liveClients[i], command, data);   
   }
 };
@@ -73,7 +73,7 @@ ServerCommunication.prototype.removePlayer = function(socket) {
     if(socket.craft){
        this.app.scene.removeEntity(socket.craft); 
     }
-    this.broadcast('removeplayer', { id: socket.id}, socket);
+    this.broadcast('removeplayer', { id: socket.id}, socket.id);
 };
 
 ServerCommunication.prototype._ready = function( data) {
@@ -110,7 +110,7 @@ ServerCommunication.prototype._ready = function( data) {
        id: socket.id,
        sync: sync
     },
-    socket);
+    socket.id);
 };
 
 exports.ServerCommunication = ServerCommunication;

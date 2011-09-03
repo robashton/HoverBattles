@@ -54,12 +54,77 @@ var Frustum = require('./frustum').Frustum;
 var MissileFactory = require('./missilefactory').MissileFactory;
 
 
+var Tracking = {
+	doLogic: function() {
+		
+		// Determine if we've started aiming at something
+		
+		// Raise an event for all new aimings
+		
+		// Raise an event for any lost aimings
+		
+	},
+	
+	getOldestTrackedObject: function() {
+		
+	}
+};
+
+var Targeting = {
+
+	_ctor: function(){ 
+		this._currentTarget = null;
+	},
+
+	_onTargetGained: function(target) {
+		this.evaluateWhetherNewTargetIsRequired();
+	},
+	
+	_onTargetLost: function(target) {
+		if(this._currentTarget === target)
+			this.deassignTarget();
+				
+		this.evaluateWhetherNewTargetIsRequired();
+	},
+	
+	hasCurrentTarget: function() {
+		return this._currentTarget !== null;
+	},
+	
+	deassignTarget: function() {
+		var target = this._currentTarget;
+		this._currentTarget = null;
+		this.raiseEvent('targetLost', {
+			target: target
+		});
+	},
+	
+	assignNewTarget: function(target) {
+		this._currentTarget = target;
+		this.raiseEvent('targetGained', {
+			target: target
+		});
+	},	
+	
+	evaluateWhetherNewTargetIsRequired: function() {
+		if(!this.hasCurrentTarget()) {
+			var newTarget = this.getOldestTrackedObject();
+			if(newTarget != null)	
+				this.assignNewTarget(newTarget);
+		}	
+	}
+	
+};
+
+
 var Aiming = {
-    currentTarget: null,
-    targetsInSight: {},
-    aimingIndicator: null,
-    beingTracked: false,
-    missile: null,
+	_ctor: function() {
+	    this.currentTarget = null;
+	    this.targetsInSight = {};
+	    this.aimingIndicator = null;
+	    this.beingTracked = false;
+	    this.missile = null;	
+	},
     
     canFire: function() {
       return this.currentTarget && 
@@ -176,6 +241,8 @@ var TargetStates = {
 };
 
 exports.Aiming = Aiming;
+exports.Tracking = Tracking;
+exports.Targeting = Targeting;
 exports.TargetStates = TargetStates;}, "bounding": function(exports, require, module) {vec3 = require('./glmatrix').vec3;
 mat4 = require('./glmatrix').mat4;
 
@@ -369,6 +436,7 @@ var MessageDispatcher = require('./messagedispatcher').MessageDispatcher;
 var ClientGameReceiver = require('./network/clientgamereceiver').ClientGameReceiver;
 var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 
+
 ClientCommunication = function(app){
     this.app = app;
     this.started = false;
@@ -483,9 +551,7 @@ function cloneObject(obj) {
     if(obj === null) return null;
     var clone = {};
     for(var i in obj) {
-        if(typeof(obj[i])=="object")
-            clone[i] = cloneObject(obj[i]);
-        else
+        if(typeof(obj[i]) !=="object")
             clone[i] = obj[i];
     }
     return clone;
@@ -512,6 +578,7 @@ Entity.prototype.getModel = function(){
 };
 
 Entity.prototype.attach = function(component) {
+	var ctor = null;
     for(i in component){
         if(i == "doLogic"){
             var newLogic = component[i];
@@ -537,16 +604,18 @@ Entity.prototype.attach = function(component) {
               oldRecvSync.call(this, sync);
             };
         }
+		else if(i == "_ctor") {
+			ctor = component[i];
+		}
         else {
-            if(typeof component[i] == "object"){
-                this[i] = cloneObject(component[i]);
-            }
-            else
-            {
+            if(typeof component[i] !== "object"){
                 this[i] = component[i];
             }
         }
     }
+
+	if(ctor)
+	 	ctor.call(this);
 };
 
 Entity.prototype.doLogic = function() { };
@@ -2541,14 +2610,16 @@ exports.mat3 = mat3;
 var mat4 = require('./glmatrix').mat4;
 
 var Hovercraft = {
-    _velocity: vec3.create([0.01,0,0.01]),
-    _decay: 0.97,
-    
-    _left: false,
-    _right: false,
-    _jump: false,
-    _forward: false,
-    _backward: false,
+	_ctor: function() {
+		this._velocity = vec3.create([0.01,0,0.01]);
+	    this._decay = 0.97;
+
+	    this._left = false;
+	    this._right = false;
+	    this._jump = false;
+	    this._forward = false;
+	    this._backward = false;
+	},
     
     getSphere: function() {
         return this._model.boundingSphere.translate(this.position);
@@ -3066,23 +3137,34 @@ exports.LazyLoad = LazyLoad;}, "messagedispatcher": function(exports, require, m
 MessageDispatcher.prototype.addReceiver = function(receiver){
     for(var i in receiver){
      if(i.indexOf('_') !== 0) continue;
-        this.routeTable[i.substr(1)] = receiver;     
+		var messageName = i.substr(1);
+		
+		if(!this.routeTable[messageName])
+			this.routeTable[messageName] = [];
+
+        this.routeTable[messageName].push(receiver);     
     }
 };
 
 MessageDispatcher.prototype.dispatch = function(message) {
-  var receiver = this.routeTable[message.command];
-  if(!receiver){
+  var receiverCollection = this.routeTable[message.command];
+  if(!receiverCollection){
    console.log('Receiver not found for message: ' + message.command);
    return;
   }
-  var method = receiver['_' + message.command];
-  method.call(receiver, message.data);  
+  var length = receiverCollection.length;
+  for(var i = 0; i < length; i++) {
+	var receiver = receiverCollection[i];
+    var method = receiver['_' + message.command];
+    method.call(receiver, message.data);	
+  }
 };
 
 exports.MessageDispatcher = MessageDispatcher;}, "missile": function(exports, require, module) {Missile = 
 {
-    target: null,    
+    _ctor: function() {
+	 	this.target = null;
+	},
     setTarget: function(target) {
         this.target = target;    
     },

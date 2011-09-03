@@ -4,12 +4,77 @@ var Frustum = require('./frustum').Frustum;
 var MissileFactory = require('./missilefactory').MissileFactory;
 
 
+var Tracking = {
+	doLogic: function() {
+		
+		// Determine if we've started aiming at something
+		
+		// Raise an event for all new aimings
+		
+		// Raise an event for any lost aimings
+		
+	},
+	
+	getOldestTrackedObject: function() {
+		
+	}
+};
+
+var Targeting = {
+
+	_ctor: function(){ 
+		this._currentTarget = null;
+	},
+
+	_onTargetGained: function(target) {
+		this.evaluateWhetherNewTargetIsRequired();
+	},
+	
+	_onTargetLost: function(target) {
+		if(this._currentTarget === target)
+			this.deassignTarget();
+				
+		this.evaluateWhetherNewTargetIsRequired();
+	},
+	
+	hasCurrentTarget: function() {
+		return this._currentTarget !== null;
+	},
+	
+	deassignTarget: function() {
+		var target = this._currentTarget;
+		this._currentTarget = null;
+		this.raiseEvent('targetLost', {
+			target: target
+		});
+	},
+	
+	assignNewTarget: function(target) {
+		this._currentTarget = target;
+		this.raiseEvent('targetGained', {
+			target: target
+		});
+	},	
+	
+	evaluateWhetherNewTargetIsRequired: function() {
+		if(!this.hasCurrentTarget()) {
+			var newTarget = this.getOldestTrackedObject();
+			if(newTarget != null)	
+				this.assignNewTarget(newTarget);
+		}	
+	}
+	
+};
+
+
 var Aiming = {
-    currentTarget: null,
-    targetsInSight: {},
-    aimingIndicator: null,
-    beingTracked: false,
-    missile: null,
+	_ctor: function() {
+	    this.currentTarget = null;
+	    this.targetsInSight = {};
+	    this.aimingIndicator = null;
+	    this.beingTracked = false;
+	    this.missile = null;	
+	},
     
     canFire: function() {
       return this.currentTarget && 
@@ -126,4 +191,6 @@ var TargetStates = {
 };
 
 exports.Aiming = Aiming;
+exports.Tracking = Tracking;
+exports.Targeting = Targeting;
 exports.TargetStates = TargetStates;

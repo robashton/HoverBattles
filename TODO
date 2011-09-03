@@ -3,14 +3,14 @@
 
 
 - Add firing code (Automatic)
-
+- Make the firing messages unique to the server
 
 - Look at unloading resources (whether it is necessary or not)
 - Make the terrain rendering a bit more sane
     - Bumpmapping over a plain black/purple underlay
     - Specular + diffuse lighting over that bump map
     - Using the player as a light source
-- Add collision detection between entities (players and landscape models)
+
 - Add collision detection between firing
 - Improve the camera control (Add mouse/something hints?)
 - Add a specular map to the hovercraft (possibly)
@@ -23,6 +23,7 @@
 
 --------------------- WORK BELOW COMPLETED --------------------------
 
+- Add collision detection between entities (players and landscape models)
 
 - Add a particle system
     - Hovercraft should emit particles of some sort, probably slow decay, low gravity

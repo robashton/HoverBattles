@@ -6,9 +6,7 @@ function cloneObject(obj) {
     if(obj === null) return null;
     var clone = {};
     for(var i in obj) {
-        if(typeof(obj[i])=="object")
-            clone[i] = cloneObject(obj[i]);
-        else
+        if(typeof(obj[i]) !=="object")
             clone[i] = obj[i];
     }
     return clone;
@@ -35,6 +33,7 @@ Entity.prototype.getModel = function(){
 };
 
 Entity.prototype.attach = function(component) {
+	var ctor = null;
     for(i in component){
         if(i == "doLogic"){
             var newLogic = component[i];
@@ -60,16 +59,18 @@ Entity.prototype.attach = function(component) {
               oldRecvSync.call(this, sync);
             };
         }
+		else if(i == "_ctor") {
+			ctor = component[i];
+		}
         else {
-            if(typeof component[i] == "object"){
-                this[i] = cloneObject(component[i]);
-            }
-            else
-            {
+            if(typeof component[i] !== "object"){
                 this[i] = component[i];
             }
         }
     }
+
+	if(ctor)
+	 	ctor.call(this);
 };
 
 Entity.prototype.doLogic = function() { };

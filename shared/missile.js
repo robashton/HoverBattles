@@ -1,6 +1,8 @@
 Missile = 
 {
-    target: null,    
+    _ctor: function() {
+	 	this.target = null;
+	},
     setTarget: function(target) {
         this.target = target;    
     },

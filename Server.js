@@ -18,11 +18,16 @@ var pkg = stitch.createPackage({
 ROOT = path.dirname(__filename);
 SHADERDIR = path.join(ROOT, "shaders");
 
-pkg.compile(function (err, source){
-  fs.writeFile('game.js', source, function (err) {
-    if (err) throw err;
-  })
-});
+buildPackages = function(callback) {
+	pkg.compile(function (err, source){
+	  fs.writeFile('game.js', source, function (err) {
+	    if (err) throw err;
+		callback();
+	  })
+	});	
+};
+
+buildPackages(function() { console.log("Packages built"); });
 
 server = http.createServer(function(req, res){ 
     var query = querystring.parse(req.url);
@@ -37,6 +42,13 @@ server = http.createServer(function(req, res){
 		}
 		else if(req.url.indexOf("/Shaders.js") == 0) {
 			shaders.handle(req, res);
+		}
+		else if(req.url.indexOf('/Build') == 0) {
+			buildPackages(function() {
+				res.writeHead(200, "Content-Type: application/json");
+				res.write('{}');
+				res.end();
+			});
 		}
 		else
 		{
@@ -60,14 +72,14 @@ console.log("Initialized Engine");
 app.resources.onAllAssetsLoaded(function(){
     
     console.log("Loaded engine assets");
-    
+    /* 
     setInterval(function(){
         controller.tick();
     }, 1000 / 30);
     
     setInterval(function(){    
         game.synchronise();
-    }, 500);
+    }, 500); */
 });
 
 

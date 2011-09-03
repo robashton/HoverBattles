@@ -33,6 +33,7 @@ $app = function(callback){
             mat3 = require('../glmatrix').mat3;
             quat4 = require('../glmatrix').quat4;
             mat4 = require('../glmatrix').mat4;
+			Targeting = require('aiming').Targeting;
             callback();
     });
 };
