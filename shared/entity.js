@@ -18,6 +18,7 @@ var Entity = function(id){
 	this.position = vec3.create([0,0,0]);
     this.rotationY = 0;
 	this._scene = null;
+	this.eventHandlers = {};
 };
 
 Entity.prototype.getId = function(){
@@ -32,17 +33,19 @@ Entity.prototype.getModel = function(){
 	return this._model;
 };
 
-Entity.prototype.addHandler = function() {
-	console.trace("Unimplemented method");
+Entity.prototype.addEventHandler = function(eventName, callback) {
+	if(!this.eventHandlers[eventName])
+		this.eventHandlers[eventName] = [];
+	this.eventHandlers[eventName].push(callback);
 };
 
-Entity.prototype.raiseEvent = function() {
-	console.trace("Unimplemented method");
+Entity.prototype.raiseEvent = function(eventName, data) {
+	if(!this.eventHandlers[eventName]) return;
+	for(var x = 0 ; x < this.eventHandlers[eventName].length; x++){
+		var handler = 	this.eventHandlers[eventName][x];
+		handler.call(this, data);
+	}
 };
-
-Entity.prototype.sendCommand = function() {
-	console.trace("Unimplemented method");
-}
 
 Entity.prototype.attach = function(component) {
 	var ctor = null;

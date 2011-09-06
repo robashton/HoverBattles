@@ -35,6 +35,7 @@ $app = function(callback){
             mat4 = require('../glmatrix').mat4;
 			Targeting = require('aiming').Targeting;
 			FiringController = require('aiming').FiringController;
+			MessageCollection = require('messagecollection').MessageCollection;
             callback();
     });
 };

@@ -5,18 +5,72 @@ var MissileFactory = require('./missilefactory').MissileFactory;
 
 
 var Tracking = {
+	
+	_ctor: function() {
+		this.targetsInSight = {};
+	},
 	doLogic: function() {
 		
-		// Determine if we've started aiming at something
-		
-		// Raise an event for all new aimings
-		
-		// Raise an event for any lost aimings
+		   for(var i in this._scene._entities){
+	            var entity = this._scene._entities[i];
+	            if(entity === this) continue;
+	            if(!entity.determineTarget) continue;
+
+	            // Get a vector to the other entity
+	            var vectorToOtherEntity = vec3.create([0,0,0]);
+	            vec3.subtract(entity.position, this.position, vectorToOtherEntity);
+	            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
+	            vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
+
+	            // Get the direction we're aiming in
+	            var vectorOfAim = [0,0,-1,1];
+	            var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
+	            mat4.identity(lookAtTransform);
+	            mat4.rotateY(lookAtTransform, this.rotationY);
+	            mat4.multiplyVec4(lookAtTransform, vectorOfAim);
+
+	            // We must both be within a certain angle of the other entity
+	            // and within a certain distance
+	            var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
+	            if(quotient > 0.75 && distanceToOtherEntity < 128) 
+	            {
+	                this.notifyAimingAt(entity);
+	            }
+	            else  
+	            {
+	                this.notifyNotAimingAt(entity);
+	            }
+	        }
 		
 	},
 	
+	notifyAimingAt: function(entity) {
+        var id = entity.getId();
+        if(this.targetsInSight[id]) return;
+        this.targetsInSight[id] = {
+			entity: entity,
+			time: new Date()
+		};
+		this.raiseEvent('targetGained', { target: entity});
+    },
+    notifyNotAimingAt: function(entity)  {
+        var id = entity.getId();
+        if(!this.targetsInSight[id]) return;			
+		delete this.targetsInSight[id];
+		this.raiseEvent('targetLost', { target: entity});
+    },
+	
 	getOldestTrackedObject: function() {
-		
+		var oldest = null;
+		for(var id in this.targetsInSight){
+			var current = this.targetsInSight[id];
+			if(oldest == null) { 
+				oldest = current;
+				continue;
+			}		
+		}
+		if(oldest === null) return null;
+		return oldest['entity'];
 	}
 };
 
@@ -24,19 +78,16 @@ var Targeting = {
 
 	_ctor: function(){ 
 		this._currentTarget = null;
-		this.addHandler('targetGained', this.onTargetGained);
-		this.addHandler('targetLost', this.onTargetLost);
+		this.addEventHandler('targetLost', this.onTargetLost);
 	},
-
-	onTargetGained: function(target) {
+	
+	doLogic: function() {		
 		this.evaluateWhetherNewTargetIsRequired();
 	},
 	
 	onTargetLost: function(target) {
 		if(this._currentTarget === target)
 			this.deassignTarget();
-				
-		this.evaluateWhetherNewTargetIsRequired();
 	},
 	
 	hasCurrentTarget: function() {
@@ -68,17 +119,17 @@ var Targeting = {
 			if(newTarget != null)	
 				this.assignNewTarget(newTarget);
 		}	
-	}
-	
+	},
 };
 
 // This should only be executed on the server dudes, hopefully the communication stuff can deal with this up there
 var FiringController = function(entity, communication) {
 	this.entity = entity;
+	var parent = this;
 	this.communication = communication;
-	entity.addHandler('trackingTarget', this.onTrackingTarget);
-	entity.addHandler('cancelledTrackingTarget', this.onCancelTrackingTarget);
-	entity.addHandler('tick', this.onTick);
+	entity.addEventHandler('trackingTarget', function(data) { parent.onTrackingTarget(data); });
+	entity.addEventHandler('cancelledTrackingTarget', function(data) { parent.onCancelTrackingTarget(data); });
+	entity.addEventHandler('tick', function(data) { parent.onTick(data); });
 	this._trackingStartTime = null;
 	this._trackedTarget = null;
 };
@@ -102,133 +153,6 @@ FiringController.prototype.onTick = function() {
 	}
 }
 
-
-
-var Aiming = {
-	_ctor: function() {
-	    this.currentTarget = null;
-	    this.targetsInSight = {};
-	    this.aimingIndicator = null;
-	    this.beingTracked = false;
-	    this.missile = null;	
-	},
-    
-    canFire: function() {
-      return this.currentTarget && 
-      this.currentTarget.state === TargetStates.LOCKED;  
-    },
-    
-    doLogic: function() {        
-        this.determineTarget();
-        this.controlFiring();
-    },
-    
-    controlFiring: function() {
-        if(!this.currentTarget || this.missile) return;
-        var timeSinceLocking = new Date() - this.currentTarget.trackingStart;        
-        if(timeSinceLocking < 5000) return;        
-        this.currentTarget.state = TargetStates.LOCKED;
-    },
-    
-    notifyMissileFired: function(missile) {
-      this.missile = missile;
-    },    
-    determineTarget: function() {             
-        for(var i in this._scene._entities){
-            var entity = this._scene._entities[i];
-            if(entity === this) continue;
-            if(!entity.determineTarget) continue;
-                        
-            // Get a vector to the other entity
-            var vectorToOtherEntity = vec3.create([0,0,0]);
-            vec3.subtract(entity.position, this.position, vectorToOtherEntity);
-            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
-            vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
-            
-            // Get the direction we're aiming in
-            var vectorOfAim = [0,0,-1,1];
-            var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
-            mat4.identity(lookAtTransform);
-            mat4.rotateY(lookAtTransform, this.rotationY);
-            mat4.multiplyVec4(lookAtTransform, vectorOfAim);
-            
-            // We must both be within a certain angle of the other entity
-            // and within a certain distance
-            var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
-            if(quotient > 0.75 && distanceToOtherEntity < 128) 
-            {
-                this.notifyAimingAt(entity);
-            }
-            else  
-            {
-                this.notifyNotAimingAt(entity);
-            }
-        } 
-    },
-    notifyAimingAt: function(entity) {
-        var id = entity.getId();
-        if(this.targetsInSight[id]) return;
-        this.targetsInSight[id] = entity;
-        
-        if(this.currentTarget === null) this.assignNewTarget(entity);        
-    },
-    notifyNotAimingAt: function(entity)  {
-        var id = entity.getId();
-        if(this.targetsInSight[id]) delete this.targetsInSight[id];
-        
-        // Find a new target if necessary
-        if(this.currentTarget && entity === this.currentTarget.entity){
-            this.clearTarget();
-        }
-    },    
-    
-    clearTarget: function() {
-        this.currentTarget = null;
-        this.findNewTarget();
-        
-        if(this.missile) {
-            this.missile.notifyLockLost();
-            this.missile = null;
-        }
-        
-        if(this.isPlayer) {
-          entity.notifyNotBeingTracked();  
-        }
-    },
-    
-    findNewTarget: function() {
-        for(i in this.targetsInSight) {
-            this.assignNewTarget(this.targetsInSight[i]);
-            break;
-        }        
-    },    
-    assignNewTarget: function(entity) {
-        this.currentTarget = {
-            entity: entity,
-            state: TargetStates.LOCKING,
-            trackingStart: new Date()
-        };
-        
-        if(this.isPlayer) {
-          entity.notifyBeingLocked();  
-        }
-    },    
-    notifyBeingTracked: function() {
-       this.beingTracked = true;
-        
-    },
-    notifyNotBeingTracked: function() {
-        this.beingTracked = false;   
-    }
-};
-
-var TargetStates = {
-  LOCKING: 0,
-  LOCKED: 1
-};
-
 exports.FiringController = FiringController;
-exports.Aiming = Aiming;
 exports.Tracking = Tracking;
 exports.Targeting = Targeting;
-exports.TargetStates = TargetStates;

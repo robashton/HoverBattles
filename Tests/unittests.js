@@ -5,6 +5,31 @@ $(document).ready(function() {
 	LazyLoad.js('/Build', function(){
 	
     	$app(function(){
+	
+			module("Basic entity tests");
+			
+			test("When raising an event", function(){
+				var entity = new Entity();
+				var TestListener = function() { 
+					this.called = false; 
+					}
+				TestListener.prototype.handler = function(data) {
+					 this.called = true;
+					this.data = data;
+
+					}
+				var listener = new TestListener();
+				var data = {};
+				
+				entity.addEventHandler('_testEvent', function(data) { listener.handler(data); listener.context = this; });				
+				entity.raiseEvent('_testEvent', data);
+				
+				ok(listener.called, "Callback was made to provided handler");
+				ok(listener.context === entity, "Callback was made in context of entity");
+				ok(listener.data === data, "Callback was given the provided data");
+			});
+	
+	
     		module("Targetting Entity Tests");
 
 			test("By default there is no selected target", function() {
@@ -83,6 +108,29 @@ $(document).ready(function() {
 				ok(entity.shouldHaveRaisedEvent('trackingTarget', { target: newTarget }), "Event was raised to let listeners know of new target");
 			});
 			
+			test("When the tracking component has a number of targetted entities", function(){
+				var targetOne = new HovercraftEntityBuilder()
+										.WithId('one');
+				var targetTwo = new HovercraftEntityBuilder()
+										.WithId('two');
+				var targetThree = new HovercraftEntityBuilder()
+									.WithId('three');
+				
+				var entity = new HovercraftEntityBuilder()
+									.WithTracking()
+									.Get();
+									
+				entity.notifyAimingAt(targetOne);
+				entity.notifyAimingAt(targetTwo);
+				entity.notifyAimingAt(targetThree);
+				
+				
+				var oldestTargetedEntity = entity.getOldestTrackedObject();				
+				ok(oldestTargetedEntity === targetOne, "The oldest tracked object can be discovered");
+				
+				
+			});
+			
 			module("Firing Controller Tests"); 
 			
 			asyncTest("After a target has been selected while time elapses", function() {
@@ -123,41 +171,6 @@ $(document).ready(function() {
   		});
 	});
 	
-	var EntityTestHelperMethods = {
-		_ctor: function() {
-			this.raisedEvents = new MessageCollection();
-		},
-		raiseEvent: function(eventName, data) {
-			this.raisedEvents.add(eventName, data);
-		},
-		shouldHaveRaisedEvent: function(eventName, expectedData) {
-			return this.raisedEvents.hasMessage(eventName, expectedData);
-		}
-	};
-	
-	var MessageCollection = function() {
-		this.inner = [];
-	};
-	
-	MessageCollection.prototype.add = function(messageName, data) {
-		this.inner.push({
-			messageName: messageName,
-			data: data
-		});
-	};
-	
-	MessageCollection.prototype.hasMessage = function(messageName, expectedData) {
-		for(var x = 0 ; x < this.inner.length; x++){
-			var msg = this.inner[x];
-			if(msg.messageName != messageName) continue;
-			for(var key in expectedData) {
-				if(msg.data[key] !== expectedData[key])
-				return false;
-			}
-			return true;
-		}
-		return false;	
-	};
 	
 	var FakeCommunication = function() {
 		this.sentMessages = new MessageCollection();
@@ -171,6 +184,19 @@ $(document).ready(function() {
 		return this.sentMessages.hasMessage(messageName, data);
 	};
 	
+	
+	var EntityTestHelperMethods = {
+		_ctor: function() {
+			this.raisedEvents = new MessageCollection();
+		},
+		raiseEvent: function(eventName, data) {
+			this.raisedEvents.add(eventName, data);
+		},
+		shouldHaveRaisedEvent: function(eventName, expectedData) {
+			return this.raisedEvents.hasMessage(eventName, expectedData);
+		}
+	};
+
 	
 	var HovercraftEntityBuilder = function() {
 		this.entity = new Entity();

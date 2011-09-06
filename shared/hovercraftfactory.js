@@ -1,7 +1,8 @@
 var Entity = require('./entity').Entity;
 var Hovercraft = require('./hovercraft').Hovercraft;
 var Clipping = require('./clipping').Clipping;
-var Aiming = require('./aiming').Aiming;
+var Tracking = require('./aiming').Tracking;
+var Targeting = require('./aiming').Targeting;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -13,7 +14,8 @@ HovercraftFactory.prototype.create = function(id) {
   
   entity.setModel(model); 
   entity.attach(Hovercraft);
-  entity.attach(Aiming);
+  entity.attach(Tracking);
+  entity.attach(Targeting);
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);

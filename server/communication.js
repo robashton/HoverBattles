@@ -4,6 +4,9 @@ HovercraftFactory = require('../shared/hovercraftfactory').HovercraftFactory;
 MessageDispatcher = require('../shared/messagedispatcher').MessageDispatcher;
 EntityReceiver = require('../shared/network/entityreceiver').EntityReceiver;
 ProxyReceiver = require('./network/proxyreceiver').ProxyReceiver;
+MissileController = require('../shared/missilecontroller').MissileController;
+MissileFactory = require('../shared/missilefactory').MissileFactory;
+FiringController = require('../shared/aiming').FiringController;
 
 ServerCommunication = function(app, server){
   this.server = server;
@@ -17,6 +20,7 @@ ServerCommunication = function(app, server){
   this.dispatcher.addReceiver(new EntityReceiver(this.app));
   this.dispatcher.addReceiver(this); // Will be refactored out
   this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
+  this.dispatcher.addReceiver(new MissileController(this.app, new MissileFactory()));
 	
   this.socket.on('connection', function(socket) { server.onConnection(socket); });
 };
@@ -49,7 +53,15 @@ ServerCommunication.prototype.dispatchMessage = function(socket, msg) {
     this.dispatcher.dispatch(msg);
 };
 
-ServerCommunication.prototype.sendMessage = function(socket, command, data){
+ServerCommunication.prototype.sendMessage = function(command, data) {
+	this.broadcast(command, data);
+	this.dispatcher.dispatch(new {
+		command: command,
+		data: data
+	});
+};
+
+ServerCommunication.prototype.sendMessageToClient = function(socket, command, data){
   socket.json.send({
       command: command,
       data: data      
@@ -59,7 +71,7 @@ ServerCommunication.prototype.sendMessage = function(socket, command, data){
 ServerCommunication.prototype.broadcast = function(command, data, from) {
   for(i in this.liveClients){
       if(from && this.liveClients[i].id === from) continue;
-      this.sendMessage(this.liveClients[i], command, data);   
+      this.sendMessageToClient(this.liveClients[i], command, data);   
   }
 };
 
@@ -80,12 +92,13 @@ ServerCommunication.prototype._ready = function( data) {
     var socket =  this.clients[data.source];
     var factory = new HovercraftFactory(this.app);
     socket.craft = factory.create(data.source);
+	socket.firingController = new FiringController(socket.craft, this);
     
     this.app.scene.addEntity(socket.craft);    
     var sync = socket.craft.getSync();
 
     // Tell the player to create its own craft
-    this.sendMessage(socket, 'start', {
+    this.sendMessageToClient(socket, 'start', {
        id: socket.id,
        sync: sync
     });
@@ -96,7 +109,7 @@ ServerCommunication.prototype._ready = function( data) {
         if(client == socket) continue;
         
         var sync = client.craft.getSync();        
-        this.sendMessage(socket, 'addplayer', {
+        this.sendMessageToClient(socket, 'addplayer', {
            id: client.id,
            sync: sync
         });

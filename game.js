@@ -55,18 +55,72 @@ var MissileFactory = require('./missilefactory').MissileFactory;
 
 
 var Tracking = {
+	
+	_ctor: function() {
+		this.targetsInSight = {};
+	},
 	doLogic: function() {
 		
-		// Determine if we've started aiming at something
-		
-		// Raise an event for all new aimings
-		
-		// Raise an event for any lost aimings
+		   for(var i in this._scene._entities){
+	            var entity = this._scene._entities[i];
+	            if(entity === this) continue;
+	            if(!entity.determineTarget) continue;
+
+	            // Get a vector to the other entity
+	            var vectorToOtherEntity = vec3.create([0,0,0]);
+	            vec3.subtract(entity.position, this.position, vectorToOtherEntity);
+	            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
+	            vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
+
+	            // Get the direction we're aiming in
+	            var vectorOfAim = [0,0,-1,1];
+	            var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
+	            mat4.identity(lookAtTransform);
+	            mat4.rotateY(lookAtTransform, this.rotationY);
+	            mat4.multiplyVec4(lookAtTransform, vectorOfAim);
+
+	            // We must both be within a certain angle of the other entity
+	            // and within a certain distance
+	            var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
+	            if(quotient > 0.75 && distanceToOtherEntity < 128) 
+	            {
+	                this.notifyAimingAt(entity);
+	            }
+	            else  
+	            {
+	                this.notifyNotAimingAt(entity);
+	            }
+	        }
 		
 	},
 	
+	notifyAimingAt: function(entity) {
+        var id = entity.getId();
+        if(this.targetsInSight[id]) return;
+        this.targetsInSight[id] = {
+			entity: entity,
+			time: new Date()
+		};
+		this.raiseEvent('targetGained', { target: entity});
+    },
+    notifyNotAimingAt: function(entity)  {
+        var id = entity.getId();
+        if(!this.targetsInSight[id]) return;			
+		delete this.targetsInSight[id];
+		this.raiseEvent('targetLost', { target: entity});
+    },
+	
 	getOldestTrackedObject: function() {
-		
+		var oldest = null;
+		for(var id in this.targetsInSight){
+			var current = this.targetsInSight[id];
+			if(oldest == null) { 
+				oldest = current;
+				continue;
+			}		
+		}
+		if(oldest === null) return null;
+		return oldest['entity'];
 	}
 };
 
@@ -74,19 +128,16 @@ var Targeting = {
 
 	_ctor: function(){ 
 		this._currentTarget = null;
-		this.addHandler('targetGained', this.onTargetGained);
-		this.addHandler('targetLost', this.onTargetLost);
+		this.addEventHandler('targetLost', this.onTargetLost);
 	},
-
-	onTargetGained: function(target) {
+	
+	doLogic: function() {		
 		this.evaluateWhetherNewTargetIsRequired();
 	},
 	
 	onTargetLost: function(target) {
 		if(this._currentTarget === target)
 			this.deassignTarget();
-				
-		this.evaluateWhetherNewTargetIsRequired();
 	},
 	
 	hasCurrentTarget: function() {
@@ -118,17 +169,17 @@ var Targeting = {
 			if(newTarget != null)	
 				this.assignNewTarget(newTarget);
 		}	
-	}
-	
+	},
 };
 
 // This should only be executed on the server dudes, hopefully the communication stuff can deal with this up there
 var FiringController = function(entity, communication) {
 	this.entity = entity;
+	var parent = this;
 	this.communication = communication;
-	entity.addHandler('trackingTarget', this.onTrackingTarget);
-	entity.addHandler('cancelledTrackingTarget', this.onCancelTrackingTarget);
-	entity.addHandler('tick', this.onTick);
+	entity.addEventHandler('trackingTarget', function(data) { parent.onTrackingTarget(data); });
+	entity.addEventHandler('cancelledTrackingTarget', function(data) { parent.onCancelTrackingTarget(data); });
+	entity.addEventHandler('tick', function(data) { parent.onTick(data); });
 	this._trackingStartTime = null;
 	this._trackedTarget = null;
 };
@@ -152,136 +203,9 @@ FiringController.prototype.onTick = function() {
 	}
 }
 
-
-
-var Aiming = {
-	_ctor: function() {
-	    this.currentTarget = null;
-	    this.targetsInSight = {};
-	    this.aimingIndicator = null;
-	    this.beingTracked = false;
-	    this.missile = null;	
-	},
-    
-    canFire: function() {
-      return this.currentTarget && 
-      this.currentTarget.state === TargetStates.LOCKED;  
-    },
-    
-    doLogic: function() {        
-        this.determineTarget();
-        this.controlFiring();
-    },
-    
-    controlFiring: function() {
-        if(!this.currentTarget || this.missile) return;
-        var timeSinceLocking = new Date() - this.currentTarget.trackingStart;        
-        if(timeSinceLocking < 5000) return;        
-        this.currentTarget.state = TargetStates.LOCKED;
-    },
-    
-    notifyMissileFired: function(missile) {
-      this.missile = missile;
-    },    
-    determineTarget: function() {             
-        for(var i in this._scene._entities){
-            var entity = this._scene._entities[i];
-            if(entity === this) continue;
-            if(!entity.determineTarget) continue;
-                        
-            // Get a vector to the other entity
-            var vectorToOtherEntity = vec3.create([0,0,0]);
-            vec3.subtract(entity.position, this.position, vectorToOtherEntity);
-            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
-            vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
-            
-            // Get the direction we're aiming in
-            var vectorOfAim = [0,0,-1,1];
-            var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
-            mat4.identity(lookAtTransform);
-            mat4.rotateY(lookAtTransform, this.rotationY);
-            mat4.multiplyVec4(lookAtTransform, vectorOfAim);
-            
-            // We must both be within a certain angle of the other entity
-            // and within a certain distance
-            var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
-            if(quotient > 0.75 && distanceToOtherEntity < 128) 
-            {
-                this.notifyAimingAt(entity);
-            }
-            else  
-            {
-                this.notifyNotAimingAt(entity);
-            }
-        } 
-    },
-    notifyAimingAt: function(entity) {
-        var id = entity.getId();
-        if(this.targetsInSight[id]) return;
-        this.targetsInSight[id] = entity;
-        
-        if(this.currentTarget === null) this.assignNewTarget(entity);        
-    },
-    notifyNotAimingAt: function(entity)  {
-        var id = entity.getId();
-        if(this.targetsInSight[id]) delete this.targetsInSight[id];
-        
-        // Find a new target if necessary
-        if(this.currentTarget && entity === this.currentTarget.entity){
-            this.clearTarget();
-        }
-    },    
-    
-    clearTarget: function() {
-        this.currentTarget = null;
-        this.findNewTarget();
-        
-        if(this.missile) {
-            this.missile.notifyLockLost();
-            this.missile = null;
-        }
-        
-        if(this.isPlayer) {
-          entity.notifyNotBeingTracked();  
-        }
-    },
-    
-    findNewTarget: function() {
-        for(i in this.targetsInSight) {
-            this.assignNewTarget(this.targetsInSight[i]);
-            break;
-        }        
-    },    
-    assignNewTarget: function(entity) {
-        this.currentTarget = {
-            entity: entity,
-            state: TargetStates.LOCKING,
-            trackingStart: new Date()
-        };
-        
-        if(this.isPlayer) {
-          entity.notifyBeingLocked();  
-        }
-    },    
-    notifyBeingTracked: function() {
-       this.beingTracked = true;
-        
-    },
-    notifyNotBeingTracked: function() {
-        this.beingTracked = false;   
-    }
-};
-
-var TargetStates = {
-  LOCKING: 0,
-  LOCKED: 1
-};
-
 exports.FiringController = FiringController;
-exports.Aiming = Aiming;
 exports.Tracking = Tracking;
-exports.Targeting = Targeting;
-exports.TargetStates = TargetStates;}, "bounding": function(exports, require, module) {vec3 = require('./glmatrix').vec3;
+exports.Targeting = Targeting;}, "bounding": function(exports, require, module) {vec3 = require('./glmatrix').vec3;
 mat4 = require('./glmatrix').mat4;
 
 var Sphere = function(radius, centre) {
@@ -473,7 +397,8 @@ var ChaseCamera = require('./chasecamera').ChaseCamera;
 var MessageDispatcher = require('./messagedispatcher').MessageDispatcher;
 var ClientGameReceiver = require('./network/clientgamereceiver').ClientGameReceiver;
 var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
-
+var MissileFactory = require('./missilefactory').MissileFactory;
+var MissileController = require('./missilecontroller').MissileController;
 
 ClientCommunication = function(app){
     this.app = app;
@@ -485,6 +410,7 @@ ClientCommunication = function(app){
     this.dispatcher = new MessageDispatcher();
     this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
+	this.dispatcher.addReceiver(new MissileController(this.app, new MissileFactory()));
 };
 
 ClientCommunication.prototype.hookSocketEvents = function() {
@@ -601,6 +527,7 @@ var Entity = function(id){
 	this.position = vec3.create([0,0,0]);
     this.rotationY = 0;
 	this._scene = null;
+	this.eventHandlers = {};
 };
 
 Entity.prototype.getId = function(){
@@ -615,17 +542,19 @@ Entity.prototype.getModel = function(){
 	return this._model;
 };
 
-Entity.prototype.addHandler = function() {
-	console.trace("Unimplemented method");
+Entity.prototype.addEventHandler = function(eventName, callback) {
+	if(!this.eventHandlers[eventName])
+		this.eventHandlers[eventName] = [];
+	this.eventHandlers[eventName].push(callback);
 };
 
-Entity.prototype.raiseEvent = function() {
-	console.trace("Unimplemented method");
+Entity.prototype.raiseEvent = function(eventName, data) {
+	if(!this.eventHandlers[eventName]) return;
+	for(var x = 0 ; x < this.eventHandlers[eventName].length; x++){
+		var handler = 	this.eventHandlers[eventName][x];
+		handler.call(this, data);
+	}
 };
-
-Entity.prototype.sendCommand = function() {
-	console.trace("Unimplemented method");
-}
 
 Entity.prototype.attach = function(component) {
 	var ctor = null;
@@ -2815,9 +2744,9 @@ exports.Hovercraft = Hovercraft;
 
 KeyboardStates = {};
 
-var HovercraftController = function(targetId, scene){
+var HovercraftController = function(targetId, server){
   this.targetId = targetId;
-  this.scene = scene;
+  this.server = server;
   
   this.forwards = false;
   this.backward = false;
@@ -2855,7 +2784,7 @@ HovercraftController.prototype.processInput = function(){
     var mapping = this.keyboardMappings[code];
     
     if(KeyboardStates[code] && !mapping.state){
-      this.scene.sendCommand(mapping.down, { id: this.targetId});
+      this.server.sendMessage(mapping.down, { id: this.targetId});
       mapping.state = true;
     }
     else if(!KeyboardStates[code] && mapping.state){
@@ -2878,7 +2807,8 @@ document.onkeyup = function(event) {
 exports.HovercraftController = HovercraftController;}, "hovercraftfactory": function(exports, require, module) {var Entity = require('./entity').Entity;
 var Hovercraft = require('./hovercraft').Hovercraft;
 var Clipping = require('./clipping').Clipping;
-var Aiming = require('./aiming').Aiming;
+var Tracking = require('./aiming').Tracking;
+var Targeting = require('./aiming').Targeting;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -2890,7 +2820,8 @@ HovercraftFactory.prototype.create = function(id) {
   
   entity.setModel(model); 
   entity.attach(Hovercraft);
-  entity.attach(Aiming);
+  entity.attach(Tracking);
+  entity.attach(Targeting);
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
@@ -3179,7 +3110,31 @@ exports.LandscapeController = LandscapeController;
     };
 };
 
-exports.LazyLoad = LazyLoad;}, "messagedispatcher": function(exports, require, module) {MessageDispatcher = function() {
+exports.LazyLoad = LazyLoad;}, "messagecollection": function(exports, require, module) {var MessageCollection = function() {
+	this.inner = [];
+};
+
+MessageCollection.prototype.add = function(messageName, data) {
+	this.inner.push({
+		messageName: messageName,
+		data: data
+	});
+};
+
+MessageCollection.prototype.hasMessage = function(messageName, expectedData) {
+	for(var x = 0 ; x < this.inner.length; x++){
+		var msg = this.inner[x];
+		if(msg.messageName != messageName) continue;
+		for(var key in expectedData) {
+			if(msg.data[key] !== expectedData[key])
+			return false;
+		}
+		return true;
+	}
+	return false;	
+};
+
+exports.MessageCollection = MessageCollection;}, "messagedispatcher": function(exports, require, module) {MessageDispatcher = function() {
   this.routeTable = {};
   this.receivers = [];
 };
@@ -3226,7 +3181,29 @@ exports.MessageDispatcher = MessageDispatcher;}, "missile": function(exports, re
     }
 };
 
-exports.Missile = Missile;}, "missilefactory": function(exports, require, module) {Entity = require('./entity').Entity;
+exports.Missile = Missile;}, "missilecontroller": function(exports, require, module) {var MissileController = function(app, missileFactory) {
+	this.app = app;
+};
+
+MissileController.prototype.fireMissile = function(sourceId, targetId) {
+	// Create a missile with these parameters
+	
+	// Attach it to the scene
+	
+	// Tell it to go
+	console.log('Firing a goddamned missile from ' + sourceId + ' to ' + targetId);
+	
+};
+
+MissileController.prototype.cancelMissile = function(missileId) {
+	// Find the missile
+	
+	// Terminate it
+	
+	// Remove it from the scene
+};
+
+exports.MissileController = MissileController;}, "missilefactory": function(exports, require, module) {Entity = require('./entity').Entity;
 Missile = require('./missile').Missile;
 
 var MissileFactory = function(app) {

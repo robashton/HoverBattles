@@ -10,9 +10,9 @@ var KeyCodes = {
 
 KeyboardStates = {};
 
-var HovercraftController = function(targetId, scene){
+var HovercraftController = function(targetId, server){
   this.targetId = targetId;
-  this.scene = scene;
+  this.server = server;
   
   this.forwards = false;
   this.backward = false;
@@ -50,7 +50,7 @@ HovercraftController.prototype.processInput = function(){
     var mapping = this.keyboardMappings[code];
     
     if(KeyboardStates[code] && !mapping.state){
-      this.scene.sendCommand(mapping.down, { id: this.targetId});
+      this.server.sendMessage(mapping.down, { id: this.targetId});
       mapping.state = true;
     }
     else if(!KeyboardStates[code] && mapping.state){
