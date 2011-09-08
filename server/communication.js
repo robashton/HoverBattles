@@ -21,7 +21,7 @@ ServerCommunication = function(app, server){
   this.dispatcher.addReceiver(this); // Will be refactored out
   this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
   this.dispatcher.addReceiver(new MissileController(this.app, new MissileFactory()));
-	
+
   this.socket.on('connection', function(socket) { server.onConnection(socket); });
 };
 
@@ -31,14 +31,9 @@ ServerCommunication.prototype.onConnection = function(socket){
 };
 
 ServerCommunication.prototype.synchronise = function(){
-  /*  for(i in this.liveClients){
-     var client = this.liveClients[i];
-     var sync = client.craft.getSync();
-     this.broadcast('sync', {
-         id: client.id,
-         sync: sync
-     });
-    }*/
+   for(i in this.liveClients){
+		this.syncPlayer(i);
+   }
 };
 
 ServerCommunication.prototype.hookClientEvents = function(socket) {
@@ -55,7 +50,7 @@ ServerCommunication.prototype.dispatchMessage = function(socket, msg) {
 
 ServerCommunication.prototype.sendMessage = function(command, data) {
 	this.broadcast(command, data);
-	this.dispatcher.dispatch(new {
+	this.dispatcher.dispatch({
 		command: command,
 		data: data
 	});
@@ -64,7 +59,7 @@ ServerCommunication.prototype.sendMessage = function(command, data) {
 ServerCommunication.prototype.sendMessageToClient = function(socket, command, data){
   socket.json.send({
       command: command,
-      data: data      
+      data: data
   });
 };
 
@@ -86,6 +81,15 @@ ServerCommunication.prototype.removePlayer = function(socket) {
        this.app.scene.removeEntity(socket.craft); 
     }
     this.broadcast('removeplayer', { id: socket.id}, socket.id);
+};
+
+ServerCommunication.prototype.syncPlayer = function(id) {
+	var socket = this.clients[id];
+    var sync = socket.craft.getSync();
+    this.broadcast('sync', {
+        id: id,
+        sync: sync
+    });
 };
 
 ServerCommunication.prototype._ready = function( data) {

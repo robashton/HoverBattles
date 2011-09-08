@@ -88,7 +88,9 @@ Entity.prototype.attach = function(component) {
 	 	ctor.call(this);
 };
 
-Entity.prototype.doLogic = function() { };
+Entity.prototype.doLogic = function() {
+	this.raiseEvent('tick', {});
+};
 
 Entity.prototype.setScene = function(scene) {
 	this._scene = scene;
@@ -101,13 +103,11 @@ Entity.prototype.getSync = function() {
 };
 
 Entity.prototype.updateSync = function(sync) {
-  sync.position = this.position;
-  sync.rotationY = this.rotationY;
+
 };
 
 Entity.prototype.setSync = function(sync) {
-  this.position = sync.position;
-  this.rotationY = sync.rotationY;
+
 };
 
 Entity.prototype.render = function(context){

@@ -36,6 +36,7 @@ $app = function(callback){
 			Targeting = require('aiming').Targeting;
 			FiringController = require('aiming').FiringController;
 			MessageCollection = require('messagecollection').MessageCollection;
+			Smoother = require('smoother').Smoother;
             callback();
     });
 };

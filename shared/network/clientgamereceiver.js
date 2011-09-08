@@ -30,6 +30,7 @@ ClientGameReceiver.prototype._start = function(data) {
     this.craft = this.hovercraftFactory.create(data.id);   
     this.controller = new HovercraftController(data.id, this.server);
     this.craft.attach(ChaseCamera);
+	this.craft.attach(Smoother);
     this.craft.setSync(data.sync);
     this.craft.player = true;
     this.app.scene.addEntity(this.craft);
@@ -38,6 +39,7 @@ ClientGameReceiver.prototype._start = function(data) {
 
 ClientGameReceiver.prototype._addplayer = function(data) {
     var craft = this.hovercraftFactory.create(data.id);
+	craft.attach(Smoother);
     craft.setSync(data.sync);
     this.app.scene.addEntity(craft);
     this.attachEmitterToCraft(craft);

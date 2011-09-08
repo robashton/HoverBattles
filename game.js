@@ -53,7 +53,6 @@ var mat4 = require('./glmatrix').mat4;
 var Frustum = require('./frustum').Frustum;
 var MissileFactory = require('./missilefactory').MissileFactory;
 
-
 var Tracking = {
 	
 	_ctor: function() {
@@ -61,37 +60,36 @@ var Tracking = {
 	},
 	doLogic: function() {
 		
-		   for(var i in this._scene._entities){
-	            var entity = this._scene._entities[i];
-	            if(entity === this) continue;
-	            if(!entity.determineTarget) continue;
+	   for(var i in this._scene._entities){
+            var entity = this._scene._entities[i];
+            if(entity === this) continue;
+            if(!entity.getOldestTrackedObject) continue;
 
-	            // Get a vector to the other entity
-	            var vectorToOtherEntity = vec3.create([0,0,0]);
-	            vec3.subtract(entity.position, this.position, vectorToOtherEntity);
-	            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
-	            vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
+            // Get a vector to the other entity
+            var vectorToOtherEntity = vec3.create([0,0,0]);
+            vec3.subtract(entity.position, this.position, vectorToOtherEntity);
+            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
+            vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
 
-	            // Get the direction we're aiming in
-	            var vectorOfAim = [0,0,-1,1];
-	            var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
-	            mat4.identity(lookAtTransform);
-	            mat4.rotateY(lookAtTransform, this.rotationY);
-	            mat4.multiplyVec4(lookAtTransform, vectorOfAim);
+            // Get the direction we're aiming in
+            var vectorOfAim = [0,0,-1,1];
+            var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
+            mat4.identity(lookAtTransform);
+            mat4.rotateY(lookAtTransform, this.rotationY);
+            mat4.multiplyVec4(lookAtTransform, vectorOfAim);
 
-	            // We must both be within a certain angle of the other entity
-	            // and within a certain distance
-	            var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
-	            if(quotient > 0.75 && distanceToOtherEntity < 128) 
-	            {
-	                this.notifyAimingAt(entity);
-	            }
-	            else  
-	            {
-	                this.notifyNotAimingAt(entity);
-	            }
-	        }
-		
+            // We must both be within a certain angle of the other entity
+            // and within a certain distance
+            var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
+            if(quotient > 0.75 && distanceToOtherEntity < 128) 
+            {
+                this.notifyAimingAt(entity);
+            }
+            else  
+            {
+                this.notifyNotAimingAt(entity);
+            }
+        }		
 	},
 	
 	notifyAimingAt: function(entity) {
@@ -103,6 +101,7 @@ var Tracking = {
 		};
 		this.raiseEvent('targetGained', { target: entity});
     },
+	
     notifyNotAimingAt: function(entity)  {
         var id = entity.getId();
         if(!this.targetsInSight[id]) return;			
@@ -135,8 +134,8 @@ var Targeting = {
 		this.evaluateWhetherNewTargetIsRequired();
 	},
 	
-	onTargetLost: function(target) {
-		if(this._currentTarget === target)
+	onTargetLost: function(data) {
+		if(this._currentTarget === data.target)
 			this.deassignTarget();
 	},
 	
@@ -151,6 +150,7 @@ var Targeting = {
 	deassignTarget: function() {
 		var target = this._currentTarget;
 		this._currentTarget = null;
+		console.info('Deassigned a target');
 		this.raiseEvent('cancelledTrackingTarget', {
 			target: target
 		});
@@ -158,6 +158,7 @@ var Targeting = {
 	
 	assignNewTarget: function(target) {
 		this._currentTarget = target;
+		console.info('Assigned a target');
 		this.raiseEvent('trackingTarget', {
 			target: target
 		});
@@ -178,15 +179,17 @@ var FiringController = function(entity, communication) {
 	var parent = this;
 	this.communication = communication;
 	entity.addEventHandler('trackingTarget', function(data) { parent.onTrackingTarget(data); });
-	entity.addEventHandler('cancelledTrackingTarget', function(data) { parent.onCancelTrackingTarget(data); });
+	entity.addEventHandler('cancelledTrackingTarget', function(data) { parent.onCancelledTrackingTarget(data); });
 	entity.addEventHandler('tick', function(data) { parent.onTick(data); });
 	this._trackingStartTime = null;
 	this._trackedTarget = null;
+	this.fired = false;
 };
 	
 FiringController.prototype.onTrackingTarget = function(ev) {
 	this._trackingStartTime = new Date();
 	this._trackedTarget = ev.target;
+	this.fired = false;
 };
 	
 FiringController.prototype.onCancelledTrackingTarget = function(ev) {
@@ -195,10 +198,11 @@ FiringController.prototype.onCancelledTrackingTarget = function(ev) {
 };
 	
 FiringController.prototype.onTick = function() {
-	if(!this._trackedTarget) return;
+	if(!this._trackedTarget || this.fired) return;
 	var currentTime = new Date();
 	var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
 	if(timeElapsedSinceStartedTracking > 3000) {
+		this.fired = true;
 		this.communication.sendMessage('fireMissile', { id: this.entity.getId(), targetid: this._trackedTarget.getId()});
 	}
 }
@@ -597,7 +601,9 @@ Entity.prototype.attach = function(component) {
 	 	ctor.call(this);
 };
 
-Entity.prototype.doLogic = function() { };
+Entity.prototype.doLogic = function() {
+	this.raiseEvent('tick', {});
+};
 
 Entity.prototype.setScene = function(scene) {
 	this._scene = scene;
@@ -610,13 +616,11 @@ Entity.prototype.getSync = function() {
 };
 
 Entity.prototype.updateSync = function(sync) {
-  sync.position = this.position;
-  sync.rotationY = this.rotationY;
+
 };
 
 Entity.prototype.setSync = function(sync) {
-  this.position = sync.position;
-  this.rotationY = sync.rotationY;
+
 };
 
 Entity.prototype.render = function(context){
@@ -2712,20 +2716,21 @@ var Hovercraft = {
         if(heightDelta < 0) {
             this.position[1] = terrainHeight;   
         }
+
+		if(Math.abs(this._velocity[1]) < 0.0001)
+			this._velocity[1] = 0;
          
          if(heightDelta < 10.0){
                this._velocity[1] += (10.0 - heightDelta) * 0.03;
          }
          this._velocity[1] -= 0.025;              
          vec3.scale(this._velocity, this._decay);
+
     },
     
     updateSync: function(sync) {
-      sync.velocity = this._velocity;
-    },
-    
-    setSync: function(sync) {
-      this._velocity = sync.velocity;
+	  sync.position = this.position;
+	  sync.rotationY = this.rotationY;
     }
 }
          
@@ -3431,6 +3436,7 @@ ClientGameReceiver.prototype._start = function(data) {
     this.craft = this.hovercraftFactory.create(data.id);   
     this.controller = new HovercraftController(data.id, this.server);
     this.craft.attach(ChaseCamera);
+	this.craft.attach(Smoother);
     this.craft.setSync(data.sync);
     this.craft.player = true;
     this.app.scene.addEntity(this.craft);
@@ -3439,6 +3445,7 @@ ClientGameReceiver.prototype._start = function(data) {
 
 ClientGameReceiver.prototype._addplayer = function(data) {
     var craft = this.hovercraftFactory.create(data.id);
+	craft.attach(Smoother);
     craft.setSync(data.sync);
     this.app.scene.addEntity(craft);
     this.attachEmitterToCraft(craft);
@@ -3937,7 +3944,51 @@ Scene.prototype.render = function(context){
 	}  
 };
 
-exports.Scene = Scene;}, "texture": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+exports.Scene = Scene;}, "smoother": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+
+var Smoother = {
+	_ctor: function() {
+		this.hasInitialState = false;
+	},
+	doLogic: function() {
+		if(!this.hasInitialState) return;
+		
+		var oldpositionDelta = vec3.create([0,0,0]);
+		vec3.subtract(this.position, this.oldposition, oldpositionDelta);
+		vec3.add(this.networkposition, oldpositionDelta);
+	
+		var networkpositionDelta = vec3.create([0,0,0]);
+		vec3.subtract(this.networkposition, this.position, networkpositionDelta);
+		vec3.scale(networkpositionDelta, 0.01);
+	
+		vec3.add(this.position, networkpositionDelta);
+			
+		var oldrotationDelta = this.rotationY - this.oldrotationy;	
+		this.networkrotationY += oldrotationDelta;
+			
+		var networkrotationDelta = this.networkrotationY - this.rotationY;
+		networkrotationDelta *= 0.1;
+		this.rotationY += networkrotationDelta;
+		
+		this.oldposition = this.position;
+		this.oldrotationy = this.rotationY; 
+		
+	},	
+	setSync: function(sync) {
+      if(!this.hasInitialState) {
+	  		this.position = sync.position;
+	  		this.rotationY = sync.rotationY;
+			this.hasInitialState = true;
+		}
+
+	  this.networkposition = sync.position;
+	  this.networkrotationY = sync.rotationY; 
+	  this.oldposition = this.position;
+	  this.oldrotationy = this.rotationY; 
+	}	
+};
+
+exports.Smoother = Smoother;}, "texture": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
 var Texture = function(name, image){

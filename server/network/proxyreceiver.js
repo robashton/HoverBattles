@@ -10,6 +10,7 @@ var proxiedMessages = [
 	"_startForward",
 	"_cancelForward",
 	"_startBackward",
+	"_cancelBackward",
 	"_startLeft",
 	"_cancelLeft",
 	"_startRight",

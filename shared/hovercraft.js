@@ -125,20 +125,21 @@ var Hovercraft = {
         if(heightDelta < 0) {
             this.position[1] = terrainHeight;   
         }
+
+		if(Math.abs(this._velocity[1]) < 0.0001)
+			this._velocity[1] = 0;
          
          if(heightDelta < 10.0){
                this._velocity[1] += (10.0 - heightDelta) * 0.03;
          }
          this._velocity[1] -= 0.025;              
          vec3.scale(this._velocity, this._decay);
+
     },
     
     updateSync: function(sync) {
-      sync.velocity = this._velocity;
-    },
-    
-    setSync: function(sync) {
-      this._velocity = sync.velocity;
+	  sync.position = this.position;
+	  sync.rotationY = this.rotationY;
     }
 }
          

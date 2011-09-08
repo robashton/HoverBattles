@@ -79,7 +79,7 @@ app.resources.onAllAssetsLoaded(function(){
     
     setInterval(function(){    
         game.synchronise();
-    }, 500); 
+    }, 250); 
 });
 
 
