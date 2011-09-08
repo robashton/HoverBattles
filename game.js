@@ -173,7 +173,6 @@ var Targeting = {
 	},
 };
 
-// This should only be executed on the server dudes, hopefully the communication stuff can deal with this up there
 var FiringController = function(entity, communication) {
 	this.entity = entity;
 	var parent = this;
@@ -375,13 +374,14 @@ CollisionManager = function(){
 CollisionManager.prototype.processPair = function(entityOne, entityTwo) {
   if(entityOne._velocity == null || entityTwo._velocity == null) { return; }
   if(entityOne.position == null || entityTwo.position == null) { return; }
+  if(!entityOne.getSphere || !entityTwo.getSphere) return;
 
   var sphereOne = entityOne.getSphere();
   var sphereTwo = entityTwo.getSphere();
   
   var results = sphereOne.intersectSphere(sphereTwo);
   
-  if(results.distance > 0) return;  
+  if(results.distance > 0) return;
 
   var distanceToMoveEntityOne = vec3.create([0,0,0]);
   var distanceToMoveEntityTwo = vec3.create([0,0,0]);
@@ -390,7 +390,8 @@ CollisionManager.prototype.processPair = function(entityOne, entityTwo) {
   vec3.scale(results.direction, -(results.distance / 2.0), distanceToMoveEntityTwo);
     
   vec3.add(entityOne.position, distanceToMoveEntityOne);
-  vec3.add(entityTwo.position, distanceToMoveEntityTwo);  
+  vec3.add(entityTwo.position, distanceToMoveEntityTwo);
+
 };
 
 
@@ -402,7 +403,7 @@ var MessageDispatcher = require('./messagedispatcher').MessageDispatcher;
 var ClientGameReceiver = require('./network/clientgamereceiver').ClientGameReceiver;
 var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 var MissileFactory = require('./missilefactory').MissileFactory;
-var MissileController = require('./missilecontroller').MissileController;
+var MissileReceiver = require('./network/missilereceiver').MissileReceiver;
 
 ClientCommunication = function(app){
     this.app = app;
@@ -414,7 +415,7 @@ ClientCommunication = function(app){
     this.dispatcher = new MessageDispatcher();
     this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
-	this.dispatcher.addReceiver(new MissileController(this.app, new MissileFactory()));
+	this.dispatcher.addReceiver(new MissileReceiver(this.app, new MissileFactory()));
 };
 
 ClientCommunication.prototype.hookSocketEvents = function() {
@@ -2769,10 +2770,10 @@ var HovercraftController = function(targetId, server){
 HovercraftController.prototype.registerKeyboardMappings = function() {
   this.keyboardMappings = {};
   this.registerKeyboardMapping(KeyCodes.W, 'startForward', 'cancelForward');
-   this.registerKeyboardMapping(KeyCodes.S, 'startBackward', 'cancelBackward');
-    this.registerKeyboardMapping(KeyCodes.A, 'startLeft', 'cancelLeft');
-     this.registerKeyboardMapping(KeyCodes.D, 'startRight', 'cancelRight');
-      this.registerKeyboardMapping(KeyCodes.Space, 'startUp', 'cancelUp');
+  this.registerKeyboardMapping(KeyCodes.S, 'startBackward', 'cancelBackward');
+  this.registerKeyboardMapping(KeyCodes.A, 'startLeft', 'cancelLeft');
+  this.registerKeyboardMapping(KeyCodes.D, 'startRight', 'cancelRight');
+  this.registerKeyboardMapping(KeyCodes.Space, 'startUp', 'cancelUp');
 };
 
 HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboardDown, onKeyboardUp){
@@ -2795,8 +2796,7 @@ HovercraftController.prototype.processInput = function(){
     else if(!KeyboardStates[code] && mapping.state){
        this.server.sendMessage(mapping.up, { id: this.targetId});
        mapping.state = false;
-    } 
-    
+    }    
   }
     
 };
@@ -3170,54 +3170,79 @@ MessageDispatcher.prototype.dispatch = function(message) {
   }
 };
 
-exports.MessageDispatcher = MessageDispatcher;}, "missile": function(exports, require, module) {Missile = 
+exports.MessageDispatcher = MessageDispatcher;}, "missile": function(exports, require, module) {Sphere = require('./bounding').Sphere;
+
+var Missile = 
 {
     _ctor: function() {
 	 	this.target = null;
+		this.source = null;
+		this._velocity = vec3.create([0,0,0]);		
+	},
+	setSource: function(source) {
+		this.source = source;
+		this.position = vec3.create(source.position);	
 	},
     setTarget: function(target) {
-        this.target = target;    
+        this.target = target;
     },
     doLogic: function() {
-        
-    }, 
-    notifyLockLost: function() {
-     this.target = null;   
-    }
+
+		this.updateVelocityTowardsTarget();
+		this.performPhysics();
+		this.determineIfTargetIsReached();
+		
+	},
+	
+	determineIfTargetIsReached: function() {
+		
+	},
+	
+	performPhysics: function() {
+		vec3.add(this.position, this._velocity);
+		this.clipMissileToTerrain();
+	},
+	
+	updateVelocityTowardsTarget: function() {
+		var difference = this.calculateVectorToTarget();
+		this.distanceFromTarget = vec3.length(difference);
+		vec3.scale(difference, 1.2 / this.distanceFromTarget, this._velocity);	
+		
+	},
+	
+	clipMissileToTerrain: function(vectorToTarget) {
+		var terrain = this._scene.getEntity("terrain");
+        var terrainHeight = terrain.getHeightAt(this.position[0], this.position[2]);
+		this.position[1] = terrainHeight;	
+		
+	},
+	
+	calculateVectorToTarget: function() {	
+	    var targetDestination = this.target.position;
+	    var currentPosition = this.position;
+		var difference = vec3.create([0,0,0]);
+		vec3.subtract(targetDestination, currentPosition, difference);
+		return difference;
+	}
 };
 
-exports.Missile = Missile;}, "missilecontroller": function(exports, require, module) {var MissileController = function(app, missileFactory) {
-	this.app = app;
-};
-
-MissileController.prototype.fireMissile = function(sourceId, targetId) {
-	// Create a missile with these parameters
-	
-	// Attach it to the scene
-	
-	// Tell it to go
-	console.log('Firing a goddamned missile from ' + sourceId + ' to ' + targetId);
-	
-};
-
-MissileController.prototype.cancelMissile = function(missileId) {
-	// Find the missile
-	
-	// Terminate it
-	
-	// Remove it from the scene
-};
-
-exports.MissileController = MissileController;}, "missilefactory": function(exports, require, module) {Entity = require('./entity').Entity;
+exports.Missile = Missile;}, "missilefactory": function(exports, require, module) {Entity = require('./entity').Entity;
 Missile = require('./missile').Missile;
 
 var MissileFactory = function(app) {
     this.app = app;
 };
 
-MissileFactory.prototype.create = function(target) {
+MissileFactory.prototype.create = function(source, target) {
   var entity = new Entity("missile-" + new Date());
+
   entity.attach(Missile);
+
+  // TODO: Particle Emitter
+
+  entity.setSource(source);
+  entity.setTarget(target);
+
   return entity;
 };
 
@@ -3381,29 +3406,6 @@ Model.Quad = function()
 
 exports.Model = Model;
 
-}, "network/clientbulletreceiver": function(exports, require, module) {var ClientBulletReceiver = function(app) {
-    this.app = app;    
-};
-
-ClientBulletReceiver.prototype._fire = function(data) {
-    // Do bugger all, this is the server's responsibility  
-};
-
-ClientBulletReceiver.prototype._createbullet = function(data) {
-    
-    // Get the entity that created this bullet (data.entityid)
-    
-    // Pass the sync data to that bullet
-    
-    // Add the bullet to the scene
-    
-};
-
-ClientBulletReceiver.prototype._destroybullet = function(data) {
-    
-    // Remove the bullet from the scene    
-};
-
 }, "network/clientgamereceiver": function(exports, require, module) {ClientGameReceiver = function(app, server) {
   this.app = app;
   this.server = server;
@@ -3522,7 +3524,47 @@ EntityReceiver.prototype.getEntity = function(id) {
   return this.app.scene.getEntity(id);
 };
 
-exports.EntityReceiver = EntityReceiver;}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
+exports.EntityReceiver = EntityReceiver;}, "network/missilereceiver": function(exports, require, module) {var MissileReceiver = function(app, missileFactory) {
+    this.app = app;    
+	this.missileFactory = missileFactory;
+	this.missiles = {};
+};
+
+MissileReceiver.prototype._fireMissile = function(data) {
+  var source = this.app.scene.getEntity(data.id);
+  var target = this.app.scene.getEntity(data.targetid);
+  var missile = this.missileFactory.create(source, target);
+  this.app.scene.addEntity(missile);
+  this.missiles[data.id] = missile;
+
+  // Not 100% sure about this, but going to give it a go
+  // May just be a better idea to modularise smarter
+  if(this.app.isClient) {
+  	this.attachEmitterToMissile(missile);
+  }
+};
+
+MissileReceiver.prototype.attachEmitterToMissile = function(missile) {
+	var emitter = new ParticleEmitter(missile.getId() + 'trail', 400, this.app,
+    {
+        maxsize: 100,
+        maxlifetime: 0.2,
+        rate: 50,
+        scatter: vec3.create([1.0, 0.001, 1.0]),
+        track: function(){
+            this.position = vec3.create(missile.position);
+        }
+    });
+    missile.emitter = emitter;
+    this.app.scene.addEntity(emitter);
+};
+
+MissileReceiver.prototype._destroyMissile = function(data) {
+    
+    // Remove the bullet from the scene    
+};
+
+exports.MissileReceiver = MissileReceiver;}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;
     this.capacity = capacity;

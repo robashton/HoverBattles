@@ -4,7 +4,7 @@ HovercraftFactory = require('../shared/hovercraftfactory').HovercraftFactory;
 MessageDispatcher = require('../shared/messagedispatcher').MessageDispatcher;
 EntityReceiver = require('../shared/network/entityreceiver').EntityReceiver;
 ProxyReceiver = require('./network/proxyreceiver').ProxyReceiver;
-MissileController = require('../shared/missilecontroller').MissileController;
+MissileReceiver = require('../shared/network/missilereceiver').MissileReceiver;
 MissileFactory = require('../shared/missilefactory').MissileFactory;
 FiringController = require('../shared/aiming').FiringController;
 
@@ -20,7 +20,7 @@ ServerCommunication = function(app, server){
   this.dispatcher.addReceiver(new EntityReceiver(this.app));
   this.dispatcher.addReceiver(this); // Will be refactored out
   this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
-  this.dispatcher.addReceiver(new MissileController(this.app, new MissileFactory()));
+  this.dispatcher.addReceiver(new MissileReceiver(this.app, new MissileFactory()));
 
   this.socket.on('connection', function(socket) { server.onConnection(socket); });
 };

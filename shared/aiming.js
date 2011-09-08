@@ -123,7 +123,6 @@ var Targeting = {
 	},
 };
 
-// This should only be executed on the server dudes, hopefully the communication stuff can deal with this up there
 var FiringController = function(entity, communication) {
 	this.entity = entity;
 	var parent = this;

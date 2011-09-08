@@ -44,6 +44,7 @@ $app = function(callback){
 blah.Application = function(target) {
   this._target = target;  
   this.context = null;
+  this.isClient = true;
 };
 
 blah.Application.prototype.init = function(finishedCallback){

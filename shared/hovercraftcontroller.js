@@ -30,10 +30,10 @@ var HovercraftController = function(targetId, server){
 HovercraftController.prototype.registerKeyboardMappings = function() {
   this.keyboardMappings = {};
   this.registerKeyboardMapping(KeyCodes.W, 'startForward', 'cancelForward');
-   this.registerKeyboardMapping(KeyCodes.S, 'startBackward', 'cancelBackward');
-    this.registerKeyboardMapping(KeyCodes.A, 'startLeft', 'cancelLeft');
-     this.registerKeyboardMapping(KeyCodes.D, 'startRight', 'cancelRight');
-      this.registerKeyboardMapping(KeyCodes.Space, 'startUp', 'cancelUp');
+  this.registerKeyboardMapping(KeyCodes.S, 'startBackward', 'cancelBackward');
+  this.registerKeyboardMapping(KeyCodes.A, 'startLeft', 'cancelLeft');
+  this.registerKeyboardMapping(KeyCodes.D, 'startRight', 'cancelRight');
+  this.registerKeyboardMapping(KeyCodes.Space, 'startUp', 'cancelUp');
 };
 
 HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboardDown, onKeyboardUp){
@@ -56,8 +56,7 @@ HovercraftController.prototype.processInput = function(){
     else if(!KeyboardStates[code] && mapping.state){
        this.server.sendMessage(mapping.up, { id: this.targetId});
        mapping.state = false;
-    } 
-    
+    }    
   }
     
 };
