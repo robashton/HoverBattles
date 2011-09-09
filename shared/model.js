@@ -13,6 +13,7 @@ var Model = function(data){
     this._textureBuffer = null;
     this._normalBuffer = null;
     this._hasData = false;
+	this.boundingSphere = new bounding.Sphere(0.0, [0,0,0]);
 };
 
 Model.prototype.setData = function(data) {

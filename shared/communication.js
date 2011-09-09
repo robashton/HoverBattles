@@ -18,7 +18,7 @@ ClientCommunication = function(app){
     this.dispatcher = new MessageDispatcher();
     this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
-	this.dispatcher.addReceiver(new MissileReceiver(this.app, new MissileFactory()));
+	this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
 };
 
 ClientCommunication.prototype.hookSocketEvents = function() {

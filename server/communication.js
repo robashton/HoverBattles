@@ -20,7 +20,7 @@ ServerCommunication = function(app, server){
   this.dispatcher.addReceiver(new EntityReceiver(this.app));
   this.dispatcher.addReceiver(this); // Will be refactored out
   this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
-  this.dispatcher.addReceiver(new MissileReceiver(this.app, new MissileFactory()));
+  this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
 
   this.socket.on('connection', function(socket) { server.onConnection(socket); });
 };
@@ -90,6 +90,21 @@ ServerCommunication.prototype.syncPlayer = function(id) {
         id: id,
         sync: sync
     });
+};
+
+ServerCommunication.prototype._destroyTarget = function(data) {
+	var craft = this.app.scene.getEntity(data.targetid);
+	this.app.scene.removeEntity(craft);
+	var self = this;
+	var sync = craft.getSync();
+	setTimeout(function() {
+		
+		self.broadcast('reviveTarget', {
+			id: data.targetid,
+			sync: sync
+		});
+		
+	}, 5000);	
 };
 
 ServerCommunication.prototype._ready = function( data) {

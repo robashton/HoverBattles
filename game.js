@@ -202,7 +202,7 @@ FiringController.prototype.onTick = function() {
 	var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
 	if(timeElapsedSinceStartedTracking > 3000) {
 		this.fired = true;
-		this.communication.sendMessage('fireMissile', { id: this.entity.getId(), targetid: this._trackedTarget.getId()});
+		this.communication.sendMessage('fireMissile', { sourceid: this.entity.getId(), targetid: this._trackedTarget.getId()});
 	}
 }
 
@@ -415,7 +415,7 @@ ClientCommunication = function(app){
     this.dispatcher = new MessageDispatcher();
     this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
-	this.dispatcher.addReceiver(new MissileReceiver(this.app, new MissileFactory()));
+	this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
 };
 
 ClientCommunication.prototype.hookSocketEvents = function() {
@@ -3177,7 +3177,8 @@ var Missile =
     _ctor: function() {
 	 	this.target = null;
 		this.source = null;
-		this._velocity = vec3.create([0,0,0]);		
+		this._velocity = vec3.create([0,0,0]);	
+		this.bounds = new Sphere(1.0, [0,0,0])	
 	},
 	setSource: function(source) {
 		this.source = source;
@@ -3195,12 +3196,27 @@ var Missile =
 	},
 	
 	determineIfTargetIsReached: function() {
-		
+		var myBounds = this.bounds.translate(this.position);
+		var targetSphere = this.target.getSphere();
+		if(targetSphere.intersectSphere(myBounds).distance < 0){
+			this.raiseEvent('targetHit', { 
+				targetid: this.target.getId(),
+				sourceid: this.source.getId() });
+		}
 	},
 	
 	performPhysics: function() {
 		vec3.add(this.position, this._velocity);
-		this.clipMissileToTerrain();
+		
+		if(!this.isWithinReachOfTarget())
+			this.clipMissileToTerrain();
+	},
+	
+	isWithinReachOfTarget: function() {
+		var difference = this.calculateVectorToTarget();
+		difference[1] = 0;
+		var distanceToTargetIgnoringHeight = vec3.length(difference);
+		return distanceToTargetIgnoringHeight < 2;		
 	},
 	
 	updateVelocityTowardsTarget: function() {
@@ -3237,9 +3253,6 @@ MissileFactory.prototype.create = function(source, target) {
   var entity = new Entity("missile-" + new Date());
 
   entity.attach(Missile);
-
-  // TODO: Particle Emitter
-
   entity.setSource(source);
   entity.setTarget(target);
 
@@ -3261,6 +3274,7 @@ var Model = function(data){
     this._textureBuffer = null;
     this._normalBuffer = null;
     this._hasData = false;
+	this.boundingSphere = new bounding.Sphere(0.0, [0,0,0]);
 };
 
 Model.prototype.setData = function(data) {
@@ -3445,19 +3459,55 @@ ClientGameReceiver.prototype._start = function(data) {
     this.attachEmitterToCraft(this.craft);
 };
 
+ClientGameReceiver.prototype._reviveTarget = function(data) {
+	if(data.id === this.craft.getId()) {
+		this.app.scene.addEntity(this.craft);
+		this.app.scene.addEntity(this.craft.emitter);
+		this.craft.setSync(data.sync);
+	}
+	else {
+		this.addHovercraftToScene(data.id, data.sync);
+	}
+};
+
+ClientGameReceiver.prototype._destroyTarget = function(data) {
+	var target = this.app.scene.getEntity(data.targetid);
+	if(this.craft === target) {
+		this.app.scene.removeEntity(this.craft);
+		this.app.scene.removeEntity(this.craft.emitter);
+		
+		// Raise an event to the outside world perhaps? 
+		// I might need to refactor in order to show a 'please wait' screen of some sort
+	}
+	else {
+		this.removeHovercraftFromScene(data.targetid);
+	}	
+};
+
 ClientGameReceiver.prototype._addplayer = function(data) {
-    var craft = this.hovercraftFactory.create(data.id);
+	this.addHovercraftToScene(data.id, data.sync);
+};
+
+ClientGameReceiver.prototype._removeplayer = function(data) {
+    this.removeHovercraftFromScene(data.id);
+};
+
+ClientGameReceiver.prototype.removeHovercraftFromScene = function(id) {
+    var craft = this.app.scene.getEntity(id);
+    this.removeCraftEmitter(craft);
+    this.app.scene.removeEntity(craft);
+};
+
+ClientGameReceiver.prototype.addHovercraftToScene = function(id, sync) {
+    var craft = this.hovercraftFactory.create(id);
 	craft.attach(Smoother);
-    craft.setSync(data.sync);
+    craft.setSync(sync);
     this.app.scene.addEntity(craft);
     this.attachEmitterToCraft(craft);
 };
 
-ClientGameReceiver.prototype._removeplayer = function(data) {
-    var craft = this.app.scene.getEntity(data.id);
-    this.removeCraftEmitter(craft);
-    this.app.scene.removeEntity(craft);
-};
+
+
 
 ClientGameReceiver.prototype._sync = function(data) {
     var entity = this.app.scene.getEntity(data.id);
@@ -3524,24 +3574,46 @@ EntityReceiver.prototype.getEntity = function(id) {
   return this.app.scene.getEntity(id);
 };
 
-exports.EntityReceiver = EntityReceiver;}, "network/missilereceiver": function(exports, require, module) {var MissileReceiver = function(app, missileFactory) {
+exports.EntityReceiver = EntityReceiver;}, "network/missilereceiver": function(exports, require, module) {var MissileReceiver = function(app, communication, missileFactory) {
     this.app = app;    
 	this.missileFactory = missileFactory;
+	this.communication = communication;
 	this.missiles = {};
 };
 
 MissileReceiver.prototype._fireMissile = function(data) {
-  var source = this.app.scene.getEntity(data.id);
+  var source = this.app.scene.getEntity(data.sourceid);
   var target = this.app.scene.getEntity(data.targetid);
   var missile = this.missileFactory.create(source, target);
   this.app.scene.addEntity(missile);
-  this.missiles[data.id] = missile;
+  this.missiles[data.sourceid] = missile;
 
   // Not 100% sure about this, but going to give it a go
   // May just be a better idea to modularise smarter
   if(this.app.isClient) {
   	this.attachEmitterToMissile(missile);
   }
+  else {
+	this.attachHandlersToCoordinateMissile(missile);
+  }
+};
+
+MissileReceiver.prototype.attachHandlersToCoordinateMissile = function(missile) {
+	var self = this;
+	missile.addEventHandler('targetHit', function(data) { self.onTargetHit(data); });
+};
+
+MissileReceiver.prototype.onTargetHit = function(data) {
+	this.communication.sendMessage('destroyTarget', data);
+};
+
+MissileReceiver.prototype._destroyTarget = function(data) {
+	var missile = this.missiles[data.sourceid];
+	this.app.scene.removeEntity(missile);
+	
+	if(this.app.isClient)
+		this.app.scene.removeEntity(missile.emitter);
+	delete this.missiles[data.sourceid];
 };
 
 MissileReceiver.prototype.attachEmitterToMissile = function(missile) {

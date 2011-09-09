@@ -152,7 +152,7 @@ FiringController.prototype.onTick = function() {
 	var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
 	if(timeElapsedSinceStartedTracking > 3000) {
 		this.fired = true;
-		this.communication.sendMessage('fireMissile', { id: this.entity.getId(), targetid: this._trackedTarget.getId()});
+		this.communication.sendMessage('fireMissile', { sourceid: this.entity.getId(), targetid: this._trackedTarget.getId()});
 	}
 }
 
