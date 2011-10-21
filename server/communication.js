@@ -1,45 +1,55 @@
 io = require('socket.io');
-HovercraftFactory = require('../shared/hovercraftfactory').HovercraftFactory;
 
 MessageDispatcher = require('../shared/messagedispatcher').MessageDispatcher;
 EntityReceiver = require('../shared/network/entityreceiver').EntityReceiver;
 ProxyReceiver = require('./network/proxyreceiver').ProxyReceiver;
 MissileReceiver = require('../shared/network/missilereceiver').MissileReceiver;
-MissileFactory = require('../shared/missilefactory').MissileFactory;
-FiringController = require('../shared/aiming').FiringController;
+ServerGameReceiver = require('./network/servergamereceiver').ServerGameReceiver;
 
 ServerCommunication = function(app, server){
+  var self = this;
   this.server = server;
   this.app = app;
   this.socket = io.listen(server).sockets; 
   this.clients = {};
-  this.liveClients = {};
+  this.game = new ServerGameReceiver(this.app, this);
   
-  var server = this;  
   this.dispatcher = new MessageDispatcher();
   this.dispatcher.addReceiver(new EntityReceiver(this.app));
-  this.dispatcher.addReceiver(this); // Will be refactored out
+  this.dispatcher.addReceiver(this.game); 
   this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
   this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
 
-  this.socket.on('connection', function(socket) { server.onConnection(socket); });
+  this.socket.on('connection', function(socket) { self.onConnection(socket); });
 };
 
-ServerCommunication.prototype.onConnection = function(socket){
+ServerCommunication.prototype.onConnection = function(socket) {
     this.clients[socket.id] = socket;
-    this.hookClientEvents(socket);
+    this.hookClient(socket);
 };
 
 ServerCommunication.prototype.synchronise = function(){
-   for(i in this.liveClients){
+   for(i in this.clients){
 		this.syncPlayer(i);
    }
 };
 
-ServerCommunication.prototype.hookClientEvents = function(socket) {
+ServerCommunication.prototype.hookClient = function(socket) {
     var server = this;
+	this.game.addPlayer(socket.id);
+	this.initializeClient(socket);
     socket.on('message', function(msg) { server.dispatchMessage(socket, msg); });    
     socket.on('disconnect', function() {server.unhookClient(socket);});
+};
+
+ServerCommunication.prototype.initializeClient = function(socket) {
+	this.sendMessageToClient(socket, 'init', { id: socket.id });
+};
+
+ServerCommunication.prototype.unhookClient = function(socket) {
+    this.game.removePlayer(socket.id);    
+    this.broadcast('removeplayer', { id: socket.id}, socket.id);
+    delete this.clients[socket.id];  
 };
 
 ServerCommunication.prototype.dispatchMessage = function(socket, msg) {
@@ -64,85 +74,25 @@ ServerCommunication.prototype.sendMessageToClient = function(socket, command, da
 };
 
 ServerCommunication.prototype.broadcast = function(command, data, from) {
-  for(i in this.liveClients){
-      if(from && this.liveClients[i].id === from) continue;
-      this.sendMessageToClient(this.liveClients[i], command, data);   
+  for(i in this.clients){
+      if(from && this.clients[i].id === from) continue;
+      this.sendMessageToClient(this.clients[i], command, data);   
   }
 };
 
-ServerCommunication.prototype.unhookClient = function(socket) {
-    this.removePlayer(socket);
-    delete this.clients[socket.id];  
-    delete this.liveClients[socket.id];
-};
-
-ServerCommunication.prototype.removePlayer = function(socket) {
-    if(socket.craft){
-       this.app.scene.removeEntity(socket.craft); 
-    }
-    this.broadcast('removeplayer', { id: socket.id}, socket.id);
+ServerCommunication.prototype.syncPlayerFull = function(id) {
+	var socket = this.clients[id];
+	var sceneData = this.game.getSceneState();
+    this.broadcast('syncscene', sceneData);
 };
 
 ServerCommunication.prototype.syncPlayer = function(id) {
 	var socket = this.clients[id];
-    var sync = socket.craft.getSync();
+	var sync = this.game.getSyncForPlayer(id);
     this.broadcast('sync', {
         id: id,
         sync: sync
     });
-};
-
-ServerCommunication.prototype._destroyTarget = function(data) {
-	var craft = this.app.scene.getEntity(data.targetid);
-	this.app.scene.removeEntity(craft);
-	var self = this;
-	var sync = craft.getSync();
-	setTimeout(function() {
-		
-		self.broadcast('reviveTarget', {
-			id: data.targetid,
-			sync: sync
-		});
-		
-	}, 5000);	
-};
-
-ServerCommunication.prototype._ready = function( data) {
-    var socket =  this.clients[data.source];
-    var factory = new HovercraftFactory(this.app);
-    socket.craft = factory.create(data.source);
-	socket.firingController = new FiringController(socket.craft, this);
-    
-    this.app.scene.addEntity(socket.craft);    
-    var sync = socket.craft.getSync();
-
-    // Tell the player to create its own craft
-    this.sendMessageToClient(socket, 'start', {
-       id: socket.id,
-       sync: sync
-    });
-    
-    // Tell the player about the rest of the scene
-    for(i in this.liveClients) {
-        var client = this.liveClients[i];
-        if(client == socket) continue;
-        
-        var sync = client.craft.getSync();        
-        this.sendMessageToClient(socket, 'addplayer', {
-           id: client.id,
-           sync: sync
-        });
-    }
-    
-    this.liveClients[socket.id] = socket;
-
-    // Tell everybody else that this player has joined the party
-    var sync = socket.craft.getSync();
-    this.broadcast('addplayer', {
-       id: socket.id,
-       sync: sync
-    },
-    socket.id);
 };
 
 exports.ServerCommunication = ServerCommunication;

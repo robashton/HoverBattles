@@ -18,34 +18,54 @@ var cache = {};
 
 parseQueryStringAndGenerateData = function(req, res, callback)
 { 
-    var query = querystring.parse(req.url);
-        
-        
+    var query = querystring.parse(req.url)
+                
     if(cache[req.url] && query.ft != "true") { console.log('cache hit'); callback(cache[req.url]); return; }
 	var chunk = {};
 
-
-    var maxHeight = parseInt(query.maxheight);
-    var width = parseInt(query.width);
-	var height = parseInt(query.height);
-	var startX = parseInt(query.startx);
-	var startY = parseInt(query.starty);
-    var scale = parseInt(query.scale);
-    
-    var data = createTerrainChunk(width, height, startX, startY, scale, maxHeight);
-    
-    var model = 'var blah = blah || {};' +
-        'blah.Land = blah.Land || {};' +
-        'blah.Land["' + req.url + '"] = ' +
-        JSON.stringify(data) + ';'
-    
-    gzip(model, function(err, zippeddata) {
-        cache[req.url] = zippeddata;
-        callback(zippeddata);    
-    });
-
+	tryReadFromFile(req.url, function(data) {
+		if(data) {
+			console.log('Read from file');
+			cache[data] = data;
+			callback(cache[data]);
+		}
+		else {
+			var maxHeight = parseInt(query.maxheight);
+			var width = parseInt(query.width);
+			var height = parseInt(query.height);
+			var startX = parseInt(query.startx);
+			var startY = parseInt(query.starty);
+			var scale = parseInt(query.scale);
+		
+			var data = createTerrainChunk(width, height, startX, startY, scale, maxHeight);
+		
+			var model = 'var blah = blah || {};' +
+				'blah.Land = blah.Land || {};' +
+				'blah.Land["' + req.url + '"] = ' +
+				JSON.stringify(data) + ';'
+		
+			gzip(model, function(err, zippeddata) {
+				writeCache(req.url, zippeddata);
+				callback(zippeddata);    
+			});
+		}
+	});
 };
 
+writeCache = function(url, data) {
+	cache[url] = data;
+	fs.writeFile('./cache/' + url, data);
+};
+
+tryReadFromFile = function(url, callback) {
+	fs.readFile('./cache/' + url, function(err, data) {
+		if(err) {
+			console.log('There was an error reading this file: ' + err);
+			callback(null);
+		}
+		else callback(data);
+	});
+};
 
 createTerrainChunk = function(width, height, startX, startY, scale, maxHeight) {
     var heightMap = new Array(width * height);

@@ -173,42 +173,9 @@ var Targeting = {
 	},
 };
 
-var FiringController = function(entity, communication) {
-	this.entity = entity;
-	var parent = this;
-	this.communication = communication;
-	entity.addEventHandler('trackingTarget', function(data) { parent.onTrackingTarget(data); });
-	entity.addEventHandler('cancelledTrackingTarget', function(data) { parent.onCancelledTrackingTarget(data); });
-	entity.addEventHandler('tick', function(data) { parent.onTick(data); });
-	this._trackingStartTime = null;
-	this._trackedTarget = null;
-	this.fired = false;
-};
-	
-FiringController.prototype.onTrackingTarget = function(ev) {
-	this._trackingStartTime = new Date();
-	this._trackedTarget = ev.target;
-	this.fired = false;
-};
-	
-FiringController.prototype.onCancelledTrackingTarget = function(ev) {
-	this._trackingStartTime = null;
-	this._trackedTarget = null;
-};
-	
-FiringController.prototype.onTick = function() {
-	if(!this._trackedTarget || this.fired) return;
-	var currentTime = new Date();
-	var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
-	if(timeElapsedSinceStartedTracking > 3000) {
-		this.fired = true;
-		this.communication.sendMessage('fireMissile', { sourceid: this.entity.getId(), targetid: this._trackedTarget.getId()});
-	}
-}
-
-exports.FiringController = FiringController;
 exports.Tracking = Tracking;
-exports.Targeting = Targeting;}, "bounding": function(exports, require, module) {vec3 = require('./glmatrix').vec3;
+exports.Targeting = Targeting;
+}, "bounding": function(exports, require, module) {vec3 = require('./glmatrix').vec3;
 mat4 = require('./glmatrix').mat4;
 
 var Sphere = function(radius, centre) {
@@ -426,7 +393,7 @@ ClientCommunication.prototype.hookSocketEvents = function() {
 };
 
 ClientCommunication.prototype.onConnected = function() {
-  this.sendMessage('ready');
+
 };
 
 ClientCommunication.prototype.onDisconnected = function() {
@@ -447,7 +414,8 @@ ClientCommunication.prototype.sendMessage = function(command, data){
   this.socket.json.send(msg);
 };
 
-exports.ClientCommunication = ClientCommunication;}, "controller": function(exports, require, module) {var Controller = function(scene) {
+exports.ClientCommunication = ClientCommunication;
+}, "controller": function(exports, require, module) {var Controller = function(scene) {
   this.scene = scene;
   this._timeAtLastFrame = new Date().getTime();
   this._idealTimePerFrame = 1000 / 30;
@@ -3425,6 +3393,7 @@ exports.Model = Model;
   this.server = server;
   this.started = false;
   this.craft = null;
+  this.playerId = null;
   this.hovercraftFactory = new HovercraftFactory(app);
 };
 
@@ -3447,25 +3416,54 @@ ClientGameReceiver.prototype.removeCraftEmitter = function(craft) {
     this.app.scene.removeEntity(craft.emitter);
 };
 
-ClientGameReceiver.prototype._start = function(data) {
-    this.started = true;
+ClientGameReceiver.prototype._init = function(data) {
+	this.playerId = data.id;
     this.craft = this.hovercraftFactory.create(data.id);   
     this.controller = new HovercraftController(data.id, this.server);
     this.craft.attach(ChaseCamera);
 	this.craft.attach(Smoother);
-    this.craft.setSync(data.sync);
     this.craft.player = true;
-    this.app.scene.addEntity(this.craft);
-    this.attachEmitterToCraft(this.craft);
+	this.server.sendMessage('ready');
+};
+
+ClientGameReceiver.prototype._syncscene = function(data) {
+
+	for(i in data.craft) {
+		var serverCraft = data.craft[i];
+		
+		var clientCraft = 
+		serverCraft.id === this.playerId 
+					? this.craft
+					: this.app.scene.getEntity(serverCraft.id);
+
+		if(!clientCraft) {
+    		clientCraft = this.addHovercraftToScene(serverCraft.id, serverCraft.sync);
+		}
+		clientCraft.setSync(serverCraft.sync);		
+	}
+
+	if(!this.started) {
+		this.started = true;
+		this.app.scene.addEntity(this.craft);
+		this.attachEmitterToCraft(this.craft);
+	}
 };
 
 ClientGameReceiver.prototype._reviveTarget = function(data) {
 	if(data.id === this.craft.getId()) {
+
+		// Re-add entity to scene
 		this.app.scene.addEntity(this.craft);
 		this.app.scene.addEntity(this.craft.emitter);
 		this.craft.setSync(data.sync);
+
+		// Tell the camera to start zooming back into the re-animated craft
+
+		// Re-hook input
 	}
 	else {
+
+		// Re-add entity to scene
 		this.addHovercraftToScene(data.id, data.sync);
 	}
 };
@@ -3473,14 +3471,24 @@ ClientGameReceiver.prototype._reviveTarget = function(data) {
 ClientGameReceiver.prototype._destroyTarget = function(data) {
 	var target = this.app.scene.getEntity(data.targetid);
 	if(this.craft === target) {
+
+		// Remove entity from scene
 		this.app.scene.removeEntity(this.craft);
 		this.app.scene.removeEntity(this.craft.emitter);
+
+		// Cause explosion
+
+		// Tell the camera to start zooming out
+
+		// Unhook input
 		
-		// Raise an event to the outside world perhaps? 
-		// I might need to refactor in order to show a 'please wait' screen of some sort
 	}
 	else {
+
+		// Remove entity from scene
 		this.removeHovercraftFromScene(data.targetid);
+
+		// Cause explosion
 	}	
 };
 
@@ -3504,10 +3512,8 @@ ClientGameReceiver.prototype.addHovercraftToScene = function(id, sync) {
     craft.setSync(sync);
     this.app.scene.addEntity(craft);
     this.attachEmitterToCraft(craft);
+	return craft;
 };
-
-
-
 
 ClientGameReceiver.prototype._sync = function(data) {
     var entity = this.app.scene.getEntity(data.id);
@@ -3515,7 +3521,8 @@ ClientGameReceiver.prototype._sync = function(data) {
 };
 
 
-exports.ClientGameReceiver = ClientGameReceiver;}, "network/entityreceiver": function(exports, require, module) {EntityReceiver = function(app) {
+exports.ClientGameReceiver = ClientGameReceiver;
+}, "network/entityreceiver": function(exports, require, module) {EntityReceiver = function(app) {
     this.app = app;
 };
 

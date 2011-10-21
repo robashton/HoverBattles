@@ -29,7 +29,7 @@ ClientCommunication.prototype.hookSocketEvents = function() {
 };
 
 ClientCommunication.prototype.onConnected = function() {
-  this.sendMessage('ready');
+
 };
 
 ClientCommunication.prototype.onDisconnected = function() {

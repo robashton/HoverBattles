@@ -3,6 +3,7 @@ ClientGameReceiver = function(app, server) {
   this.server = server;
   this.started = false;
   this.craft = null;
+  this.playerId = null;
   this.hovercraftFactory = new HovercraftFactory(app);
 };
 
@@ -25,16 +26,37 @@ ClientGameReceiver.prototype.removeCraftEmitter = function(craft) {
     this.app.scene.removeEntity(craft.emitter);
 };
 
-ClientGameReceiver.prototype._start = function(data) {
-    this.started = true;
+ClientGameReceiver.prototype._init = function(data) {
+	this.playerId = data.id;
     this.craft = this.hovercraftFactory.create(data.id);   
     this.controller = new HovercraftController(data.id, this.server);
     this.craft.attach(ChaseCamera);
 	this.craft.attach(Smoother);
-    this.craft.setSync(data.sync);
     this.craft.player = true;
-    this.app.scene.addEntity(this.craft);
-    this.attachEmitterToCraft(this.craft);
+	this.server.sendMessage('ready');
+};
+
+ClientGameReceiver.prototype._syncscene = function(data) {
+
+	for(i in data.craft) {
+		var serverCraft = data.craft[i];
+		
+		var clientCraft = 
+		serverCraft.id === this.playerId 
+					? this.craft
+					: this.app.scene.getEntity(serverCraft.id);
+
+		if(!clientCraft) {
+    		clientCraft = this.addHovercraftToScene(serverCraft.id, serverCraft.sync);
+		}
+		clientCraft.setSync(serverCraft.sync);		
+	}
+
+	if(!this.started) {
+		this.started = true;
+		this.app.scene.addEntity(this.craft);
+		this.attachEmitterToCraft(this.craft);
+	}
 };
 
 ClientGameReceiver.prototype._reviveTarget = function(data) {
@@ -100,6 +122,7 @@ ClientGameReceiver.prototype.addHovercraftToScene = function(id, sync) {
     craft.setSync(sync);
     this.app.scene.addEntity(craft);
     this.attachEmitterToCraft(craft);
+	return craft;
 };
 
 ClientGameReceiver.prototype._sync = function(data) {
