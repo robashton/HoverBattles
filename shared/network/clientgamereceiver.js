@@ -39,11 +39,19 @@ ClientGameReceiver.prototype._start = function(data) {
 
 ClientGameReceiver.prototype._reviveTarget = function(data) {
 	if(data.id === this.craft.getId()) {
+
+		// Re-add entity to scene
 		this.app.scene.addEntity(this.craft);
 		this.app.scene.addEntity(this.craft.emitter);
 		this.craft.setSync(data.sync);
+
+		// Tell the camera to start zooming back into the re-animated craft
+
+		// Re-hook input
 	}
 	else {
+
+		// Re-add entity to scene
 		this.addHovercraftToScene(data.id, data.sync);
 	}
 };
@@ -51,14 +59,24 @@ ClientGameReceiver.prototype._reviveTarget = function(data) {
 ClientGameReceiver.prototype._destroyTarget = function(data) {
 	var target = this.app.scene.getEntity(data.targetid);
 	if(this.craft === target) {
+
+		// Remove entity from scene
 		this.app.scene.removeEntity(this.craft);
 		this.app.scene.removeEntity(this.craft.emitter);
+
+		// Cause explosion
+
+		// Tell the camera to start zooming out
+
+		// Unhook input
 		
-		// Raise an event to the outside world perhaps? 
-		// I might need to refactor in order to show a 'please wait' screen of some sort
 	}
 	else {
+
+		// Remove entity from scene
 		this.removeHovercraftFromScene(data.targetid);
+
+		// Cause explosion
 	}	
 };
 
@@ -83,9 +101,6 @@ ClientGameReceiver.prototype.addHovercraftToScene = function(id, sync) {
     this.app.scene.addEntity(craft);
     this.attachEmitterToCraft(craft);
 };
-
-
-
 
 ClientGameReceiver.prototype._sync = function(data) {
     var entity = this.app.scene.getEntity(data.id);
