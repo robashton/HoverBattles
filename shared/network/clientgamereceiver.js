@@ -4,6 +4,7 @@ ClientGameReceiver = function(app, server) {
   this.started = false;
   this.craft = null;
   this.playerId = null;
+  this.chaseCamera = null;
   this.hovercraftFactory = new HovercraftFactory(app);
 };
 
@@ -30,9 +31,14 @@ ClientGameReceiver.prototype._init = function(data) {
 	this.playerId = data.id;
     this.craft = this.hovercraftFactory.create(data.id);   
     this.controller = new HovercraftController(data.id, this.server);
-    this.craft.attach(ChaseCamera);
-	this.craft.attach(Smoother);
+	  this.craft.attach(Smoother);
     this.craft.player = true;
+
+    this.chaseCamera = new Entity("chaseCameraController");
+    this.chaseCamera.attach(ChaseCamera);
+    this.chaseCamera.setTrackedEntity(this.craft);
+    this.app.scene.addEntity(this.chaseCamera);
+
 	this.server.sendMessage('ready');
 };
 
@@ -68,6 +74,7 @@ ClientGameReceiver.prototype._reviveTarget = function(data) {
 		this.craft.setSync(data.sync);
 
 		// Tell the camera to start zooming back into the re-animated craft
+		this.chaseCamera.startZoomingBackInChaseCamera();
 
 		// Re-hook input
 	}
@@ -89,6 +96,7 @@ ClientGameReceiver.prototype._destroyTarget = function(data) {
 		// Cause explosion
 
 		// Tell the camera to start zooming out
+		this.chaseCamera.startZoomingOutChaseCamera();
 
 		// Unhook input
 		
