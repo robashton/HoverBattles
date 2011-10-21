@@ -25,8 +25,6 @@ void main(void){
     float distanceSquared = abs(dot(vectorToPoint, vectorToPoint));
     float scale = clamp(distanceSquared, 1.0, 10000.0);      
 
-
-
     life = 1.0 - (age / aLifetime);
     life = clamp(life, 0.0, 1.0);
 

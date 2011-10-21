@@ -3517,6 +3517,11 @@ ClientGameReceiver.prototype.addHovercraftToScene = function(id, sync) {
 
 ClientGameReceiver.prototype._sync = function(data) {
     var entity = this.app.scene.getEntity(data.id);
+
+	if(!entity) {
+		console.log('Message received to sync entity that does not exist: ' + data.id);
+		return;
+	}
     entity.setSync(data.sync);
 };
 

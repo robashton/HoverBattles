@@ -55,14 +55,13 @@ ServerGameReceiver.prototype._destroyTarget = function(data) {
 	setTimeout(function() {
 
 		// Re-add the craft on our side
-		this.app.scene.addEntity(craft);
+		self.app.scene.addEntity(craft);
 
 		// And tell everyone else to do likewise
 		self.communication.sendMessage('reviveTarget', { 
-			id: this.entity.getId(),
+			id: craft.getId(),
 			sync: sync
-		});
-		
+		});		
 		
 	}, 5000);	
 };
