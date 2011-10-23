@@ -60,14 +60,6 @@ var ChaseCamera = {
 
   doLogicAfterAscertainingTarget: function() {
 
-    // Our target has a velocity
-    // We have a location that is relative to that of the object being chased
-    // Our ideal position is another location that is relative to the object being chased
-    // We should aim to cover x% of that distance every frame?
-    // If we reach < y distance, we should look at the velocity of the object being chased
-    // And match that for our next movement so we move with the object
-    // If the velocity < z, then we should just stop
-
     var directionToWhereWeWantToBe = vec3.create();
     vec3.subtract(this.destinationCameraLocation, this.cameraLocation, directionToWhereWeWantToBe);
     var distance = vec3.length(directionToWhereWeWantToBe);
@@ -82,7 +74,7 @@ var ChaseCamera = {
   startZoomingOutChaseCamera: function() {
     this.cameraMode = "death";
     this.destinationCameraLocation = vec3.create(this.entity.position);
-    this.destinationCameraLocation[1] = 300.0;
+    this.destinationCameraLocation[1] = 700.0;
     this.targetVelocity = vec3.create([0,0,0]);
   },
 
