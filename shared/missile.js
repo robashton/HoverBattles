@@ -2,35 +2,65 @@ Sphere = require('./bounding').Sphere;
 
 var Missile = 
 {
-    _ctor: function() {
+   _ctor: function() {
 	 	this.target = null;
 		this.source = null;
 		this._velocity = vec3.create([0,0,0]);	
-		this.bounds = new Sphere(1.0, [0,0,0])	
+		this.bounds = new Sphere(1.0, [0,0,0]);
+    this.isTrackingTarget = false;
 	},
-	setSource: function(source) {
-		this.source = source;
-		this.position = vec3.create(source.position);	
+	setSource: function(sourceid, position) {
+		this.sourceid = sourceid;
+		this.position = vec3.create(position);	
 	},
-    setTarget: function(target) {
-        this.target = target;
-    },
-    doLogic: function() {
+  setTarget: function(targetid) {
+      if(!targetid) throw "Tried to set a null target on a missile";
+      this.targetid = targetid;
+      this.isTrackingTarget = true;
+  },
 
-		this.updateVelocityTowardsTarget();
-		this.performPhysics();
-		this.determineIfTargetIsReached();
-		
+  doLogic: function() {
+
+    if(this.isTrackingTarget) {
+      this.updateTargetReferences();
+		  this.updateVelocityTowardsTarget();
+		  this.performPhysics();
+		  this.determineIfTargetIsReached();
+    } else {
+      this.performPhysics();
+    }		
 	},
+
+  updateTargetReferences: function() {
+    this.source = this.getSource();
+    this.target = this.getTarget();
+
+    if(!this.source || !this.target) {
+      this.isTrackingTarget = false;
+			this.raiseEvent('missileLost', { 
+				targetid: this.targetid,
+				sourceid: this.sourceid 
+      });
+    }
+  },
+
+  getSource: function() {
+    return this._scene.getEntity(this.sourceid);
+  },
+
+  getTarget: function() {
+    return this._scene.getEntity(this.targetid);
+  },
 	
 	determineIfTargetIsReached: function() {
 		var myBounds = this.bounds.translate(this.position);
+    
 		var targetSphere = this.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
 			this.raiseEvent('targetHit', { 
-				targetid: this.target.getId(),
-				sourceid: this.source.getId() });
-		}
+				targetid: this.targetid,
+				sourceid: this.sourceid });
+		  }
 	},
 	
 	performPhysics: function() {
@@ -64,9 +94,9 @@ var Missile =
 	calculateVectorToTarget: function() {	
 	    var targetDestination = this.target.position;
 	    var currentPosition = this.position;
-		var difference = vec3.create([0,0,0]);
-		vec3.subtract(targetDestination, currentPosition, difference);
-		return difference;
+		  var difference = vec3.create([0,0,0]);
+		  vec3.subtract(targetDestination, currentPosition, difference);
+		  return difference;
 	}
 };
 

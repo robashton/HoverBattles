@@ -3204,35 +3204,65 @@ exports.MessageDispatcher = MessageDispatcher;}, "missile": function(exports, re
 
 var Missile = 
 {
-    _ctor: function() {
+   _ctor: function() {
 	 	this.target = null;
 		this.source = null;
 		this._velocity = vec3.create([0,0,0]);	
-		this.bounds = new Sphere(1.0, [0,0,0])	
+		this.bounds = new Sphere(1.0, [0,0,0]);
+    this.isTrackingTarget = false;
 	},
-	setSource: function(source) {
-		this.source = source;
-		this.position = vec3.create(source.position);	
+	setSource: function(sourceid, position) {
+		this.sourceid = sourceid;
+		this.position = vec3.create(position);	
 	},
-    setTarget: function(target) {
-        this.target = target;
-    },
-    doLogic: function() {
+  setTarget: function(targetid) {
+      if(!targetid) throw "Tried to set a null target on a missile";
+      this.targetid = targetid;
+      this.isTrackingTarget = true;
+  },
 
-		this.updateVelocityTowardsTarget();
-		this.performPhysics();
-		this.determineIfTargetIsReached();
-		
+  doLogic: function() {
+
+    if(this.isTrackingTarget) {
+      this.updateTargetReferences();
+		  this.updateVelocityTowardsTarget();
+		  this.performPhysics();
+		  this.determineIfTargetIsReached();
+    } else {
+      this.performPhysics();
+    }		
 	},
+
+  updateTargetReferences: function() {
+    this.source = this.getSource();
+    this.target = this.getTarget();
+
+    if(!this.source || !this.target) {
+      this.isTrackingTarget = false;
+			this.raiseEvent('missileLost', { 
+				targetid: this.targetid,
+				sourceid: this.sourceid 
+      });
+    }
+  },
+
+  getSource: function() {
+    return this._scene.getEntity(this.sourceid);
+  },
+
+  getTarget: function() {
+    return this._scene.getEntity(this.targetid);
+  },
 	
 	determineIfTargetIsReached: function() {
 		var myBounds = this.bounds.translate(this.position);
+    
 		var targetSphere = this.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
 			this.raiseEvent('targetHit', { 
-				targetid: this.target.getId(),
-				sourceid: this.source.getId() });
-		}
+				targetid: this.targetid,
+				sourceid: this.sourceid });
+		  }
 	},
 	
 	performPhysics: function() {
@@ -3266,13 +3296,14 @@ var Missile =
 	calculateVectorToTarget: function() {	
 	    var targetDestination = this.target.position;
 	    var currentPosition = this.position;
-		var difference = vec3.create([0,0,0]);
-		vec3.subtract(targetDestination, currentPosition, difference);
-		return difference;
+		  var difference = vec3.create([0,0,0]);
+		  vec3.subtract(targetDestination, currentPosition, difference);
+		  return difference;
 	}
 };
 
-exports.Missile = Missile;}, "missilefactory": function(exports, require, module) {Entity = require('./entity').Entity;
+exports.Missile = Missile;
+}, "missilefactory": function(exports, require, module) {Entity = require('./entity').Entity;
 Missile = require('./missile').Missile;
 
 var MissileFactory = function(app) {
@@ -3283,13 +3314,14 @@ MissileFactory.prototype.create = function(source, target) {
   var entity = new Entity("missile-" + new Date());
 
   entity.attach(Missile);
-  entity.setSource(source);
-  entity.setTarget(target);
+  entity.setSource(source.getId(), source.position);
+  entity.setTarget(target.getId());
 
   return entity;
 };
 
-exports.MissileFactory = MissileFactory;}, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+exports.MissileFactory = MissileFactory;
+}, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var bounding = require('./bounding');
 
@@ -3670,6 +3702,7 @@ MissileReceiver.prototype._fireMissile = function(data) {
   this.app.scene.addEntity(missile);
   this.missiles[data.sourceid] = missile;
 
+
   // Not 100% sure about this, but going to give it a go
   // May just be a better idea to modularise smarter
   if(this.app.isClient) {
@@ -3683,19 +3716,32 @@ MissileReceiver.prototype._fireMissile = function(data) {
 MissileReceiver.prototype.attachHandlersToCoordinateMissile = function(missile) {
 	var self = this;
 	missile.addEventHandler('targetHit', function(data) { self.onTargetHit(data); });
+  missile.addEventHandler('missileLost', function(data) { self.onMissileLost(data); });
 };
 
 MissileReceiver.prototype.onTargetHit = function(data) {
 	this.communication.sendMessage('destroyTarget', data);
 };
 
+MissileReceiver.prototype.onMissileLost = function(data) {
+	this.communication.sendMessage('destroyMissile', data);
+};
+
+MissileReceiver.prototype._destroyMissile = function(data) {
+  this.removeMissileFromScene(data.sourceid);
+}; 
+
 MissileReceiver.prototype._destroyTarget = function(data) {
-	var missile = this.missiles[data.sourceid];
+  this.removeMissileFromScene(data.sourceid);
+};
+
+MissileReceiver.prototype.removeMissileFromScene = function(sourceid) {
+	var missile = this.missiles[sourceid];
 	this.app.scene.removeEntity(missile);
 	
 	if(this.app.isClient)
 		this.app.scene.removeEntity(missile.emitter);
-	delete this.missiles[data.sourceid];
+	delete this.missiles[sourceid];
 };
 
 MissileReceiver.prototype.attachEmitterToMissile = function(missile) {
@@ -3718,7 +3764,8 @@ MissileReceiver.prototype._destroyMissile = function(data) {
     // Remove the bullet from the scene    
 };
 
-exports.MissileReceiver = MissileReceiver;}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
+exports.MissileReceiver = MissileReceiver;
+}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;
     this.capacity = capacity;

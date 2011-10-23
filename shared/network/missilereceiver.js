@@ -12,6 +12,7 @@ MissileReceiver.prototype._fireMissile = function(data) {
   this.app.scene.addEntity(missile);
   this.missiles[data.sourceid] = missile;
 
+
   // Not 100% sure about this, but going to give it a go
   // May just be a better idea to modularise smarter
   if(this.app.isClient) {
@@ -25,19 +26,32 @@ MissileReceiver.prototype._fireMissile = function(data) {
 MissileReceiver.prototype.attachHandlersToCoordinateMissile = function(missile) {
 	var self = this;
 	missile.addEventHandler('targetHit', function(data) { self.onTargetHit(data); });
+  missile.addEventHandler('missileLost', function(data) { self.onMissileLost(data); });
 };
 
 MissileReceiver.prototype.onTargetHit = function(data) {
 	this.communication.sendMessage('destroyTarget', data);
 };
 
+MissileReceiver.prototype.onMissileLost = function(data) {
+	this.communication.sendMessage('destroyMissile', data);
+};
+
+MissileReceiver.prototype._destroyMissile = function(data) {
+  this.removeMissileFromScene(data.sourceid);
+}; 
+
 MissileReceiver.prototype._destroyTarget = function(data) {
-	var missile = this.missiles[data.sourceid];
+  this.removeMissileFromScene(data.sourceid);
+};
+
+MissileReceiver.prototype.removeMissileFromScene = function(sourceid) {
+	var missile = this.missiles[sourceid];
 	this.app.scene.removeEntity(missile);
 	
 	if(this.app.isClient)
 		this.app.scene.removeEntity(missile.emitter);
-	delete this.missiles[data.sourceid];
+	delete this.missiles[sourceid];
 };
 
 MissileReceiver.prototype.attachEmitterToMissile = function(missile) {
