@@ -20,14 +20,17 @@ var Missile =
   },
 
   doLogic: function() {
+   if(this.isTrackingTarget) this.updateTargetReferences();
 
-    if(this.isTrackingTarget) {
-      this.updateTargetReferences();
+    if(this.isTrackingTarget) {   
 		  this.updateVelocityTowardsTarget();
 		  this.performPhysics();
 		  this.determineIfTargetIsReached();
     } else {
-      this.performPhysics();
+      
+        // Probably still want to do something here in the future
+        // At the moment the missile will simply cease to be
+        // But simply removing the reference and letting it fly would be much cooler
     }		
 	},
 

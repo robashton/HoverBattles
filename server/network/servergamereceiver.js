@@ -17,8 +17,12 @@ ServerGameReceiver.prototype.addPlayer = function(id) {
 };
 
 ServerGameReceiver.prototype.removePlayer = function(id) {
-	if(this.craft[id])
-		this.app.scene.removeEntity(this.craft[id]);
+	if(this.craft[id]) {
+		this.app.scene.removeEntity(this.craft[id])
+     delete this.craft[id];
+  } else {
+    console.log('Attempted to remove non-existent player from craft collection: ' + id);  
+  }
 };
 
 ServerGameReceiver.prototype.getSyncForPlayer = function(id) {

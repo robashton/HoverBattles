@@ -3222,14 +3222,17 @@ var Missile =
   },
 
   doLogic: function() {
+   if(this.isTrackingTarget) this.updateTargetReferences();
 
-    if(this.isTrackingTarget) {
-      this.updateTargetReferences();
+    if(this.isTrackingTarget) {   
 		  this.updateVelocityTowardsTarget();
 		  this.performPhysics();
 		  this.determineIfTargetIsReached();
     } else {
-      this.performPhysics();
+      
+        // Probably still want to do something here in the future
+        // At the moment the missile will simply cease to be
+        // But simply removing the reference and letting it fly would be much cooler
     }		
 	},
 
@@ -3689,7 +3692,7 @@ EntityReceiver.prototype.getEntity = function(id) {
 };
 
 exports.EntityReceiver = EntityReceiver;}, "network/missilereceiver": function(exports, require, module) {var MissileReceiver = function(app, communication, missileFactory) {
-    this.app = app;    
+  this.app = app;    
 	this.missileFactory = missileFactory;
 	this.communication = communication;
 	this.missiles = {};
@@ -3701,7 +3704,6 @@ MissileReceiver.prototype._fireMissile = function(data) {
   var missile = this.missileFactory.create(source, target);
   this.app.scene.addEntity(missile);
   this.missiles[data.sourceid] = missile;
-
 
   // Not 100% sure about this, but going to give it a go
   // May just be a better idea to modularise smarter
@@ -3757,11 +3759,6 @@ MissileReceiver.prototype.attachEmitterToMissile = function(missile) {
     });
     missile.emitter = emitter;
     this.app.scene.addEntity(emitter);
-};
-
-MissileReceiver.prototype._destroyMissile = function(data) {
-    
-    // Remove the bullet from the scene    
 };
 
 exports.MissileReceiver = MissileReceiver;
