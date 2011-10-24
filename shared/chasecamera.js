@@ -72,9 +72,17 @@ var ChaseCamera = {
   },
 
   startZoomingOutChaseCamera: function() {
+    var self = this;
     this.cameraMode = "death";
     this.destinationCameraLocation = vec3.create(this.entity.position);
-    this.destinationCameraLocation[1] = 700.0;
+
+  
+    this.destinationCameraLocation[1] = 200.0;
+
+    setTimeout(function() {
+      self.destinationCameraLocation[1] = 700;
+    }, 1500);
+
     this.targetVelocity = vec3.create([0,0,0]);
   },
 
