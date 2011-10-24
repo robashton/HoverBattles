@@ -8,7 +8,11 @@ var MissileReceiver = function(app, communication, missileFactory) {
 MissileReceiver.prototype._fireMissile = function(data) {
   var source = this.app.scene.getEntity(data.sourceid);
   var target = this.app.scene.getEntity(data.targetid);
-  var missile = this.missileFactory.create(source, target);
+ 
+  if(!source) return;
+  if(!target) return;
+
+  var missile = this.missileFactory.create(data.sourceid, data.targetid, source.position);
   this.app.scene.addEntity(missile);
   this.missiles[data.sourceid] = missile;
 

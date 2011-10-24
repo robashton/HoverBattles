@@ -5,12 +5,12 @@ var MissileFactory = function(app) {
     this.app = app;
 };
 
-MissileFactory.prototype.create = function(source, target) {
+MissileFactory.prototype.create = function(sourceid, targetid, position) {
   var entity = new Entity("missile-" + new Date());
 
   entity.attach(Missile);
-  entity.setSource(source.getId(), source.position);
-  entity.setTarget(target.getId());
+  entity.setSource(sourceid, position);
+  entity.setTarget(targetid);
 
   return entity;
 };

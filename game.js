@@ -3287,7 +3287,7 @@ var Missile =
 	updateVelocityTowardsTarget: function() {
 		var difference = this.calculateVectorToTarget();
 		this.distanceFromTarget = vec3.length(difference);
-		vec3.scale(difference, 1.2 / this.distanceFromTarget, this._velocity);	
+		vec3.scale(difference, 2.5 / this.distanceFromTarget, this._velocity);	
 		
 	},
 	
@@ -3315,12 +3315,12 @@ var MissileFactory = function(app) {
     this.app = app;
 };
 
-MissileFactory.prototype.create = function(source, target) {
+MissileFactory.prototype.create = function(sourceid, targetid, position) {
   var entity = new Entity("missile-" + new Date());
 
   entity.attach(Missile);
-  entity.setSource(source.getId(), source.position);
-  entity.setTarget(target.getId());
+  entity.setSource(sourceid, position);
+  entity.setTarget(targetid);
 
   return entity;
 };
@@ -3703,7 +3703,11 @@ exports.EntityReceiver = EntityReceiver;}, "network/missilereceiver": function(e
 MissileReceiver.prototype._fireMissile = function(data) {
   var source = this.app.scene.getEntity(data.sourceid);
   var target = this.app.scene.getEntity(data.targetid);
-  var missile = this.missileFactory.create(source, target);
+ 
+  if(!source) return;
+  if(!target) return;
+
+  var missile = this.missileFactory.create(data.sourceid, data.targetid, source.position);
   this.app.scene.addEntity(missile);
   this.missiles[data.sourceid] = missile;
 

@@ -83,7 +83,7 @@ var Missile =
 	updateVelocityTowardsTarget: function() {
 		var difference = this.calculateVectorToTarget();
 		this.distanceFromTarget = vec3.length(difference);
-		vec3.scale(difference, 1.2 / this.distanceFromTarget, this._velocity);	
+		vec3.scale(difference, 2.5 / this.distanceFromTarget, this._velocity);	
 		
 	},
 	
