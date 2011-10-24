@@ -17,7 +17,6 @@ ServerCommunication = function(app, server){
       });
   
   this.socket = listener.sockets;
-
   this.clients = {};
   this.game = new ServerGameReceiver(this.app, this);
   
@@ -43,8 +42,8 @@ ServerCommunication.prototype.synchronise = function(){
 
 ServerCommunication.prototype.hookClient = function(socket) {
     var server = this;
-	this.game.addPlayer(socket.id);
-	this.initializeClient(socket);
+	  this.game.addPlayer(socket.id);
+	  this.initializeClient(socket);
     socket.on('message', function(msg) { server.dispatchMessage(socket, msg); });    
     socket.on('disconnect', function() {server.unhookClient(socket);});
 };
@@ -55,7 +54,7 @@ ServerCommunication.prototype.initializeClient = function(socket) {
 
 ServerCommunication.prototype.unhookClient = function(socket) {
     this.game.removePlayer(socket.id);    
-    this.broadcast('removeplayer', { id: socket.id}, socket.id);
+    this.sendMessage('removeplayer', { id: socket.id}, socket.id);
     delete this.clients[socket.id];  
 };
 
@@ -85,6 +84,7 @@ ServerCommunication.prototype.broadcast = function(command, data, from) {
       if(from && this.clients[i].id === from) continue;
       this.sendMessageToClient(this.clients[i], command, data);   
   }
+
 };
 
 ServerCommunication.prototype.syncPlayerFull = function(id) {

@@ -7,6 +7,9 @@ exports.ScoreReceiver = function(app, communication) {
       GlobalViewModel.setScores(scores);
   };
 
-
+  self._updateAllScores = function(data) {
+      scores = data.scores;
+      GlobalViewModel.setScores(scores);
+  };
 
 };

@@ -4,17 +4,24 @@ exports.ScoreKeepingReceiver = function(app, communication) {
 
   self._ready = function(data) {
     scores[data.source] = 0;
-    communication.sendMessage('updateScore', {
-        playerid: data.source,
-        score: 0       
+    communication.sendMessage('updateAllScores', {
+        scores: scores    
+    });
+  };
+
+  self._removeplayer = function(data) {
+    console.log(data.id);
+    delete scores[data.id];
+    communication.sendMessage('updateAllScores', {
+        scores: scores    
     });
   };
   
   self._destroyTarget = function(data) {
-    scores[data.targetid]++;
+    scores[data.sourceid]++;
     communication.sendMessage('updateScore', {
-         playerid: data.targetid,
-         score: scores[data.targetid]
+         playerid: data.sourceid,
+         score: scores[data.sourceid]
     });
   };
 };

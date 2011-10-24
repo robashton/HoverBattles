@@ -3500,7 +3500,7 @@ exports.Model = Model;
 ClientGameReceiver.prototype.attachEmitterToCraft = function(craft) {
     var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, this.app,
     {
-        maxsize: 100,
+        maxsize: 130,
         maxlifetime: 0.2,
         rate: 50,
         scatter: vec3.create([1.0, 0.001, 1.0]),
@@ -3773,7 +3773,10 @@ exports.MissileReceiver = MissileReceiver;
       GlobalViewModel.setScores(scores);
   };
 
-
+  self._updateAllScores = function(data) {
+      scores = data.scores;
+      GlobalViewModel.setScores(scores);
+  };
 
 };
 }, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {

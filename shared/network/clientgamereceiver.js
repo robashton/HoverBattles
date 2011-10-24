@@ -11,7 +11,7 @@ ClientGameReceiver = function(app, server) {
 ClientGameReceiver.prototype.attachEmitterToCraft = function(craft) {
     var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, this.app,
     {
-        maxsize: 100,
+        maxsize: 130,
         maxlifetime: 0.2,
         rate: 50,
         scatter: vec3.create([1.0, 0.001, 1.0]),

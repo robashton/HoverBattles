@@ -14,7 +14,7 @@
       }     
 
       orderedScores.sort(function(x, y) {
-        return x.score > y.score ? 1 : -1;
+        return x.score > y.score ? -1 : 1;
       });    
 
       var html = '<ul>';
