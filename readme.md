@@ -1,8 +1,10 @@
-*Hoverbattles*
+Hoverbattles
+------------
 
 This is a toy project I pick up from time to time, socket.io + webgl + a healthy dose of shared server/client code = gaming fun, supposedly. I'm trying to do the quickest thing possible for most part, to get to a playable game with as little fuss as possible, this means spending days on little pieces of technology is a no-no (brute force terrain, lack of octrees etc :-))
 
 Currently implemented:
+------------
 
 - A basic rendering pipeline (render everything given to it, make sure that globals are settable like camera etc)
 - A shader delivery system (packaging up shaders from server into a single json file)
