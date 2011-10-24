@@ -1,8 +1,11 @@
 <html>
     <head>
-    	<script src="../client/jquery-1.5.1.min.js"></script>
-        <script src="../bootstrap.js"></script>
-        <script src="../client/lazyload.js"></script>
+    	<script src="jquery-1.5.1.min.js"></script>
+      <script src="jquery.tmpl.js"></script>
+      <script src="knockout-1.2.1.js"></script>
+      <script src="hb.ui.js"></script>
+      <script src="../bootstrap.js"></script>
+      <script src="../client/lazyload.js"></script>
         
 		<script type="text/javascript">
 			
@@ -10,7 +13,7 @@
                 
                 var app = new blah.Application('game');             
                 app.init(function() {
-                    app.scene.camera.setLocation([0, 10, -10]);
+                    app.scene.camera.setLocation([0, 1000, -10]);
                     var landscapeController = new LandscapeController(app);    
                     
                     var clientOne = new ClientCommunication(app);
@@ -20,15 +23,7 @@
                     });
                     
                     setInterval(function() {  app.tick(); }, 1000 / 30); 
-                    
-                    setInterval(function() {
-                        
-                        var debugWindow = $('#debug');
-                        debugWindow.html('');
-                        for(i in debug){
-                            debugWindow.append('<li>' + i + ': ' + debug[i] + '</li>');
-                        }
-                    }, 20);
+
                 });
 			});
 
@@ -42,12 +37,10 @@
 		</canvas>
         
         <div style="float: left;">
-            <ul id="debug">
-
-            </ul>
-        </div>
-        
-        
+            <div id="scores">
+                
+            </div>
+        </div>     
         
         <div style="clear: both;"></div>
          <p>Added collision handling, improved the network code a tad - in the middle of adding firing but need to do a bit more work on network code before that works proper</p>

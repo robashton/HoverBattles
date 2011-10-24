@@ -5,12 +5,19 @@ EntityReceiver = require('../shared/network/entityreceiver').EntityReceiver;
 ProxyReceiver = require('./network/proxyreceiver').ProxyReceiver;
 MissileReceiver = require('../shared/network/missilereceiver').MissileReceiver;
 ServerGameReceiver = require('./network/servergamereceiver').ServerGameReceiver;
+ScoreKeepingReceiver = require('./network/scorekeepingreceiver').ScoreKeepingReceiver;
 
 ServerCommunication = function(app, server){
   var self = this;
   this.server = server;
   this.app = app;
-  this.socket = io.listen(server).sockets; 
+  var listener = io.listen(server);
+  listener.configure(function(){
+        listener.set('log level', 1);
+      });
+  
+  this.socket = listener.sockets;
+
   this.clients = {};
   this.game = new ServerGameReceiver(this.app, this);
   
@@ -19,7 +26,7 @@ ServerCommunication = function(app, server){
   this.dispatcher.addReceiver(this.game); 
   this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
   this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
-
+  this.dispatcher.addReceiver(new ScoreKeepingReceiver(this.app, this));
   this.socket.on('connection', function(socket) { self.onConnection(socket); });
 };
 

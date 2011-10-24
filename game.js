@@ -433,6 +433,7 @@ var ClientGameReceiver = require('./network/clientgamereceiver').ClientGameRecei
 var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 var MissileFactory = require('./missilefactory').MissileFactory;
 var MissileReceiver = require('./network/missilereceiver').MissileReceiver;
+var ScoreReceiver = require('./network/scorereceiver').ScoreReceiver;
 
 ClientCommunication = function(app){
     this.app = app;
@@ -444,7 +445,8 @@ ClientCommunication = function(app){
     this.dispatcher = new MessageDispatcher();
     this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
-	this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
+	  this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
+    this.dispatcher.addReceiver(new ScoreReceiver(this.app, this));
 };
 
 ClientCommunication.prototype.hookSocketEvents = function() {
@@ -3762,6 +3764,18 @@ MissileReceiver.prototype.attachEmitterToMissile = function(missile) {
 };
 
 exports.MissileReceiver = MissileReceiver;
+}, "network/scorereceiver": function(exports, require, module) {exports.ScoreReceiver = function(app, communication) {
+  var self = this;
+  var scores = { };
+
+  self._updateScore = function(data) {
+      scores[data.playerid] = data.score;
+      GlobalViewModel.setScores(scores);
+  };
+
+
+
+};
 }, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;

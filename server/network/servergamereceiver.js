@@ -47,6 +47,7 @@ ServerGameReceiver.prototype._ready = function( data) {
 	this.communication.syncPlayerFull(data.source);
 };
 
+ServerGameReceiver.prototype._reviveTarget = function() {}; 
 ServerGameReceiver.prototype._destroyTarget = function(data) {
 
 	// Remove the entity from our scene
