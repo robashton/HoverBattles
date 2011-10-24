@@ -5,9 +5,10 @@ var MissileFactory = function(app) {
     this.app = app;
 };
 
-MissileFactory.prototype.create = function(sourceid, targetid, position) {
-  var entity = new Entity("missile-" + new Date());
+MissileFactory.prototype.create = function(missileid, sourceid, targetid, position) {
+  var entity = new Entity(missileid);
 
+  
   entity.attach(Missile);
   entity.setSource(sourceid, position);
   entity.setTarget(targetid);

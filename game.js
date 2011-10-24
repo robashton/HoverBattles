@@ -3254,7 +3254,8 @@ var Missile =
       this.isTrackingTarget = false;
 			this.raiseEvent('missileLost', { 
 				targetid: this.targetid,
-				sourceid: this.sourceid 
+				sourceid: this.sourceid,
+        missileid: this.getId()
       });
     }
   },
@@ -3274,7 +3275,8 @@ var Missile =
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
 			this.raiseEvent('targetHit', { 
 				targetid: this.targetid,
-				sourceid: this.sourceid });
+				sourceid: this.sourceid,
+        missileid: this.getId() });
 		  }
 	},
 	
@@ -3323,9 +3325,10 @@ var MissileFactory = function(app) {
     this.app = app;
 };
 
-MissileFactory.prototype.create = function(sourceid, targetid, position) {
-  var entity = new Entity("missile-" + new Date());
+MissileFactory.prototype.create = function(missileid, sourceid, targetid, position) {
+  var entity = new Entity(missileid);
 
+  
   entity.attach(Missile);
   entity.setSource(sourceid, position);
   entity.setTarget(targetid);
@@ -3735,9 +3738,8 @@ MissileReceiver.prototype._fireMissile = function(data) {
   if(!source) return;
   if(!target) return;
 
-  var missile = this.missileFactory.create(data.sourceid, data.targetid, source.position);
+  var missile = this.missileFactory.create(data.missileid, data.sourceid, data.targetid, source.position);
   this.app.scene.addEntity(missile);
-  this.missiles[data.sourceid] = missile;
 
   // Not 100% sure about this, but going to give it a go
   // May just be a better idea to modularise smarter
@@ -3764,20 +3766,21 @@ MissileReceiver.prototype.onMissileLost = function(data) {
 };
 
 MissileReceiver.prototype._destroyMissile = function(data) {
-  this.removeMissileFromScene(data.sourceid);
+  this.removeMissileFromScene(data.missileid);
 }; 
 
 MissileReceiver.prototype._destroyTarget = function(data) {
-  this.removeMissileFromScene(data.sourceid);
+  this.removeMissileFromScene(data.missileid);
 };
 
-MissileReceiver.prototype.removeMissileFromScene = function(sourceid) {
-	var missile = this.missiles[sourceid];
-	this.app.scene.removeEntity(missile);
+MissileReceiver.prototype.removeMissileFromScene = function(id) {
+  var self = this;
+  self.app.scene.withEntity(id, function(missile) {
+	  self.app.scene.removeEntity(missile);
 	
-	if(this.app.isClient)
-		this.app.scene.removeEntity(missile.emitter);
-	delete this.missiles[sourceid];
+	  if(self.app.isClient)
+		  self.app.scene.removeEntity(missile.emitter);
+  });	
 };
 
 MissileReceiver.prototype.attachEmitterToMissile = function(missile) {

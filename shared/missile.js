@@ -42,7 +42,8 @@ var Missile =
       this.isTrackingTarget = false;
 			this.raiseEvent('missileLost', { 
 				targetid: this.targetid,
-				sourceid: this.sourceid 
+				sourceid: this.sourceid,
+        missileid: this.getId()
       });
     }
   },
@@ -62,7 +63,8 @@ var Missile =
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
 			this.raiseEvent('targetHit', { 
 				targetid: this.targetid,
-				sourceid: this.sourceid });
+				sourceid: this.sourceid,
+        missileid: this.getId() });
 		  }
 	},
 	

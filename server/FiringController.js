@@ -8,6 +8,7 @@ var FiringController = function(entity, communication) {
 	this._trackingStartTime = null;
 	this._trackedTarget = null;
 	this.fired = false;
+  this.missileidCounter = 0;
 };
 	
 FiringController.prototype.onTrackingTarget = function(ev) {
@@ -27,7 +28,10 @@ FiringController.prototype.onTick = function() {
 	var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
 	if(timeElapsedSinceStartedTracking > 3000) {
 		this.fired = true;
-		this.communication.sendMessage('fireMissile', { sourceid: this.entity.getId(), targetid: this._trackedTarget.getId()});
+		this.communication.sendMessage('fireMissile', { 
+        missileid: 'missile-' + this.entity.getId() + this.missileidCounter++, 
+        sourceid: this.entity.getId(), 
+        targetid: this._trackedTarget.getId()});
 	}
 }
 
