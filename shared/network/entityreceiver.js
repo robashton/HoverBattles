@@ -2,55 +2,71 @@ EntityReceiver = function(app) {
     this.app = app;
 };
 
+EntityReceiver.prototype.withEntity = function(id, callback) {
+  var entity = this.getEntity(id);
+  if(!entity) return;
+  callback(entity);
+};
+
 EntityReceiver.prototype._startUp = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.startUp();
+    this.withEntity(data.id, function(entity) {
+      entity.startUp();
+    });
 };
 
 EntityReceiver.prototype._cancelUp = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.cancelUp();
+    this.withEntity(data.id, function(entity) {
+      entity.cancelUp();
+    });
 };
 
 EntityReceiver.prototype._startForward = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.startForward();
+    this.withEntity(data.id, function(entity) {
+      entity.startForward();
+    });
 };
 
 
 EntityReceiver.prototype._cancelForward = function(data) {
-  var entity = this.getEntity(data.id);
-  entity.cancelForward();
+    this.withEntity(data.id, function(entity) {
+      entity.cancelForward();
+    });
 };
 
 EntityReceiver.prototype._startBackward = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.startBackward();
+    this.withEntity(data.id, function(entity) {
+      entity.startBackward();
+    });
 };
 
 EntityReceiver.prototype._cancelBackward = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.cancelBackward();
+    this.withEntity(data.id, function(entity) {
+      entity.cancelBackward();
+    });
 };
 
 EntityReceiver.prototype._startLeft = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.startLeft();
+    this.withEntity(data.id, function(entity) {
+      entity.startLeft();
+    });
 };
 
 EntityReceiver.prototype._cancelLeft = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.cancelLeft();
-};
+    this.withEntity(data.id, function(entity) {
+      entity.cancelLeft();
+    });
+ };
 
 EntityReceiver.prototype._startRight = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.startRight();
+    this.withEntity(data.id, function(entity) {
+      entity.startRight();
+    });
 };
 
 EntityReceiver.prototype._cancelRight = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.cancelRight();
+    this.withEntity(data.id, function(entity) {
+      entity.cancelRight();
+    });
 };
 
 EntityReceiver.prototype.getEntity = function(id) {

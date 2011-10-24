@@ -45,7 +45,7 @@ var ChaseCamera = {
      var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(this._scene.camera.location[0], 
                                                              this._scene.camera.location[2]);
                             
-     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, this.entity.position[1] + 15);
+     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, this.entity.position[1] + 10);
      
      desiredCameraLocation[1] =  cameraHeight;
   

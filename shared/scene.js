@@ -14,6 +14,13 @@ Scene.prototype.sendCommand = function(commandName, data) {
 	
 };
 
+Scene.prototype.withEntity = function(id, callback) {
+  var entity = this.getEntity(id);
+  if(entity) {
+    callback(entity);
+  } else console.log('Failed to find entity ' + id);
+};
+
 Scene.prototype.getEntity = function(id) {
   return this._entities[id];  
 };

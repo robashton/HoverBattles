@@ -333,7 +333,7 @@ var ChaseCamera = {
      var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(this._scene.camera.location[0], 
                                                              this._scene.camera.location[2]);
                             
-     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, this.entity.position[1] + 15);
+     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, this.entity.position[1] + 10);
      
      desiredCameraLocation[1] =  cameraHeight;
   
@@ -3583,8 +3583,9 @@ ClientGameReceiver.prototype._reviveTarget = function(data) {
 };
 
 ClientGameReceiver.prototype._destroyTarget = function(data) {
-	var target = this.app.scene.getEntity(data.targetid);
-	if(this.craft === target) {
+
+ 
+	if(this.craft.getId() === data.targetid) {
 
 		// Remove entity from scene
 		this.app.scene.removeEntity(this.craft);
@@ -3616,18 +3617,20 @@ ClientGameReceiver.prototype._removeplayer = function(data) {
 };
 
 ClientGameReceiver.prototype.removeHovercraftFromScene = function(id) {
-    var craft = this.app.scene.getEntity(id);
-    this.removeCraftEmitter(craft);
-    this.app.scene.removeEntity(craft);
+    var self = this;
+    var craft = this.app.scene.withEntity(id, function(craft) {
+      self.removeCraftEmitter(craft);
+      self.app.scene.removeEntity(craft);
+    });
 };
 
 ClientGameReceiver.prototype.addHovercraftToScene = function(id, sync) {
     var craft = this.hovercraftFactory.create(id);
-	craft.attach(Smoother);
+	  craft.attach(Smoother);
     craft.setSync(sync);
     this.app.scene.addEntity(craft);
     this.attachEmitterToCraft(craft);
-	return craft;
+	  return craft;
 };
 
 ClientGameReceiver.prototype._sync = function(data) {
@@ -3646,62 +3649,79 @@ exports.ClientGameReceiver = ClientGameReceiver;
     this.app = app;
 };
 
+EntityReceiver.prototype.withEntity = function(id, callback) {
+  var entity = this.getEntity(id);
+  if(!entity) return;
+  callback(entity);
+};
+
 EntityReceiver.prototype._startUp = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.startUp();
+    this.withEntity(data.id, function(entity) {
+      entity.startUp();
+    });
 };
 
 EntityReceiver.prototype._cancelUp = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.cancelUp();
+    this.withEntity(data.id, function(entity) {
+      entity.cancelUp();
+    });
 };
 
 EntityReceiver.prototype._startForward = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.startForward();
+    this.withEntity(data.id, function(entity) {
+      entity.startForward();
+    });
 };
 
 
 EntityReceiver.prototype._cancelForward = function(data) {
-  var entity = this.getEntity(data.id);
-  entity.cancelForward();
+    this.withEntity(data.id, function(entity) {
+      entity.cancelForward();
+    });
 };
 
 EntityReceiver.prototype._startBackward = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.startBackward();
+    this.withEntity(data.id, function(entity) {
+      entity.startBackward();
+    });
 };
 
 EntityReceiver.prototype._cancelBackward = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.cancelBackward();
+    this.withEntity(data.id, function(entity) {
+      entity.cancelBackward();
+    });
 };
 
 EntityReceiver.prototype._startLeft = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.startLeft();
+    this.withEntity(data.id, function(entity) {
+      entity.startLeft();
+    });
 };
 
 EntityReceiver.prototype._cancelLeft = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.cancelLeft();
-};
+    this.withEntity(data.id, function(entity) {
+      entity.cancelLeft();
+    });
+ };
 
 EntityReceiver.prototype._startRight = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.startRight();
+    this.withEntity(data.id, function(entity) {
+      entity.startRight();
+    });
 };
 
 EntityReceiver.prototype._cancelRight = function(data) {
-    var entity = this.getEntity(data.id);
-    entity.cancelRight();
+    this.withEntity(data.id, function(entity) {
+      entity.cancelRight();
+    });
 };
 
 EntityReceiver.prototype.getEntity = function(id) {
   return this.app.scene.getEntity(id);
 };
 
-exports.EntityReceiver = EntityReceiver;}, "network/missilereceiver": function(exports, require, module) {var MissileReceiver = function(app, communication, missileFactory) {
+exports.EntityReceiver = EntityReceiver;
+}, "network/missilereceiver": function(exports, require, module) {var MissileReceiver = function(app, communication, missileFactory) {
   this.app = app;    
 	this.missileFactory = missileFactory;
 	this.communication = communication;
@@ -4156,6 +4176,13 @@ Scene.prototype.sendCommand = function(commandName, data) {
 	
 };
 
+Scene.prototype.withEntity = function(id, callback) {
+  var entity = this.getEntity(id);
+  if(entity) {
+    callback(entity);
+  } else console.log('Failed to find entity ' + id);
+};
+
 Scene.prototype.getEntity = function(id) {
   return this._entities[id];  
 };
@@ -4213,7 +4240,8 @@ Scene.prototype.render = function(context){
 	}  
 };
 
-exports.Scene = Scene;}, "smoother": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+exports.Scene = Scene;
+}, "smoother": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 
 var Smoother = {
 	_ctor: function() {

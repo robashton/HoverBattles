@@ -86,8 +86,9 @@ ClientGameReceiver.prototype._reviveTarget = function(data) {
 };
 
 ClientGameReceiver.prototype._destroyTarget = function(data) {
-	var target = this.app.scene.getEntity(data.targetid);
-	if(this.craft === target) {
+
+ 
+	if(this.craft.getId() === data.targetid) {
 
 		// Remove entity from scene
 		this.app.scene.removeEntity(this.craft);
@@ -119,18 +120,20 @@ ClientGameReceiver.prototype._removeplayer = function(data) {
 };
 
 ClientGameReceiver.prototype.removeHovercraftFromScene = function(id) {
-    var craft = this.app.scene.getEntity(id);
-    this.removeCraftEmitter(craft);
-    this.app.scene.removeEntity(craft);
+    var self = this;
+    var craft = this.app.scene.withEntity(id, function(craft) {
+      self.removeCraftEmitter(craft);
+      self.app.scene.removeEntity(craft);
+    });
 };
 
 ClientGameReceiver.prototype.addHovercraftToScene = function(id, sync) {
     var craft = this.hovercraftFactory.create(id);
-	craft.attach(Smoother);
+	  craft.attach(Smoother);
     craft.setSync(sync);
     this.app.scene.addEntity(craft);
     this.attachEmitterToCraft(craft);
-	return craft;
+	  return craft;
 };
 
 ClientGameReceiver.prototype._sync = function(data) {
