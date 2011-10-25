@@ -68,7 +68,7 @@ ServerGameReceiver.prototype._destroyTarget = function(data) {
 			sync: sync
 		});		
 		
-	}, 5000);	
+	}, 10000);	
 };
 
 

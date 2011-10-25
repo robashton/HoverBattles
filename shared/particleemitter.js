@@ -1,6 +1,7 @@
 ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;
+    this.active = true;
     this.capacity = capacity;
     this.positions = new Float32Array(capacity * 3);
     this.velocities = new Float32Array(capacity * 3);
@@ -11,6 +12,7 @@ ParticleEmitter = function(id, capacity, app, config) {
     this.maxsize = config.maxsize || 20;
     this.maxlifetime = config.maxlifetime || 2.5;
     this.scatter = config.scatter || vec3.create([0.01,0.01,0.01]);
+    
     this.track = config.track || function() {};
     this.time = 0;
     this.ticks = 0;
@@ -19,7 +21,9 @@ ParticleEmitter = function(id, capacity, app, config) {
     this.lifetimes = new Float32Array(capacity);
     this.creationTimes = new Float32Array(capacity);
     
-    this.position = vec3.create([0,0,0]);
+    this.position =  config.position || vec3.create([0,0,0]);
+    this.particleOutwardVelocity = config.particleOutwardVelocity || vec3.create([1,1,1]);
+    this.particleTrajectoryVelocity = config.particleTrajectoryVelocity || vec3.create([0,0,0]);
         
     for(var x = 0 ; x < capacity; x++) {
         var vertex = x * 3;
@@ -28,10 +32,10 @@ ParticleEmitter = function(id, capacity, app, config) {
         this.positions[vertex] = 0;
         this.positions[vertex+1] = 0;
         this.positions[vertex+1] = 0;
-        
-        this.velocities[vertex] = Math.random() * 2 - 1;
-        this.velocities[vertex+1] = Math.random() * 2 - 1;
-        this.velocities[vertex+2] = Math.random() * 2 - 1;
+      
+        this.velocities[vertex] = this.particleTrajectoryVelocity[0] + (this.particleOutwardVelocity[0] - (Math.random() * this.particleOutwardVelocity[0] * 2)); 
+        this.velocities[vertex+1] =  this.particleTrajectoryVelocity[1] + (this.particleOutwardVelocity[1] - (Math.random() * this.particleOutwardVelocity[1] * 2)); 
+        this.velocities[vertex+2] = this.particleTrajectoryVelocity[2] + (this.particleOutwardVelocity[2] - (Math.random() * this.particleOutwardVelocity[2] * 2)); 
         
         this.colours[colour] = Math.random();
         this.colours[colour+1] = Math.random();
@@ -43,6 +47,14 @@ ParticleEmitter = function(id, capacity, app, config) {
     }
     
     this.createBuffers();
+};
+
+ParticleEmitter.prototype.start = function() {
+  this.active = true;
+};
+
+ParticleEmitter.prototype.stop = function() {
+  this.active = false;
 };
 
 ParticleEmitter.prototype.createBuffers = function(){
@@ -93,6 +105,8 @@ ParticleEmitter.prototype.getId = function() { return this.id; }
 ParticleEmitter.prototype.doLogic = function() {
     this.time += 0.01;
     this.ticks++;
+
+    if(!this.active) return;
         
     var lastPosition = vec3.create(this.position);
     var interpolation = vec3.create();
@@ -150,12 +164,12 @@ ParticleEmitter.prototype.render = function(context) {
     gl.depthMask(false);
     
     gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
+	  gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
+	  gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
     
     gl.bindBuffer(gl.ARRAY_BUFFER, this._velocityBuffer);
     gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVelocity'), 3, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVelocity'));
+	  gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVelocity'));
     
     gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
     gl.vertexAttribPointer(gl.getAttribLocation(program, 'aColour'), 3, gl.FLOAT, false, 0, 0);

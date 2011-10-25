@@ -296,36 +296,51 @@ var ChaseCamera = {
 
   _ctor: function() {
       this.cameraLocation = vec3.create([0,100,0]);
+      this.cameraLookAt = vec3.create([0,0,0]);
+      this.destinationCameraLocation = vec3.create([0,0,0]);
+      this.destinationCameraLookAt = vec3.create([0,0,0]);
+
+      this.movementDelta = 0.1;
+      this.lookAtDelta = 0.7;
+      this.fixLocation = false;
+
       this.cameraVelocity = vec3.create([0,0,0]);
-      this.targetVelocity = vec3.create([0,0,0]);
-      
+      this.lookAtVelocity = vec3.create([0,0,0]);
   },
 
   setTrackedEntity: function(entity) {
     this.entity = entity;
-    this.cameraLocation = vec3.create(this.entity.position);
-    this.cameraLocation[1] = 10;
+  },
+
+  fixLocationAt: function(position) {
+      this.fixLocation = true;
+      this.destinationCameraLocation = vec3.create(position);
+  },
+
+  unfixLocation: function() {
+      this.fixLocation = false;
+  },
+
+  setMovementDelta: function(delta) {
+    this.movementDelta = delta;
+  },
+  
+  setLookAtDelta: function(delta) {
+    this.lookAtDelta = delta;
   },
 
   doLogic: function(){      
-    this._scene.camera.location = vec3.create(this.cameraLocation);
-    if(this.cameraMode === "chase")
-      this.doLogicForChaseCamera();
-    else if(this.cameraMode === "death")
-      this.doLogicForDeathCamera();
-    else
-      throw "Camera is in an invalid state, wtf dude?";
+    this.workOutWhereTargetIs();
+    this.doLogicAfterAscertainingTarget();
   },
 
-  doLogicForChaseCamera: function() {
-     var terrain = this._scene.getEntity("terrain");
-      
-     this._scene.camera.lookAt = this.entity.position;     
+  workOutWhereTargetIs: function() {
+     var terrain = this._scene.getEntity("terrain");      
      var cameraTrail = vec3.create(this.entity._velocity);
 
      cameraTrail[1] = 0;
      vec3.normalize(cameraTrail);
-     vec3.scale(cameraTrail, 15);
+     vec3.scale(cameraTrail, 25);
      vec3.subtract(this.entity.position, cameraTrail, cameraTrail);
 
      var desiredCameraLocation = cameraTrail;
@@ -335,49 +350,29 @@ var ChaseCamera = {
                             
      var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, this.entity.position[1] + 10);
      
-     desiredCameraLocation[1] =  cameraHeight;
-  
-     this.destinationCameraLocation = desiredCameraLocation;
-     this.targetVelocity = vec3.create(this.entity._velocity);
-     this.doLogicAfterAscertainingTarget();
-  },
+     desiredCameraLocation[1] =  cameraHeight;  
+    
 
-  doLogicForDeathCamera: function() {   
-    this.doLogicAfterAscertainingTarget();
+     this.destinationCameraLookAt = vec3.create(this.entity.position);
+
+     if(!this.fixLocation)
+      this.destinationCameraLocation = desiredCameraLocation;
   },
 
   doLogicAfterAscertainingTarget: function() {
-
-    var directionToWhereWeWantToBe = vec3.create();
+    var directionToWhereWeWantToBe = vec3.create([0,0,0]);
     vec3.subtract(this.destinationCameraLocation, this.cameraLocation, directionToWhereWeWantToBe);
-    var distance = vec3.length(directionToWhereWeWantToBe);
-    var movementTowardsDestination = 0.1;
-
-    vec3.scale(directionToWhereWeWantToBe, movementTowardsDestination, this.cameraVelocity);
-
+    vec3.scale(directionToWhereWeWantToBe, this.movementDelta , this.cameraVelocity);
     vec3.add(this.cameraLocation, this.cameraVelocity); 
-    this._scene.camera.location = new vec3.create(this.cameraLocation);
-  },
 
-  startZoomingOutChaseCamera: function() {
-    var self = this;
-    this.cameraMode = "death";
-    this.destinationCameraLocation = vec3.create(this.entity.position);
+    var directionToWhereWeWantToLookAt = vec3.create([0,0,0]);
+    vec3.subtract(this.destinationCameraLookAt, this.cameraLookAt, directionToWhereWeWantToLookAt);
+    vec3.scale(directionToWhereWeWantToLookAt, this.lookAtDelta , this.lookAtVelocity);
+    vec3.add(this.cameraLookAt, this.lookAtVelocity); 
 
-  
-    this.destinationCameraLocation[1] = 200.0;
-
-    setTimeout(function() {
-      self.destinationCameraLocation[1] = 700;
-    }, 1500);
-
-    this.targetVelocity = vec3.create([0,0,0]);
-  },
-
-  startZoomingBackInChaseCamera: function() {
-    this.cameraMode = "chase";
-  }
-  
+    this._scene.camera.lookAt = vec3.create(this.cameraLookAt);
+    this._scene.camera.location = vec3.create(this.cameraLocation);
+  },  
 };
 
 exports.ChaseCamera = ChaseCamera;
@@ -697,6 +692,40 @@ Entity.prototype.render = function(context){
 };
 
 exports.Entity = Entity;
+}, "explosion": function(exports, require, module) {var ParticleEmitter = require('./particleemitter').ParticleEmitter;
+
+exports.Explosion = function(app, details) {
+  var date = new Date();
+
+  var directionOfExplosion = vec3.create([0,0,0]);
+  var speed = vec3.length(details.initialVelocity);
+  
+  if(speed > 0.5) {
+    vec3.normalize(details.initialVelocity, directionOfExplosion);
+    vec3.scale(directionOfExplosion, 30.0);
+  }
+
+  var emitter = new ParticleEmitter('Explosion-' + date, 10000, app,
+  {
+      maxsize: 300,
+      maxlifetime: 0.8,
+      rate: 1400,
+      position: details.position,
+      scatter: vec3.create([0.2, 0.2, 0.2]),
+      particleOutwardVelocity: vec3.create([20,20,20]),
+      particleTrajectoryVelocity: directionOfExplosion
+  });
+
+  app.scene.addEntity(emitter);
+
+  setTimeout(function() {
+    emitter.stop();
+  }, 150);
+
+  setTimeout(function() {
+    app.scene.removeEntity(emitter);
+  }, 10000); 
+};
 }, "frustum": function(exports, require, module) {mat4 = require('./glmatrix').mat4;
 debug = require('./debug');
 
@@ -3498,7 +3527,9 @@ Model.Quad = function()
 
 exports.Model = Model;
 
-}, "network/clientgamereceiver": function(exports, require, module) {exports.ClientGameReceiver = function(app, server) {
+}, "network/clientgamereceiver": function(exports, require, module) {var Explosion = require('../explosion').Explosion;
+
+exports.ClientGameReceiver = function(app, server) {
   var self = this;
 
   var app = app;
@@ -3526,6 +3557,34 @@ exports.Model = Model;
 	  server.sendMessage('ready');
   };
 
+  self._destroyTarget = function(data) {
+
+	  if(craft.getId() === data.targetid) {    
+      createExplosionForCraftWithId(data.targetid);
+		  app.scene.removeEntity(craft);
+		  app.scene.removeEntity(craft.emitter);
+
+      app.scene.withEntity(data.sourceid, function(source) {
+
+        chaseCamera.setMovementDelta(0.03);
+        chaseCamera.setLookAtDelta(0.03);
+        chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 100, craft.position[1]]);
+
+        setTimeout(function() {
+            chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 300, craft.position[1]]);
+            chaseCamera.setTrackedEntity(source);
+        }, 5000);
+      });
+
+		  // Unhook input
+		
+	  }
+	  else {
+      createExplosionForCraftWithId(data.targetid);
+		  removeHovercraftFromScene(data.targetid);
+	  }	
+  };
+
     self._reviveTarget = function(data) {
 	  if(data.id === craft.getId()) {
 
@@ -3534,8 +3593,10 @@ exports.Model = Model;
 		  app.scene.addEntity(craft.emitter);
 		  craft.setSync(data.sync);
 
-		  // Tell the camera to start zooming back into the re-animated craft
-		  chaseCamera.startZoomingBackInChaseCamera();
+      chaseCamera.setMovementDelta(0.1);
+      chaseCamera.setLookAtDelta(0.7);
+		  chaseCamera.setTrackedEntity(craft);
+      chaseCamera.unfixLocation();
 
 		  // Re-hook input
 	  }
@@ -3570,32 +3631,6 @@ exports.Model = Model;
 	  }
   };
 
-  self._destroyTarget = function(data) {
-
-	  if(craft.getId() === data.targetid) {
-
-		  // Remove entity from scene
-		  app.scene.removeEntity(craft);
-		  app.scene.removeEntity(craft.emitter);
-
-		  // Cause explosion
-      
-
-		  // Tell the camera to start zooming out
-		  chaseCamera.startZoomingOutChaseCamera();
-
-		  // Unhook input
-		
-	  }
-	  else {
-
-		  // Remove entity from scene
-		  removeHovercraftFromScene(data.targetid);
-
-		  // Cause explosion
-	  }	
-  };
-
   self._sync = function(data) {
       var entity = app.scene.getEntity(data.id);
 
@@ -3605,20 +3640,28 @@ exports.Model = Model;
 	  }
       entity.setSync(data.sync);
   };
-   
+  
+  createExplosionForCraftWithId = function(craftId) {
+    app.scene.withEntity(craftId, function(explodingCraft) {
+      var explosion = new Explosion(app, {
+        position: explodingCraft.position,
+        initialVelocity: explodingCraft._velocity        
+      });
+    });
+  };
 
   var removeCraftEmitter = function(craft) {
     app.scene.removeEntity(craft.emitter);
-  };
-  
+  };  
 
   var attachEmitterToCraft = function(craft) {
     var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, app,
     {
-        maxsize: 130,
+        maxsize: 40,
         maxlifetime: 0.2,
         rate: 50,
         scatter: vec3.create([1.0, 0.001, 1.0]),
+        particleVelocity: vec3.create([0.1, -0.3, 0.1]),
         track: function(){
             this.position = vec3.create(craft.position);
         }
@@ -3821,6 +3864,7 @@ exports.MissileReceiver = MissileReceiver;
 }, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;
+    this.active = true;
     this.capacity = capacity;
     this.positions = new Float32Array(capacity * 3);
     this.velocities = new Float32Array(capacity * 3);
@@ -3831,6 +3875,7 @@ exports.MissileReceiver = MissileReceiver;
     this.maxsize = config.maxsize || 20;
     this.maxlifetime = config.maxlifetime || 2.5;
     this.scatter = config.scatter || vec3.create([0.01,0.01,0.01]);
+    
     this.track = config.track || function() {};
     this.time = 0;
     this.ticks = 0;
@@ -3839,7 +3884,9 @@ exports.MissileReceiver = MissileReceiver;
     this.lifetimes = new Float32Array(capacity);
     this.creationTimes = new Float32Array(capacity);
     
-    this.position = vec3.create([0,0,0]);
+    this.position =  config.position || vec3.create([0,0,0]);
+    this.particleOutwardVelocity = config.particleOutwardVelocity || vec3.create([1,1,1]);
+    this.particleTrajectoryVelocity = config.particleTrajectoryVelocity || vec3.create([0,0,0]);
         
     for(var x = 0 ; x < capacity; x++) {
         var vertex = x * 3;
@@ -3848,10 +3895,10 @@ exports.MissileReceiver = MissileReceiver;
         this.positions[vertex] = 0;
         this.positions[vertex+1] = 0;
         this.positions[vertex+1] = 0;
-        
-        this.velocities[vertex] = Math.random() * 2 - 1;
-        this.velocities[vertex+1] = Math.random() * 2 - 1;
-        this.velocities[vertex+2] = Math.random() * 2 - 1;
+      
+        this.velocities[vertex] = this.particleTrajectoryVelocity[0] + (this.particleOutwardVelocity[0] - (Math.random() * this.particleOutwardVelocity[0] * 2)); 
+        this.velocities[vertex+1] =  this.particleTrajectoryVelocity[1] + (this.particleOutwardVelocity[1] - (Math.random() * this.particleOutwardVelocity[1] * 2)); 
+        this.velocities[vertex+2] = this.particleTrajectoryVelocity[2] + (this.particleOutwardVelocity[2] - (Math.random() * this.particleOutwardVelocity[2] * 2)); 
         
         this.colours[colour] = Math.random();
         this.colours[colour+1] = Math.random();
@@ -3863,6 +3910,14 @@ exports.MissileReceiver = MissileReceiver;
     }
     
     this.createBuffers();
+};
+
+ParticleEmitter.prototype.start = function() {
+  this.active = true;
+};
+
+ParticleEmitter.prototype.stop = function() {
+  this.active = false;
 };
 
 ParticleEmitter.prototype.createBuffers = function(){
@@ -3913,6 +3968,8 @@ ParticleEmitter.prototype.getId = function() { return this.id; }
 ParticleEmitter.prototype.doLogic = function() {
     this.time += 0.01;
     this.ticks++;
+
+    if(!this.active) return;
         
     var lastPosition = vec3.create(this.position);
     var interpolation = vec3.create();
@@ -3970,12 +4027,12 @@ ParticleEmitter.prototype.render = function(context) {
     gl.depthMask(false);
     
     gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
+	  gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
+	  gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
     
     gl.bindBuffer(gl.ARRAY_BUFFER, this._velocityBuffer);
     gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVelocity'), 3, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVelocity'));
+	  gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVelocity'));
     
     gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
     gl.vertexAttribPointer(gl.getAttribLocation(program, 'aColour'), 3, gl.FLOAT, false, 0, 0);

@@ -8,36 +8,51 @@ var ChaseCamera = {
 
   _ctor: function() {
       this.cameraLocation = vec3.create([0,100,0]);
+      this.cameraLookAt = vec3.create([0,0,0]);
+      this.destinationCameraLocation = vec3.create([0,0,0]);
+      this.destinationCameraLookAt = vec3.create([0,0,0]);
+
+      this.movementDelta = 0.1;
+      this.lookAtDelta = 0.7;
+      this.fixLocation = false;
+
       this.cameraVelocity = vec3.create([0,0,0]);
-      this.targetVelocity = vec3.create([0,0,0]);
-      
+      this.lookAtVelocity = vec3.create([0,0,0]);
   },
 
   setTrackedEntity: function(entity) {
     this.entity = entity;
-    this.cameraLocation = vec3.create(this.entity.position);
-    this.cameraLocation[1] = 10;
+  },
+
+  fixLocationAt: function(position) {
+      this.fixLocation = true;
+      this.destinationCameraLocation = vec3.create(position);
+  },
+
+  unfixLocation: function() {
+      this.fixLocation = false;
+  },
+
+  setMovementDelta: function(delta) {
+    this.movementDelta = delta;
+  },
+  
+  setLookAtDelta: function(delta) {
+    this.lookAtDelta = delta;
   },
 
   doLogic: function(){      
-    this._scene.camera.location = vec3.create(this.cameraLocation);
-    if(this.cameraMode === "chase")
-      this.doLogicForChaseCamera();
-    else if(this.cameraMode === "death")
-      this.doLogicForDeathCamera();
-    else
-      throw "Camera is in an invalid state, wtf dude?";
+    this.workOutWhereTargetIs();
+    this.doLogicAfterAscertainingTarget();
   },
 
-  doLogicForChaseCamera: function() {
-     var terrain = this._scene.getEntity("terrain");
-      
-     this._scene.camera.lookAt = this.entity.position;     
+  workOutWhereTargetIs: function() {
+     var terrain = this._scene.getEntity("terrain");      
      var cameraTrail = vec3.create(this.entity._velocity);
 
      cameraTrail[1] = 0;
      vec3.normalize(cameraTrail);
-     vec3.scale(cameraTrail, 15);
+     vec3.scale(cameraTrail, 25);
      vec3.subtract(this.entity.position, cameraTrail, cameraTrail);
 
      var desiredCameraLocation = cameraTrail;
@@ -47,49 +62,29 @@ var ChaseCamera = {
                             
      var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, this.entity.position[1] + 10);
      
-     desiredCameraLocation[1] =  cameraHeight;
-  
-     this.destinationCameraLocation = desiredCameraLocation;
-     this.targetVelocity = vec3.create(this.entity._velocity);
-     this.doLogicAfterAscertainingTarget();
-  },
+     desiredCameraLocation[1] =  cameraHeight;  
+    
 
-  doLogicForDeathCamera: function() {   
-    this.doLogicAfterAscertainingTarget();
+     this.destinationCameraLookAt = vec3.create(this.entity.position);
+
+     if(!this.fixLocation)
+      this.destinationCameraLocation = desiredCameraLocation;
   },
 
   doLogicAfterAscertainingTarget: function() {
-
-    var directionToWhereWeWantToBe = vec3.create();
+    var directionToWhereWeWantToBe = vec3.create([0,0,0]);
     vec3.subtract(this.destinationCameraLocation, this.cameraLocation, directionToWhereWeWantToBe);
-    var distance = vec3.length(directionToWhereWeWantToBe);
-    var movementTowardsDestination = 0.1;
-
-    vec3.scale(directionToWhereWeWantToBe, movementTowardsDestination, this.cameraVelocity);
-
+    vec3.scale(directionToWhereWeWantToBe, this.movementDelta , this.cameraVelocity);
     vec3.add(this.cameraLocation, this.cameraVelocity); 
-    this._scene.camera.location = new vec3.create(this.cameraLocation);
-  },
 
-  startZoomingOutChaseCamera: function() {
-    var self = this;
-    this.cameraMode = "death";
-    this.destinationCameraLocation = vec3.create(this.entity.position);
+    var directionToWhereWeWantToLookAt = vec3.create([0,0,0]);
+    vec3.subtract(this.destinationCameraLookAt, this.cameraLookAt, directionToWhereWeWantToLookAt);
+    vec3.scale(directionToWhereWeWantToLookAt, this.lookAtDelta , this.lookAtVelocity);
+    vec3.add(this.cameraLookAt, this.lookAtVelocity); 
 
-  
-    this.destinationCameraLocation[1] = 200.0;
-
-    setTimeout(function() {
-      self.destinationCameraLocation[1] = 700;
-    }, 1500);
-
-    this.targetVelocity = vec3.create([0,0,0]);
-  },
-
-  startZoomingBackInChaseCamera: function() {
-    this.cameraMode = "chase";
-  }
-  
+    this._scene.camera.lookAt = vec3.create(this.cameraLookAt);
+    this._scene.camera.location = vec3.create(this.cameraLocation);
+  },  
 };
 
 exports.ChaseCamera = ChaseCamera;

@@ -1,3 +1,5 @@
+var Explosion = require('../explosion').Explosion;
+
 exports.ClientGameReceiver = function(app, server) {
   var self = this;
 
@@ -26,6 +28,34 @@ exports.ClientGameReceiver = function(app, server) {
 	  server.sendMessage('ready');
   };
 
+  self._destroyTarget = function(data) {
+
+	  if(craft.getId() === data.targetid) {    
+      createExplosionForCraftWithId(data.targetid);
+		  app.scene.removeEntity(craft);
+		  app.scene.removeEntity(craft.emitter);
+
+      app.scene.withEntity(data.sourceid, function(source) {
+
+        chaseCamera.setMovementDelta(0.03);
+        chaseCamera.setLookAtDelta(0.03);
+        chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 100, craft.position[1]]);
+
+        setTimeout(function() {
+            chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 300, craft.position[1]]);
+            chaseCamera.setTrackedEntity(source);
+        }, 5000);
+      });
+
+		  // Unhook input
+		
+	  }
+	  else {
+      createExplosionForCraftWithId(data.targetid);
+		  removeHovercraftFromScene(data.targetid);
+	  }	
+  };
+
     self._reviveTarget = function(data) {
 	  if(data.id === craft.getId()) {
 
@@ -34,8 +64,10 @@ exports.ClientGameReceiver = function(app, server) {
 		  app.scene.addEntity(craft.emitter);
 		  craft.setSync(data.sync);
 
-		  // Tell the camera to start zooming back into the re-animated craft
-		  chaseCamera.startZoomingBackInChaseCamera();
+      chaseCamera.setMovementDelta(0.1);
+      chaseCamera.setLookAtDelta(0.7);
+		  chaseCamera.setTrackedEntity(craft);
+      chaseCamera.unfixLocation();
 
 		  // Re-hook input
 	  }
@@ -70,32 +102,6 @@ exports.ClientGameReceiver = function(app, server) {
 	  }
   };
 
-  self._destroyTarget = function(data) {
-
-	  if(craft.getId() === data.targetid) {
-
-		  // Remove entity from scene
-		  app.scene.removeEntity(craft);
-		  app.scene.removeEntity(craft.emitter);
-
-		  // Cause explosion
-      
-
-		  // Tell the camera to start zooming out
-		  chaseCamera.startZoomingOutChaseCamera();
-
-		  // Unhook input
-		
-	  }
-	  else {
-
-		  // Remove entity from scene
-		  removeHovercraftFromScene(data.targetid);
-
-		  // Cause explosion
-	  }	
-  };
-
   self._sync = function(data) {
       var entity = app.scene.getEntity(data.id);
 
@@ -105,20 +111,28 @@ exports.ClientGameReceiver = function(app, server) {
 	  }
       entity.setSync(data.sync);
   };
-   
+  
+  createExplosionForCraftWithId = function(craftId) {
+    app.scene.withEntity(craftId, function(explodingCraft) {
+      var explosion = new Explosion(app, {
+        position: explodingCraft.position,
+        initialVelocity: explodingCraft._velocity        
+      });
+    });
+  };
 
   var removeCraftEmitter = function(craft) {
     app.scene.removeEntity(craft.emitter);
-  };
-  
+  };  
 
   var attachEmitterToCraft = function(craft) {
     var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, app,
     {
-        maxsize: 130,
+        maxsize: 40,
         maxlifetime: 0.2,
         rate: 50,
         scatter: vec3.create([1.0, 0.001, 1.0]),
+        particleVelocity: vec3.create([0.1, -0.3, 0.1]),
         track: function(){
             this.position = vec3.create(craft.position);
         }
