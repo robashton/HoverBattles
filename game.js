@@ -325,7 +325,7 @@ var ChaseCamera = {
 
      cameraTrail[1] = 0;
      vec3.normalize(cameraTrail);
-     vec3.scale(cameraTrail, 30);
+     vec3.scale(cameraTrail, 15);
      vec3.subtract(this.entity.position, cameraTrail, cameraTrail);
 
      var desiredCameraLocation = cameraTrail;
@@ -3498,18 +3498,122 @@ Model.Quad = function()
 
 exports.Model = Model;
 
-}, "network/clientgamereceiver": function(exports, require, module) {ClientGameReceiver = function(app, server) {
-  this.app = app;
-  this.server = server;
-  this.started = false;
-  this.craft = null;
-  this.playerId = null;
-  this.chaseCamera = null;
-  this.hovercraftFactory = new HovercraftFactory(app);
-};
+}, "network/clientgamereceiver": function(exports, require, module) {exports.ClientGameReceiver = function(app, server) {
+  var self = this;
 
-ClientGameReceiver.prototype.attachEmitterToCraft = function(craft) {
-    var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, this.app,
+  var app = app;
+  var server = server;
+  var started = false;
+  var craft = null;
+  var playerId = null;
+  var chaseCamera = null;
+  var controller = null;
+  var hovercraftFactory = new HovercraftFactory(app);
+  
+
+  self._init = function(data) {
+	  playerId = data.id;
+    craft = hovercraftFactory.create(data.id);   
+    controller = new HovercraftController(data.id, server);
+	  craft.attach(Smoother);
+    craft.player = true;
+
+    chaseCamera = new Entity("chaseCameraController");
+    chaseCamera.attach(ChaseCamera);
+    chaseCamera.setTrackedEntity(craft);
+    app.scene.addEntity(chaseCamera);
+
+	  server.sendMessage('ready');
+  };
+
+    self._reviveTarget = function(data) {
+	  if(data.id === craft.getId()) {
+
+		  // Re-add entity to scene
+		  app.scene.addEntity(craft);
+		  app.scene.addEntity(craft.emitter);
+		  craft.setSync(data.sync);
+
+		  // Tell the camera to start zooming back into the re-animated craft
+		  chaseCamera.startZoomingBackInChaseCamera();
+
+		  // Re-hook input
+	  }
+	  else {
+
+		  // Re-add entity to scene
+		  addHovercraftToScene(data.id, data.sync);
+	  }
+  };  
+  
+
+  self._syncscene = function(data) {
+
+	  for(i in data.craft) {
+		  var serverCraft = data.craft[i];
+		
+		  var clientCraft = 
+		  serverCraft.id === playerId 
+					  ? craft
+					  : app.scene.getEntity(serverCraft.id);
+
+		  if(!clientCraft) {
+      		clientCraft = addHovercraftToScene(serverCraft.id, serverCraft.sync);
+		  }
+		  clientCraft.setSync(serverCraft.sync);		
+	  }
+
+	  if(!started) {
+		  started = true;
+		  app.scene.addEntity(craft);
+		  attachEmitterToCraft(craft);
+	  }
+  };
+
+  self._destroyTarget = function(data) {
+
+	  if(craft.getId() === data.targetid) {
+
+		  // Remove entity from scene
+		  app.scene.removeEntity(craft);
+		  app.scene.removeEntity(craft.emitter);
+
+		  // Cause explosion
+      
+
+		  // Tell the camera to start zooming out
+		  chaseCamera.startZoomingOutChaseCamera();
+
+		  // Unhook input
+		
+	  }
+	  else {
+
+		  // Remove entity from scene
+		  removeHovercraftFromScene(data.targetid);
+
+		  // Cause explosion
+	  }	
+  };
+
+  self._sync = function(data) {
+      var entity = app.scene.getEntity(data.id);
+
+	  if(!entity) {
+		  console.log('Message received to sync entity that does not exist: ' + data.id);
+		  return;
+	  }
+      entity.setSync(data.sync);
+  };
+   
+
+  var removeCraftEmitter = function(craft) {
+    app.scene.removeEntity(craft.emitter);
+  };
+  
+
+  var attachEmitterToCraft = function(craft) {
+    var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, app,
     {
         maxsize: 130,
         maxlifetime: 0.2,
@@ -3520,134 +3624,34 @@ ClientGameReceiver.prototype.attachEmitterToCraft = function(craft) {
         }
     });
     craft.emitter = emitter;
-    this.app.scene.addEntity(emitter);
+    app.scene.addEntity(emitter);
+   };
+
+  self._addplayer = function(data) {
+	  addHovercraftToScene(data.id, data.sync);
+  };
+
+  self._removeplayer = function(data) {
+      removeHovercraftFromScene(data.id);
+  };
+
+  var removeHovercraftFromScene = function(id) {
+      app.scene.withEntity(id, function(craftToRemove) {
+        removeCraftEmitter(craftToRemove);
+        app.scene.removeEntity(craftToRemove);
+      });
+  };
+
+  var addHovercraftToScene = function(id, sync) {
+      var craftToAdd = hovercraftFactory.create(id);
+	    craftToAdd.attach(Smoother);
+      craftToAdd.setSync(sync);
+      app.scene.addEntity(craftToAdd);
+      attachEmitterToCraft(craftToAdd);
+	    return craftToAdd;
+  };
 };
 
-ClientGameReceiver.prototype.removeCraftEmitter = function(craft) {
-    this.app.scene.removeEntity(craft.emitter);
-};
-
-ClientGameReceiver.prototype._init = function(data) {
-	this.playerId = data.id;
-    this.craft = this.hovercraftFactory.create(data.id);   
-    this.controller = new HovercraftController(data.id, this.server);
-	  this.craft.attach(Smoother);
-    this.craft.player = true;
-
-    this.chaseCamera = new Entity("chaseCameraController");
-    this.chaseCamera.attach(ChaseCamera);
-    this.chaseCamera.setTrackedEntity(this.craft);
-    this.app.scene.addEntity(this.chaseCamera);
-
-	this.server.sendMessage('ready');
-};
-
-ClientGameReceiver.prototype._syncscene = function(data) {
-
-	for(i in data.craft) {
-		var serverCraft = data.craft[i];
-		
-		var clientCraft = 
-		serverCraft.id === this.playerId 
-					? this.craft
-					: this.app.scene.getEntity(serverCraft.id);
-
-		if(!clientCraft) {
-    		clientCraft = this.addHovercraftToScene(serverCraft.id, serverCraft.sync);
-		}
-		clientCraft.setSync(serverCraft.sync);		
-	}
-
-	if(!this.started) {
-		this.started = true;
-		this.app.scene.addEntity(this.craft);
-		this.attachEmitterToCraft(this.craft);
-	}
-};
-
-ClientGameReceiver.prototype._reviveTarget = function(data) {
-	if(data.id === this.craft.getId()) {
-
-		// Re-add entity to scene
-		this.app.scene.addEntity(this.craft);
-		this.app.scene.addEntity(this.craft.emitter);
-		this.craft.setSync(data.sync);
-
-		// Tell the camera to start zooming back into the re-animated craft
-		this.chaseCamera.startZoomingBackInChaseCamera();
-
-		// Re-hook input
-	}
-	else {
-
-		// Re-add entity to scene
-		this.addHovercraftToScene(data.id, data.sync);
-	}
-};
-
-ClientGameReceiver.prototype._destroyTarget = function(data) {
-
- 
-	if(this.craft.getId() === data.targetid) {
-
-		// Remove entity from scene
-		this.app.scene.removeEntity(this.craft);
-		this.app.scene.removeEntity(this.craft.emitter);
-
-		// Cause explosion
-
-		// Tell the camera to start zooming out
-		this.chaseCamera.startZoomingOutChaseCamera();
-
-		// Unhook input
-		
-	}
-	else {
-
-		// Remove entity from scene
-		this.removeHovercraftFromScene(data.targetid);
-
-		// Cause explosion
-	}	
-};
-
-ClientGameReceiver.prototype._addplayer = function(data) {
-	this.addHovercraftToScene(data.id, data.sync);
-};
-
-ClientGameReceiver.prototype._removeplayer = function(data) {
-    this.removeHovercraftFromScene(data.id);
-};
-
-ClientGameReceiver.prototype.removeHovercraftFromScene = function(id) {
-    var self = this;
-    var craft = this.app.scene.withEntity(id, function(craft) {
-      self.removeCraftEmitter(craft);
-      self.app.scene.removeEntity(craft);
-    });
-};
-
-ClientGameReceiver.prototype.addHovercraftToScene = function(id, sync) {
-    var craft = this.hovercraftFactory.create(id);
-	  craft.attach(Smoother);
-    craft.setSync(sync);
-    this.app.scene.addEntity(craft);
-    this.attachEmitterToCraft(craft);
-	  return craft;
-};
-
-ClientGameReceiver.prototype._sync = function(data) {
-    var entity = this.app.scene.getEntity(data.id);
-
-	if(!entity) {
-		console.log('Message received to sync entity that does not exist: ' + data.id);
-		return;
-	}
-    entity.setSync(data.sync);
-};
-
-
-exports.ClientGameReceiver = ClientGameReceiver;
 }, "network/entityreceiver": function(exports, require, module) {EntityReceiver = function(app) {
     this.app = app;
 };

@@ -37,7 +37,7 @@ var ChaseCamera = {
 
      cameraTrail[1] = 0;
      vec3.normalize(cameraTrail);
-     vec3.scale(cameraTrail, 30);
+     vec3.scale(cameraTrail, 15);
      vec3.subtract(this.entity.position, cameraTrail, cameraTrail);
 
      var desiredCameraLocation = cameraTrail;
