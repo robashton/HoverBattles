@@ -207,7 +207,7 @@ ParticleEmitter.prototype.render = function(context) {
     
 };
 
-
+ParticleEmitter.prototype.is = function() { return false; };
 exports.ParticleEmitter = ParticleEmitter;
 
 

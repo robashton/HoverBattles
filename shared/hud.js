@@ -20,7 +20,7 @@ exports.Hud = function(app) {
   };
 
   hookHovercraftEvents = function(entity) {
-    if(!entity.notifyAimingAt) return;
+    if(!entity.is(Hovercraft)) return;
     entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
   };
@@ -29,6 +29,20 @@ exports.Hud = function(app) {
 
   self.setPlayerId = function(id) {
     playerId = id;
+  };
+
+  self.notifyOfMissileFiring = function(data) {
+    if(data.sourceid === this.getId())
+      onPlayerFired();
+    else if(data.targetid === this.getId())
+      onPlayerFiredOn();
+  };
+
+  self.notifyOfMissileDestruction = function(data) {
+    if(data.sourceid === this.getId())
+      onPlayerLostMissile();
+    else if(data.targetid === this.getId())
+      onPlayerEvadedMissile();
   };
   
   onPlayerTrackingTarget = function(targetId) {
@@ -39,7 +53,7 @@ exports.Hud = function(app) {
     $('#targettedStatus').html('You\'re being targetted');
   };
 
-  onPlayerCancelledBeingTracked  =  function() {
+  onPlayerCancelledBeingTracked = function() {
     $('#targettedStatus').html('<p>Home free</p>');
   };
 
@@ -47,26 +61,21 @@ exports.Hud = function(app) {
     $('#targettingStatus').html('<p>Lost the lock :(</p>');
   };
 
-/*
-
-  self.alertBeingFiredOn = function() { 
-    $('#targettedStatus').html('<p>They\'ve fired a missile!!</p>');
+  onPlayerFired = function() {
+    $('#targettingStatus').html('<p>Fired on target!</p>');
   };
 
-  self.updateBeingFiredOn = function() {
-    $('#targettedStatus').html('<p>Missile is getting closer!!"</p>');
+  onPlayerFiredOn = function(){ 
+    $('#targettedStatus').html('<p>They\'ve fired, get out of the way</p>');
   };
 
+  onPlayerLostMissile = function() {
+    $('#targettingStatus').html('<p>Target lost, missile destroyed</p>');
   };
 
-  self.alertLocked = function() {
-    $('#targettingStatus').html('<p>You\'ve got them locked, firing!</p>');
+  onPlayerEvadedMissile = function() {
+    $('#targettedStatus').html('<p>They missed you, good job!</p>'); 
   };
-
-  self.updateFiringStatus = function() {
-    $('#targettingStatus').html('<p>Missile is getting closer</p>');
-  };
-*/
 };
 
 exports.Hud.ID = "HUDEntity";

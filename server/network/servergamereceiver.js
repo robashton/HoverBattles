@@ -43,6 +43,15 @@ ServerGameReceiver.prototype.getSceneState = function() {
 	return state;	
 };
 
+ServerGameReceiver.prototype._fireRequest = function(data) {
+  var craft = this.craft[data.source];
+  if(!craft) {
+    console.warn('Fire request received for craft that does not exist');
+    return;
+  }
+  craft._firingController.tryFireMissile();
+};
+
 ServerGameReceiver.prototype._ready = function( data) {
 	this.communication.syncPlayerFull(data.source);
 };

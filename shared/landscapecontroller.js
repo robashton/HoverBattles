@@ -111,5 +111,5 @@ LandscapeController.prototype.doLogic = function() {
 
 LandscapeController.prototype.setScene = function(scene){};
 LandscapeController.prototype.render = function(context){};
-
+LandscapeController.prototype.is = function(){return false;};
 exports.LandscapeController = LandscapeController;

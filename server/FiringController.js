@@ -7,19 +7,22 @@ var FiringController = function(entity, communication) {
 	entity.addEventHandler('tick', function(data) { parent.onTick(data); });
 	this._trackingStartTime = null;
 	this._trackedTarget = null;
-	this.fired = false;
+	this._locked = false;
+  this._fired = false;
   this.missileidCounter = 0;
 };
 	
 FiringController.prototype.onTrackingTarget = function(ev) {
 	this._trackingStartTime = new Date();
 	this._trackedTarget = ev.target;
-	this.fired = false;
+	this._locked = false;
 };
 	
 FiringController.prototype.onCancelledTrackingTarget = function(ev) {
 	this._trackingStartTime = null;
 	this._trackedTarget = null;
+  this._locked = false;
+  this._fired = false;
 };
 	
 FiringController.prototype.onTick = function() {
@@ -27,12 +30,19 @@ FiringController.prototype.onTick = function() {
 	var currentTime = new Date();
 	var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
 	if(timeElapsedSinceStartedTracking > 3000) {
-		this.fired = true;
+		this.locked = true;
+  }
+};
+
+FiringController.prototype.tryFireMissile = function() {
+  if(this.locked === true && this._fired === false) {
+    this._fired = true;
 		this.communication.sendMessage('fireMissile', { 
         missileid: 'missile-' + this.entity.getId() + this.missileidCounter++, 
         sourceid: this.entity.getId(), 
-        targetid: this._trackedTarget.getId()});
-	}
-}
+        targetid: this._trackedTarget.getId()
+    });    
+  }
+};
 
 exports.FiringController = FiringController;

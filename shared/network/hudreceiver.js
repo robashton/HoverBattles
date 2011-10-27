@@ -9,5 +9,18 @@ exports.HudReceiver = function(app, communication) {
     app.scene.withEntity(Hud.ID, function(hud) {
       hud.setPlayerId(data.id);
     });
-  };     
+  };  
+
+  self._fireMissile = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+      hud.notifyOfMissileFiring(data);
+    });
+  };
+
+  self._destroyMissile = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+      hud.notifyOfMissileDestruction(data);
+    });
+  };
+   
 };

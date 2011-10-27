@@ -35,6 +35,7 @@ HovercraftController.prototype.registerKeyboardMappings = function() {
   this.registerKeyboardMapping(KeyCodes.A, 'startLeft', 'cancelLeft');
   this.registerKeyboardMapping(KeyCodes.D, 'startRight', 'cancelRight');
   this.registerKeyboardMapping(KeyCodes.Space, 'startUp', 'cancelUp');
+  this.registerKeyboardMapping(KeyCodes.RCTRL, 'fireRequest', null);
 };
 
 HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboardDown, onKeyboardUp){
@@ -60,15 +61,16 @@ HovercraftController.prototype.processInput = function(){
     var mapping = this.keyboardMappings[code];
     
     if(KeyboardStates[code] && !mapping.state){
-      this.server.sendMessage(mapping.down, { id: this.targetId});
+      if(mapping.down)
+        this.server.sendMessage(mapping.down, { id: this.targetId});
       mapping.state = true;
     }
     else if(!KeyboardStates[code] && mapping.state){
-       this.server.sendMessage(mapping.up, { id: this.targetId});
+       if(mapping.up)
+          this.server.sendMessage(mapping.up, { id: this.targetId});
        mapping.state = false;
     }    
-  }
-    
+  }    
 };
 
 document.onkeydown = function(event) { 

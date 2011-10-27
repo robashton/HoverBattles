@@ -107,7 +107,7 @@ Entity.prototype.getSync = function() {
 
 Entity.prototype.is = function(component) {
   for(var x = 0; x < this.components.length; x++) {
-    if(this.components[x] instanceof component) return true;
+    if(this.components[x] === component) return true;
   }
   return false;
 };

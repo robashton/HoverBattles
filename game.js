@@ -658,7 +658,7 @@ Entity.prototype.getSync = function() {
 
 Entity.prototype.is = function(component) {
   for(var x = 0; x < this.components.length; x++) {
-    if(this.components[x] instanceof component) return true;
+    if(this.components[x] === component) return true;
   }
   return false;
 };
@@ -2857,6 +2857,7 @@ HovercraftController.prototype.registerKeyboardMappings = function() {
   this.registerKeyboardMapping(KeyCodes.A, 'startLeft', 'cancelLeft');
   this.registerKeyboardMapping(KeyCodes.D, 'startRight', 'cancelRight');
   this.registerKeyboardMapping(KeyCodes.Space, 'startUp', 'cancelUp');
+  this.registerKeyboardMapping(KeyCodes.RCTRL, 'fireRequest', null);
 };
 
 HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboardDown, onKeyboardUp){
@@ -2882,15 +2883,16 @@ HovercraftController.prototype.processInput = function(){
     var mapping = this.keyboardMappings[code];
     
     if(KeyboardStates[code] && !mapping.state){
-      this.server.sendMessage(mapping.down, { id: this.targetId});
+      if(mapping.down)
+        this.server.sendMessage(mapping.down, { id: this.targetId});
       mapping.state = true;
     }
     else if(!KeyboardStates[code] && mapping.state){
-       this.server.sendMessage(mapping.up, { id: this.targetId});
+       if(mapping.up)
+          this.server.sendMessage(mapping.up, { id: this.targetId});
        mapping.state = false;
     }    
-  }
-    
+  }    
 };
 
 document.onkeydown = function(event) { 
@@ -2948,7 +2950,7 @@ exports.Hud = function(app) {
   };
 
   hookHovercraftEvents = function(entity) {
-    if(!entity.notifyAimingAt) return;
+    if(!entity.is(Hovercraft)) return;
     entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
   };
@@ -2957,6 +2959,20 @@ exports.Hud = function(app) {
 
   self.setPlayerId = function(id) {
     playerId = id;
+  };
+
+  self.notifyOfMissileFiring = function(data) {
+    if(data.sourceid === this.getId())
+      onPlayerFired();
+    else if(data.targetid === this.getId())
+      onPlayerFiredOn();
+  };
+
+  self.notifyOfMissileDestruction = function(data) {
+    if(data.sourceid === this.getId())
+      onPlayerLostMissile();
+    else if(data.targetid === this.getId())
+      onPlayerEvadedMissile();
   };
   
   onPlayerTrackingTarget = function(targetId) {
@@ -2967,7 +2983,7 @@ exports.Hud = function(app) {
     $('#targettedStatus').html('You\'re being targetted');
   };
 
-  onPlayerCancelledBeingTracked  =  function() {
+  onPlayerCancelledBeingTracked = function() {
     $('#targettedStatus').html('<p>Home free</p>');
   };
 
@@ -2975,26 +2991,21 @@ exports.Hud = function(app) {
     $('#targettingStatus').html('<p>Lost the lock :(</p>');
   };
 
-/*
-
-  self.alertBeingFiredOn = function() { 
-    $('#targettedStatus').html('<p>They\'ve fired a missile!!</p>');
+  onPlayerFired = function() {
+    $('#targettingStatus').html('<p>Fired on target!</p>');
   };
 
-  self.updateBeingFiredOn = function() {
-    $('#targettedStatus').html('<p>Missile is getting closer!!"</p>');
+  onPlayerFiredOn = function(){ 
+    $('#targettedStatus').html('<p>They\'ve fired, get out of the way</p>');
   };
 
+  onPlayerLostMissile = function() {
+    $('#targettingStatus').html('<p>Target lost, missile destroyed</p>');
   };
 
-  self.alertLocked = function() {
-    $('#targettingStatus').html('<p>You\'ve got them locked, firing!</p>');
+  onPlayerEvadedMissile = function() {
+    $('#targettedStatus').html('<p>They missed you, good job!</p>'); 
   };
-
-  self.updateFiringStatus = function() {
-    $('#targettingStatus').html('<p>Missile is getting closer</p>');
-  };
-*/
 };
 
 exports.Hud.ID = "HUDEntity";
@@ -3281,7 +3292,7 @@ LandscapeController.prototype.doLogic = function() {
 
 LandscapeController.prototype.setScene = function(scene){};
 LandscapeController.prototype.render = function(context){};
-
+LandscapeController.prototype.is = function(){return false;};
 exports.LandscapeController = LandscapeController;
 }, "lazyload": function(exports, require, module) {if(typeof LazyLoad == undefined){
     LazyLoad = {};
@@ -3888,7 +3899,20 @@ exports.HudReceiver = function(app, communication) {
     app.scene.withEntity(Hud.ID, function(hud) {
       hud.setPlayerId(data.id);
     });
-  };     
+  };  
+
+  self._fireMissile = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+      hud.notifyOfMissileFiring(data);
+    });
+  };
+
+  self._destroyMissile = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+      hud.notifyOfMissileDestruction(data);
+    });
+  };
+   
 };
 }, "network/missilereceiver": function(exports, require, module) {var MissileReceiver = function(app, communication, missileFactory) {
   this.app = app;    
@@ -4189,7 +4213,7 @@ ParticleEmitter.prototype.render = function(context) {
     
 };
 
-
+ParticleEmitter.prototype.is = function() { return false; };
 exports.ParticleEmitter = ParticleEmitter;
 
 
