@@ -34,6 +34,7 @@
 
       $('#scores').html(html);      
     };
+
   };
 
   $(document).ready(function() {

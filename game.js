@@ -150,7 +150,6 @@ var Targeting = {
 	deassignTarget: function() {
 		var target = this._currentTarget;
 		this._currentTarget = null;
-		console.info('Deassigned a target');
 		this.raiseEvent('cancelledTrackingTarget', {
 			target: target
 		});
@@ -158,7 +157,6 @@ var Targeting = {
 	
 	assignNewTarget: function(target) {
 		this._currentTarget = target;
-		console.info('Assigned a target');
 		this.raiseEvent('trackingTarget', {
 			target: target
 		});
@@ -437,6 +435,7 @@ var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 var MissileFactory = require('./missilefactory').MissileFactory;
 var MissileReceiver = require('./network/missilereceiver').MissileReceiver;
 var ScoreReceiver = require('./network/scorereceiver').ScoreReceiver;
+var HudReceiver = require('./network/hudreceiver').HudReceiver;
 
 ClientCommunication = function(app){
     this.app = app;
@@ -450,6 +449,7 @@ ClientCommunication = function(app){
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
 	  this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
     this.dispatcher.addReceiver(new ScoreReceiver(this.app, this));
+    this.dispatcher.addReceiver(new HudReceiver(this.app, this));
 };
 
 ClientCommunication.prototype.hookSocketEvents = function() {
@@ -562,13 +562,15 @@ function cloneObject(obj) {
 }
 
 var Entity = function(id){
-    this._model = null;
+  this._model = null;
 	this._id = id;
 	this.position = vec3.create([0,0,0]);
-    this.rotationY = 0;
+  this.rotationY = 0;
 	this._scene = null;
 	this.eventHandlers = {};
+  this.components = [];
 };
+
 
 Entity.prototype.getId = function(){
 	return this._id;
@@ -597,6 +599,7 @@ Entity.prototype.raiseEvent = function(eventName, data) {
 };
 
 Entity.prototype.attach = function(component) {
+  this.components.push(component);
 	var ctor = null;
     for(i in component){
         if(i == "doLogic"){
@@ -649,6 +652,13 @@ Entity.prototype.getSync = function() {
   var sync = {};
   this.updateSync(sync);
   return sync;
+};
+
+Entity.prototype.is = function(component) {
+  for(var x = 0; x < this.components.length; x++) {
+    if(this.components[x] instanceof component) return true;
+  }
+  return false;
 };
 
 Entity.prototype.updateSync = function(sync) {
@@ -2828,6 +2838,7 @@ var HovercraftController = function(targetId, server){
   this.left = false;
   this.right = false;
   this.jump = false;
+  this.enabled = true;
   
   var controller = this;
   setInterval(function() { controller.processInput(); }, 1000 / 30);
@@ -2851,10 +2862,19 @@ HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboa
     up: onKeyboardUp,
     state: false
   };
-}
+};
+
+HovercraftController.prototype.disable = function() {
+  this.enabled = false;
+};
+
+HovercraftController.prototype.enable = function() {
+  this.enabled = true;
+};
 
 HovercraftController.prototype.processInput = function(){
-  
+  if(!this.enabled) return;
+
   for(var code in this.keyboardMappings){
     var mapping = this.keyboardMappings[code];
     
@@ -2878,7 +2898,8 @@ document.onkeyup = function(event) {
     KeyboardStates[event.keyCode] = false;
 };
 
-exports.HovercraftController = HovercraftController;}, "hovercraftfactory": function(exports, require, module) {var Entity = require('./entity').Entity;
+exports.HovercraftController = HovercraftController;
+}, "hovercraftfactory": function(exports, require, module) {var Entity = require('./entity').Entity;
 var Hovercraft = require('./hovercraft').Hovercraft;
 var Clipping = require('./clipping').Clipping;
 var Tracking = require('./aiming').Tracking;
@@ -2902,7 +2923,88 @@ HovercraftFactory.prototype.create = function(id) {
   return entity;
 };
 
-exports.HovercraftFactory = HovercraftFactory;}, "keyboard": function(exports, require, module) {
+exports.HovercraftFactory = HovercraftFactory;}, "hud": function(exports, require, module) {var Hovercraft = require('./hovercraft').Hovercraft;
+
+exports.Hud = function(app) {
+  var self = this;
+  var app = app;
+  var playerId = null;
+
+  onEntityTrackingTarget = function(data) {
+    if(this.getId() === playerId)
+      onPlayerTrackingTarget(data.target.getId());      
+    else if(data.target.getId() == playerId)
+      onPlayerBeingTracked(this.getId());
+  };
+  
+  onEntityCancelledTrackingTarget = function(data) {
+    if(this.getId() === playerId)
+      onPlayerCancelledTrackingTarget();
+    else if(data.target.getId() === playerId)
+      onPlayerCancelledBeingTracked();
+  };
+
+  hookHovercraftEvents = function(entity) {
+    if(!entity.notifyAimingAt) return;
+    entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
+    entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+  };
+
+  app.scene.onEntityAdded(hookHovercraftEvents);
+
+  self.setPlayerId = function(id) {
+    playerId = id;
+  };
+  
+  onPlayerTrackingTarget = function(targetId) {
+     $('#targettingStatus').html('<p>You\'ve got them in your sights</p>');
+  };
+
+  onPlayerBeingTracked = function(sourceId) {
+    $('#targettedStatus').html('You\'re being targetted');
+  };
+
+  onPlayerCancelledBeingTracked  =  function() {
+    $('#targettedStatus').html('<p>Home free</p>');
+  };
+
+  onPlayerCancelledTrackingTarget = function() {
+    $('#targettingStatus').html('<p>Lost the lock :(</p>');
+  };
+
+/*
+
+  self.alertBeingFiredOn = function() { 
+    $('#targettedStatus').html('<p>They\'ve fired a missile!!</p>');
+  };
+
+  self.updateBeingFiredOn = function() {
+    $('#targettedStatus').html('<p>Missile is getting closer!!"</p>');
+  };
+
+  };
+
+  self.alertLocked = function() {
+    $('#targettingStatus').html('<p>You\'ve got them locked, firing!</p>');
+  };
+
+  self.updateFiringStatus = function() {
+    $('#targettingStatus').html('<p>Missile is getting closer</p>');
+  };
+*/
+};
+
+exports.Hud.ID = "HUDEntity";
+exports.Hud.create = function(app) {
+  var hudEntity = new Entity(exports.Hud.ID);
+  hudEntity.attach(new exports.Hud(app));
+
+  app.scene.addEntity(hudEntity);
+};
+
+
+
+}, "keyboard": function(exports, require, module) {
 exports.KeyboardStates = KeyboardStates;}, "landchunk": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
@@ -3540,8 +3642,7 @@ exports.ClientGameReceiver = function(app, server) {
   var chaseCamera = null;
   var controller = null;
   var hovercraftFactory = new HovercraftFactory(app);
-  
-
+ 
   self._init = function(data) {
 	  playerId = data.id;
     craft = hovercraftFactory.create(data.id);   
@@ -3561,11 +3662,14 @@ exports.ClientGameReceiver = function(app, server) {
 
 	  if(craft.getId() === data.targetid) {    
       createExplosionForCraftWithId(data.targetid);
+
+      // Remove entity from scene
 		  app.scene.removeEntity(craft);
 		  app.scene.removeEntity(craft.emitter);
 
       app.scene.withEntity(data.sourceid, function(source) {
 
+        // Set up the camera to do the zooming out thing
         chaseCamera.setMovementDelta(0.03);
         chaseCamera.setLookAtDelta(0.03);
         chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 100, craft.position[1]]);
@@ -3576,7 +3680,8 @@ exports.ClientGameReceiver = function(app, server) {
         }, 5000);
       });
 
-		  // Unhook input
+      // Disable input
+		  controller.disable();   
 		
 	  }
 	  else {
@@ -3593,12 +3698,14 @@ exports.ClientGameReceiver = function(app, server) {
 		  app.scene.addEntity(craft.emitter);
 		  craft.setSync(data.sync);
 
+      // Reset camera
       chaseCamera.setMovementDelta(0.1);
       chaseCamera.setLookAtDelta(0.7);
 		  chaseCamera.setTrackedEntity(craft);
       chaseCamera.unfixLocation();
 
-		  // Re-hook input
+      // Re-add input control
+		  controller.enable();
 	  }
 	  else {
 
@@ -3771,6 +3878,19 @@ EntityReceiver.prototype.getEntity = function(id) {
 };
 
 exports.EntityReceiver = EntityReceiver;
+}, "network/hudreceiver": function(exports, require, module) {var Hud = require('../hud').Hud;
+
+exports.HudReceiver = function(app, communication) {
+  var self = this;
+  var app = app;
+  var communication = communication;
+
+  self._init = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+      hud.setPlayerId(data.id);
+    });
+  };     
+};
 }, "network/missilereceiver": function(exports, require, module) {var MissileReceiver = function(app, communication, missileFactory) {
   this.app = app;    
 	this.missileFactory = missileFactory;
@@ -4230,14 +4350,34 @@ var Camera = require('./camera').Camera;
 var CollisionManager = require('./collisionmanager').CollisionManager;
 
 var Scene = function(app){
-    this._entities = {};
-    this.app = app;
-    this.camera = new Camera();
-    this.collisionManager = new CollisionManager();
+  this._entities = {};
+  this.app = app;
+  this.camera = new Camera();
+  this.collisionManager = new CollisionManager();
+  this.entityAddedListeners = [];
+  this.entityRemovedListeners = [];
 };
 
-Scene.prototype.sendCommand = function(commandName, data) {
-	
+Scene.prototype.onEntityAdded = function(callback) {
+  this.entityAddedListeners.push(callback);
+};
+
+Scene.prototype.onEntityRemoved = function(callback) {
+  this.entityRemovedListeners.push(callback);
+};
+
+Scene.prototype.raiseEntityAdded = function(entity) {
+  for(var i = 0; i < this.entityAddedListeners.length ; i++){ 
+    var listener = this.entityAddedListeners[i];
+    listener(entity);
+  }
+};
+
+Scene.prototype.raiseEntityRemoved = function(entity) {
+  for(var i = 0; i < this.entityRemovedListeners.length ; i++){ 
+    var listener = this.entityRemovedListeners[i];
+    listener(entity);
+  }
 };
 
 Scene.prototype.withEntity = function(id, callback) {
@@ -4253,10 +4393,12 @@ Scene.prototype.getEntity = function(id) {
 
 Scene.prototype.addEntity = function(entity){
     this._entities[entity.getId()] = entity;
-	entity.setScene(this);
+	  entity.setScene(this);
+    this.raiseEntityAdded(entity);
 };
 
 Scene.prototype.removeEntity = function(entity) {
+  this.raiseEntityRemoved(entity);
 	entity.setScene(undefined);
 	delete this._entities[entity.getId()];
 };

@@ -37,7 +37,7 @@ $app = function(callback){
 			FiringController = require('aiming').FiringController;
 			MessageCollection = require('messagecollection').MessageCollection;
 			Smoother = require('smoother').Smoother;
-            callback();
+      callback();
     });
 };
 
@@ -57,12 +57,12 @@ blah.Application.prototype.init = function(finishedCallback){
 blah.Application.prototype.go = function(context) {
     this.context = context;
     this.scene = new Scene(this);
-    this.resources = new ResourceManager(this);
-    
+    this.resources = new ResourceManager(this);  
     this.resources.setTextureLoader(new DefaultTextureLoader(app));
     this.resources.addModelLoader(new DefaultModelLoader(this.resources));
     this.resources.addModelLoader(new LandChunkModelLoader(this.resources));
     this.controller = new Controller(this.scene);
+    this.hud = require('hud').Hud.create(this);
     var app = this;
 };
 

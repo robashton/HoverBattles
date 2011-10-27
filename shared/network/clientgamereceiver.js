@@ -11,8 +11,7 @@ exports.ClientGameReceiver = function(app, server) {
   var chaseCamera = null;
   var controller = null;
   var hovercraftFactory = new HovercraftFactory(app);
-  
-
+ 
   self._init = function(data) {
 	  playerId = data.id;
     craft = hovercraftFactory.create(data.id);   
@@ -32,11 +31,14 @@ exports.ClientGameReceiver = function(app, server) {
 
 	  if(craft.getId() === data.targetid) {    
       createExplosionForCraftWithId(data.targetid);
+
+      // Remove entity from scene
 		  app.scene.removeEntity(craft);
 		  app.scene.removeEntity(craft.emitter);
 
       app.scene.withEntity(data.sourceid, function(source) {
 
+        // Set up the camera to do the zooming out thing
         chaseCamera.setMovementDelta(0.03);
         chaseCamera.setLookAtDelta(0.03);
         chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 100, craft.position[1]]);
@@ -47,7 +49,8 @@ exports.ClientGameReceiver = function(app, server) {
         }, 5000);
       });
 
-		  // Unhook input
+      // Disable input
+		  controller.disable();   
 		
 	  }
 	  else {
@@ -64,12 +67,14 @@ exports.ClientGameReceiver = function(app, server) {
 		  app.scene.addEntity(craft.emitter);
 		  craft.setSync(data.sync);
 
+      // Reset camera
       chaseCamera.setMovementDelta(0.1);
       chaseCamera.setLookAtDelta(0.7);
 		  chaseCamera.setTrackedEntity(craft);
       chaseCamera.unfixLocation();
 
-		  // Re-hook input
+      // Re-add input control
+		  controller.enable();
 	  }
 	  else {
 

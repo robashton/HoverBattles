@@ -8,6 +8,7 @@ var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 var MissileFactory = require('./missilefactory').MissileFactory;
 var MissileReceiver = require('./network/missilereceiver').MissileReceiver;
 var ScoreReceiver = require('./network/scorereceiver').ScoreReceiver;
+var HudReceiver = require('./network/hudreceiver').HudReceiver;
 
 ClientCommunication = function(app){
     this.app = app;
@@ -21,6 +22,7 @@ ClientCommunication = function(app){
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
 	  this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
     this.dispatcher.addReceiver(new ScoreReceiver(this.app, this));
+    this.dispatcher.addReceiver(new HudReceiver(this.app, this));
 };
 
 ClientCommunication.prototype.hookSocketEvents = function() {

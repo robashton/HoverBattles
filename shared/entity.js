@@ -13,13 +13,15 @@ function cloneObject(obj) {
 }
 
 var Entity = function(id){
-    this._model = null;
+  this._model = null;
 	this._id = id;
 	this.position = vec3.create([0,0,0]);
-    this.rotationY = 0;
+  this.rotationY = 0;
 	this._scene = null;
 	this.eventHandlers = {};
+  this.components = [];
 };
+
 
 Entity.prototype.getId = function(){
 	return this._id;
@@ -48,6 +50,7 @@ Entity.prototype.raiseEvent = function(eventName, data) {
 };
 
 Entity.prototype.attach = function(component) {
+  this.components.push(component);
 	var ctor = null;
     for(i in component){
         if(i == "doLogic"){
@@ -100,6 +103,13 @@ Entity.prototype.getSync = function() {
   var sync = {};
   this.updateSync(sync);
   return sync;
+};
+
+Entity.prototype.is = function(component) {
+  for(var x = 0; x < this.components.length; x++) {
+    if(this.components[x] instanceof component) return true;
+  }
+  return false;
 };
 
 Entity.prototype.updateSync = function(sync) {

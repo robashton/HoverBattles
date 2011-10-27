@@ -100,7 +100,6 @@ var Targeting = {
 	deassignTarget: function() {
 		var target = this._currentTarget;
 		this._currentTarget = null;
-		console.info('Deassigned a target');
 		this.raiseEvent('cancelledTrackingTarget', {
 			target: target
 		});
@@ -108,7 +107,6 @@ var Targeting = {
 	
 	assignNewTarget: function(target) {
 		this._currentTarget = target;
-		console.info('Assigned a target');
 		this.raiseEvent('trackingTarget', {
 			target: target
 		});

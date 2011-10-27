@@ -4,14 +4,34 @@ var Camera = require('./camera').Camera;
 var CollisionManager = require('./collisionmanager').CollisionManager;
 
 var Scene = function(app){
-    this._entities = {};
-    this.app = app;
-    this.camera = new Camera();
-    this.collisionManager = new CollisionManager();
+  this._entities = {};
+  this.app = app;
+  this.camera = new Camera();
+  this.collisionManager = new CollisionManager();
+  this.entityAddedListeners = [];
+  this.entityRemovedListeners = [];
 };
 
-Scene.prototype.sendCommand = function(commandName, data) {
-	
+Scene.prototype.onEntityAdded = function(callback) {
+  this.entityAddedListeners.push(callback);
+};
+
+Scene.prototype.onEntityRemoved = function(callback) {
+  this.entityRemovedListeners.push(callback);
+};
+
+Scene.prototype.raiseEntityAdded = function(entity) {
+  for(var i = 0; i < this.entityAddedListeners.length ; i++){ 
+    var listener = this.entityAddedListeners[i];
+    listener(entity);
+  }
+};
+
+Scene.prototype.raiseEntityRemoved = function(entity) {
+  for(var i = 0; i < this.entityRemovedListeners.length ; i++){ 
+    var listener = this.entityRemovedListeners[i];
+    listener(entity);
+  }
 };
 
 Scene.prototype.withEntity = function(id, callback) {
@@ -27,10 +47,12 @@ Scene.prototype.getEntity = function(id) {
 
 Scene.prototype.addEntity = function(entity){
     this._entities[entity.getId()] = entity;
-	entity.setScene(this);
+	  entity.setScene(this);
+    this.raiseEntityAdded(entity);
 };
 
 Scene.prototype.removeEntity = function(entity) {
+  this.raiseEntityRemoved(entity);
 	entity.setScene(undefined);
 	delete this._entities[entity.getId()];
 };

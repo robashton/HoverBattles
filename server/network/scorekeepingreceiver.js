@@ -25,4 +25,3 @@ exports.ScoreKeepingReceiver = function(app, communication) {
     });
   };
 };
-

@@ -19,6 +19,7 @@ var HovercraftController = function(targetId, server){
   this.left = false;
   this.right = false;
   this.jump = false;
+  this.enabled = true;
   
   var controller = this;
   setInterval(function() { controller.processInput(); }, 1000 / 30);
@@ -42,10 +43,19 @@ HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboa
     up: onKeyboardUp,
     state: false
   };
-}
+};
+
+HovercraftController.prototype.disable = function() {
+  this.enabled = false;
+};
+
+HovercraftController.prototype.enable = function() {
+  this.enabled = true;
+};
 
 HovercraftController.prototype.processInput = function(){
-  
+  if(!this.enabled) return;
+
   for(var code in this.keyboardMappings){
     var mapping = this.keyboardMappings[code];
     
