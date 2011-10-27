@@ -2,25 +2,25 @@ var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
 var LandChunk = function(width, height, maxHeight, scale,x,y){
-    this._maxHeight = maxHeight;
-	this._width = width;
-	this._height = height;
-	this._x = x;
-	this._y = y;
-    this._scale = scale;
+  this._maxHeight = maxHeight;
+  this._width = width;
+  this._height = height;
+  this._x = x;
+  this._y = y;
+  this._scale = scale;
 
-	this._vertexBuffer = null;
-	this._indexBuffer = null;
-    this._normalBuffer = null;
-	this._indexCount = 0;
-	this._texturecoordsBuffer = null;
-	
-	this._diffuseTexture = null;
-    this._data = null;
-    
-    this._frame = 0.0;
-    this._playerPosition = vec3.create();
-    this._cameraPosition = vec3.create();
+  this._vertexBuffer = null;
+  this._indexBuffer = null;
+  this._normalBuffer = null;
+  this._indexCount = 0;
+  this._texturecoordsBuffer = null;
+
+  this._diffuseTexture = null;
+  this._data = null;
+
+  this._frame = 0.0;
+  this._playerPosition = vec3.create();
+  this._cameraPosition = vec3.create();
 };
 
 LandChunk.prototype.getProgram = function(){

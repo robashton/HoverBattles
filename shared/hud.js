@@ -72,7 +72,7 @@ exports.Hud = function(app) {
 exports.Hud.ID = "HUDEntity";
 exports.Hud.create = function(app) {
   var hudEntity = new Entity(exports.Hud.ID);
-  hudEntity.attach(new exports.Hud(app));
+  hudEntity.attach(exports.Hud, [app]);
 
   app.scene.addEntity(hudEntity);
 };

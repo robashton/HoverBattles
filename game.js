@@ -53,66 +53,65 @@ var mat4 = require('./glmatrix').mat4;
 var Frustum = require('./frustum').Frustum;
 var MissileFactory = require('./missilefactory').MissileFactory;
 
-var Tracking = {
-	
-	_ctor: function() {
-		this.targetsInSight = {};
-	},
-	doLogic: function() {
-		
-	   for(var i in this._scene._entities){
-            var entity = this._scene._entities[i];
-            if(entity === this) continue;
-            if(!entity.getOldestTrackedObject) continue;
+exports.Tracking = function() {
+  var self = this;
 
-            // Get a vector to the other entity
-            var vectorToOtherEntity = vec3.create([0,0,0]);
-            vec3.subtract(entity.position, this.position, vectorToOtherEntity);
-            var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
-            vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
+	self.targetsInSight = {};
 
-            // Get the direction we're aiming in
-            var vectorOfAim = [0,0,-1,1];
-            var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
-            mat4.identity(lookAtTransform);
-            mat4.rotateY(lookAtTransform, this.rotationY);
-            mat4.multiplyVec4(lookAtTransform, vectorOfAim);
+	self.doLogic = function() {		
+   for(var i in self._scene._entities){
+      var entity = self._scene._entities[i];
+      if(entity === this) continue;
+      if(!entity.getOldestTrackedObject) continue;
 
-            // We must both be within a certain angle of the other entity
-            // and within a certain distance
-            var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
-            if(quotient > 0.75 && distanceToOtherEntity < 128) 
-            {
-                this.notifyAimingAt(entity);
-            }
-            else  
-            {
-                this.notifyNotAimingAt(entity);
-            }
-        }		
-	},
+      // Get a vector to the other entity
+      var vectorToOtherEntity = vec3.create([0,0,0]);
+      vec3.subtract(entity.position, self.position, vectorToOtherEntity);
+      var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
+      vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
+
+      // Get the direction we're aiming in
+      var vectorOfAim = [0,0,-1,1];
+      var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
+      mat4.identity(lookAtTransform);
+      mat4.rotateY(lookAtTransform, self.rotationY);
+      mat4.multiplyVec4(lookAtTransform, vectorOfAim);
+
+      // We must both be within a certain angle of the other entity
+      // and within a certain distance
+      var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
+      if(quotient > 0.75 && distanceToOtherEntity < 128) 
+      {
+          self.notifyAimingAt(entity);
+      }
+      else  
+      {
+          self.notifyNotAimingAt(entity);
+      }
+    }		
+	};
 	
-	notifyAimingAt: function(entity) {
-        var id = entity.getId();
-        if(this.targetsInSight[id]) return;
-        this.targetsInSight[id] = {
-			entity: entity,
-			time: new Date()
-		};
-		this.raiseEvent('targetGained', { target: entity});
-    },
+	self.notifyAimingAt = function(entity) {
+    var id = entity.getId();
+    if(self.targetsInSight[id]) return;
+    self.targetsInSight[id] = {
+	    entity: entity,
+	    time: new Date()
+	  };
+	  self.raiseEvent('targetGained', { target: entity});
+  };
+
+  self.notifyNotAimingAt = function(entity)  {
+    var id = entity.getId();
+    if(!self.targetsInSight[id]) return;			
+    delete self.targetsInSight[id];
+    self.raiseEvent('targetLost', { target: entity});
+  };
 	
-    notifyNotAimingAt: function(entity)  {
-        var id = entity.getId();
-        if(!this.targetsInSight[id]) return;			
-		delete this.targetsInSight[id];
-		this.raiseEvent('targetLost', { target: entity});
-    },
-	
-	getOldestTrackedObject: function() {
+	self.getOldestTrackedObject = function() {
 		var oldest = null;
-		for(var id in this.targetsInSight){
-			var current = this.targetsInSight[id];
+		for(var id in self.targetsInSight){
+			var current = self.targetsInSight[id];
 			if(oldest == null) { 
 				oldest = current;
 				continue;
@@ -120,59 +119,57 @@ var Tracking = {
 		}
 		if(oldest === null) return null;
 		return oldest['entity'];
-	}
+	};
+
 };
 
-var Targeting = {
+exports.Targeting = function(){
+  var self = this;
 
-	_ctor: function(){ 
-		this._currentTarget = null;
-		this.addEventHandler('targetLost', this.onTargetLost);
-	},
+	self._currentTarget = null;
+
+	self.onTargetLost = function(data) {
+		if(self._currentTarget === data.target)
+			self.deassignTarget();
+	};
+
+	self.addEventHandler('targetLost', self.onTargetLost);
 	
-	doLogic: function() {		
-		this.evaluateWhetherNewTargetIsRequired();
-	},
+	self.doLogic = function() {		
+		self.evaluateWhetherNewTargetIsRequired();
+	};
+		
+	self.hasCurrentTarget = function() {
+		return self._currentTarget !== null;
+	};
 	
-	onTargetLost: function(data) {
-		if(this._currentTarget === data.target)
-			this.deassignTarget();
-	},
+	self.getCurrentTarget = function() {
+		return self._currentTarget;
+	};
 	
-	hasCurrentTarget: function() {
-		return this._currentTarget !== null;
-	},
-	
-	getCurrentTarget: function() {
-		return this._currentTarget;
-	},
-	
-	deassignTarget: function() {
-		var target = this._currentTarget;
-		this._currentTarget = null;
-		this.raiseEvent('cancelledTrackingTarget', {
+	self.deassignTarget = function() {
+		var target = self._currentTarget;
+		self._currentTarget = null;
+		self.raiseEvent('cancelledTrackingTarget', {
 			target: target
 		});
-	},
+	};
 	
-	assignNewTarget: function(target) {
-		this._currentTarget = target;
-		this.raiseEvent('trackingTarget', {
+	self.assignNewTarget = function(target) {
+		self._currentTarget = target;
+		self.raiseEvent('trackingTarget', {
 			target: target
 		});
-	},	
+	};
 	
-	evaluateWhetherNewTargetIsRequired: function() {
-		if(!this.hasCurrentTarget()) {
-			var newTarget = this.getOldestTrackedObject();
+	self.evaluateWhetherNewTargetIsRequired = function() {
+		if(!self.hasCurrentTarget()) {
+			var newTarget = self.getOldestTrackedObject();
 			if(newTarget != null)	
-				this.assignNewTarget(newTarget);
+				self.assignNewTarget(newTarget);
 		}	
-	},
+	};
 };
-
-exports.Tracking = Tracking;
-exports.Targeting = Targeting;
 }, "bounding": function(exports, require, module) {vec3 = require('./glmatrix').vec3;
 mat4 = require('./glmatrix').mat4;
 
@@ -251,11 +248,12 @@ Box.Create = function(vertices) {
 };
 
 exports.Box = Box;
-exports.Sphere = Sphere;}, "camera": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+exports.Sphere = Sphere;
+}, "camera": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var Frustum = require('./frustum').Frustum;
 
-var Camera = function(location){
+var Camera = function(location) {
     this.location = location || vec3.create();
     this.lookAt = vec3.create();
     this.width = 800;
@@ -284,118 +282,122 @@ Camera.prototype.getViewMatrix = function(){
     return this.viewMatrix;
 };
 
-exports.Camera = Camera;}, "chasecamera": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+exports.Camera = Camera;
+}, "chasecamera": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
 
-var ChaseCamera = {
-  cameraMode: "chase",
-  entity: null,
+var ChaseCamera = function() {
+  var self = this;
+  self.cameraMode = "chase";
+  self.entity = null;
 
-  _ctor: function() {
-      this.cameraLocation = vec3.create([0,100,0]);
-      this.cameraLookAt = vec3.create([0,0,0]);
-      this.destinationCameraLocation = vec3.create([0,0,0]);
-      this.destinationCameraLookAt = vec3.create([0,0,0]);
+  self.cameraLocation = vec3.create([0,100,0]);
+  self.cameraLookAt = vec3.create([0,0,0]);
+  self.destinationCameraLocation = vec3.create([0,0,0]);
+  self.destinationCameraLookAt = vec3.create([0,0,0]);
 
-      this.movementDelta = 0.1;
-      this.lookAtDelta = 0.7;
-      this.fixLocation = false;
+  self.movementDelta = 0.1;
+  self.lookAtDelta = 0.7;
+  self.fixLocation = false;
 
-      this.cameraVelocity = vec3.create([0,0,0]);
-      this.lookAtVelocity = vec3.create([0,0,0]);
-  },
+  self.cameraVelocity = vec3.create([0,0,0]);
+  self.lookAtVelocity = vec3.create([0,0,0]); 
 
-  setTrackedEntity: function(entity) {
-    this.entity = entity;
-  },
+  self.setTrackedEntity= function(entity) {
+    self.entity = entity;
+  };
 
-  fixLocationAt: function(position) {
-      this.fixLocation = true;
-      this.destinationCameraLocation = vec3.create(position);
-  },
+  self.fixLocationAt= function(position) {
+      self.fixLocation = true;
+      self.destinationCameraLocation = vec3.create(position);
+  };
 
-  unfixLocation: function() {
-      this.fixLocation = false;
-  },
+  self.unfixLocation= function() {
+      self.fixLocation = false;
+  };
 
-  setMovementDelta: function(delta) {
-    this.movementDelta = delta;
-  },
+  self.setMovementDelta= function(delta) {
+    self.movementDelta = delta;
+  };
   
-  setLookAtDelta: function(delta) {
-    this.lookAtDelta = delta;
-  },
+  self.setLookAtDelta= function(delta) {
+    self.lookAtDelta = delta;
+  };
 
-  doLogic: function(){      
-    this.workOutWhereTargetIs();
-    this.doLogicAfterAscertainingTarget();
-  },
+  self.doLogic= function(){      
+    self.workOutWhereTargetIs();
+    self.doLogicAfterAscertainingTarget();
+  };
 
-  workOutWhereTargetIs: function() {
-     var terrain = this._scene.getEntity("terrain");      
-     var cameraTrail = vec3.create(this.entity._velocity);
+  self.workOutWhereTargetIs= function() {
+     var terrain = self._scene.getEntity("terrain");      
+     var cameraTrail = vec3.create(self.entity._velocity);
 
      cameraTrail[1] = 0;
      vec3.normalize(cameraTrail);
      vec3.scale(cameraTrail, 25);
-     vec3.subtract(this.entity.position, cameraTrail, cameraTrail);
+     vec3.subtract(self.entity.position, cameraTrail, cameraTrail);
 
      var desiredCameraLocation = cameraTrail;
 
-     var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(this._scene.camera.location[0], 
-                                                             this._scene.camera.location[2]);
+     var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(self._scene.camera.location[0], 
+                                                             self._scene.camera.location[2]);
                             
-     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, this.entity.position[1] + 10);
+     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, self.entity.position[1] + 10);
      
      desiredCameraLocation[1] =  cameraHeight;  
     
 
-     this.destinationCameraLookAt = vec3.create(this.entity.position);
+     self.destinationCameraLookAt = vec3.create(self.entity.position);
 
-     if(!this.fixLocation)
-      this.destinationCameraLocation = desiredCameraLocation;
-  },
+     if(!self.fixLocation)
+      self.destinationCameraLocation = desiredCameraLocation;
+  };
 
-  doLogicAfterAscertainingTarget: function() {
+  self.doLogicAfterAscertainingTarget= function() {
     var directionToWhereWeWantToBe = vec3.create([0,0,0]);
-    vec3.subtract(this.destinationCameraLocation, this.cameraLocation, directionToWhereWeWantToBe);
-    vec3.scale(directionToWhereWeWantToBe, this.movementDelta , this.cameraVelocity);
-    vec3.add(this.cameraLocation, this.cameraVelocity); 
+    vec3.subtract(self.destinationCameraLocation, self.cameraLocation, directionToWhereWeWantToBe);
+    vec3.scale(directionToWhereWeWantToBe, self.movementDelta , self.cameraVelocity);
+    vec3.add(self.cameraLocation, self.cameraVelocity); 
 
     var directionToWhereWeWantToLookAt = vec3.create([0,0,0]);
-    vec3.subtract(this.destinationCameraLookAt, this.cameraLookAt, directionToWhereWeWantToLookAt);
-    vec3.scale(directionToWhereWeWantToLookAt, this.lookAtDelta , this.lookAtVelocity);
-    vec3.add(this.cameraLookAt, this.lookAtVelocity); 
+    vec3.subtract(self.destinationCameraLookAt, self.cameraLookAt, directionToWhereWeWantToLookAt);
+    vec3.scale(directionToWhereWeWantToLookAt, self.lookAtDelta , self.lookAtVelocity);
+    vec3.add(self.cameraLookAt, self.lookAtVelocity); 
 
-    this._scene.camera.lookAt = vec3.create(this.cameraLookAt);
-    this._scene.camera.location = vec3.create(this.cameraLocation);
-  },  
+    self._scene.camera.lookAt = vec3.create(self.cameraLookAt);
+    self._scene.camera.location = vec3.create(self.cameraLocation);
+  };
+
 };
 
 exports.ChaseCamera = ChaseCamera;
-}, "clipping": function(exports, require, module) {var Clipping = {
-  setBounds: function(min, max){
-    this._min = min;
-    this._max = max;
-  },
+}, "clipping": function(exports, require, module) {var Clipping = function() {
+  var self = this;
+
+  self.setBounds = function(min, max){
+    self._min = min;
+    self._max = max;
+  };
   
-  doLogic: function(){
+  self.doLogic = function(){
     for(var i = 0 ; i < 3 ; i++){
-        if(this.position[i] < this._min[i]) {
-            this.position[i] = this._min[i];
-            this._velocity[i] = 0;
+        if(self.position[i] < self._min[i]) {
+            self.position[i] = self._min[i];
+            self._velocity[i] = 0;
         }
-        else if(this.position[i] > this._max[i]) {
-            this.position[i] = this._max[i];
-            this._velocity[i] = 0;
+        else if(self.position[i] > self._max[i]) {
+            self.position[i] = self._max[i];
+            self._velocity[i] = 0;
         }
     }
-  }
+  };
     
 };
 
-exports.Clipping = Clipping;}, "collisionmanager": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+exports.Clipping = Clipping;
+}, "collisionmanager": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 
 CollisionManager = function(){
     
@@ -551,16 +553,6 @@ exports.DefaultTextureLoader = DefaultTextureLoader;}, "entity": function(export
 var mat4 = require('./glmatrix').mat4;
 var mat3 = require('./glmatrix').mat3;
 
-function cloneObject(obj) {
-    if(obj === null) return null;
-    var clone = {};
-    for(var i in obj) {
-        if(typeof(obj[i]) !=="object")
-            clone[i] = obj[i];
-    }
-    return clone;
-}
-
 var Entity = function(id){
   this._model = null;
 	this._id = id;
@@ -598,46 +590,56 @@ Entity.prototype.raiseEvent = function(eventName, data) {
 	}
 };
 
-Entity.prototype.attach = function(component) {
+Entity.prototype.attach = function(component, args) {
   this.components.push(component);
-	var ctor = null;
-    for(i in component){
-        if(i == "doLogic"){
-            var newLogic = component[i];
-            var oldLogic = this.doLogic;
-            this.doLogic = function(){
-              oldLogic.call(this);
-              newLogic.call(this);
-            };
-        }
-        else if(i == "updateSync"){
-            var newSendSync = component[i];
-            var oldSendSync = this[i];
-            this[i] = function(sync) {
-              newSendSync.call(this, sync);
-              oldSendSync.call(this, sync);
-            };
-        }
-        else if(i == "setSync") {
-            var newRecvSync = component[i];
-            var oldRecvSync = this[i];
-            this[i] = function(sync) {
-              newRecvSync.call(this, sync);
-              oldRecvSync.call(this, sync);
-            };
-        }
-		else if(i == "_ctor") {
-			ctor = component[i];
-		}
-        else {
-            if(typeof component[i] !== "object"){
-                this[i] = component[i];
-            }
-        }
-    }
 
-	if(ctor)
-	 	ctor.call(this);
+  var oldProperties = {};
+  for(var i in this) {
+    oldProperties[i] = this[i];
+  }
+
+  if(!component.apply){
+    console.warn("Cannot apply component, it's written in the old style");
+    return;
+  }
+
+  component.apply(this, args);
+
+  // Note: We've ended up here because of the natural evolution of 
+  // how these components have traditionally worked
+  // clearly this code is sub-optimal, and it'll get fixed next time
+  // these entities become painful to deal with (just like how this happened
+  // last time these entities became painful to deal with)
+  for(var i in this) {
+    if(oldProperties[i] && oldProperties[i] !== this[i]) {
+       if(i === 'doLogic') {
+          var newLogic = this[i];
+          var oldLogic = oldProperties[i];
+          this.doLogic = function() {
+            oldLogic.call(this);
+            newLogic.call(this);
+          }
+       }
+       else if(i === 'updateSync') {
+          var newSendSync = this[i];
+          var oldSendSync = oldProperties[i];
+          this.updateSync = function(sync) {
+            newSendSync.call(this, sync);
+            oldSendSync.call(this, sync);
+          };
+       }
+       else if(i === 'setSync') {
+          var newRecvSync = this[i];
+          var oldRecvSync = oldProperties[i];
+          this.setSync = function(sync) {
+            newRecvSync.call(this, sync);
+            oldRecvSync.call(this, sync);
+          };
+       } else {
+        console.warn("Detected a potentially unacceptable overwrite of " + i + 'on ' + this.getId());
+      }
+    }
+  }
 };
 
 Entity.prototype.doLogic = function() {
@@ -2672,146 +2674,147 @@ exports.mat3 = mat3;
 }, "hovercraft": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
-var Hovercraft = {
-	_ctor: function() {
-		this._velocity = vec3.create([0.01,0,0.01]);
-	    this._decay = 0.97;
+var Hovercraft = function() {
+  var self = this;
 
-	    this._left = false;
-	    this._right = false;
-	    this._jump = false;
-	    this._forward = false;
-	    this._backward = false;
-	},
-    
-    getSphere: function() {
-        return this._model.boundingSphere.translate(this.position);
-    },
-    
-    startForward: function() {
-      this._forward = true;  
-    },
-    
-    cancelForward: function() {
-      this._forward  = false;  
-    },
-    
-    startLeft: function() {
-        this._left = true;
-    },
-    
-    cancelLeft: function() {
-        this._left = false;
-    },
-    
-    startRight: function() {
-      this._right = true;  
-    },
-    
-    cancelRight: function() {
-        this._right = false;
-    },
-    
-    startBackward: function() {
-        this._backward = true;
-    },
-    
-    cancelBackward:  function() {
-        this._backward = false;
-    },
-    
-    startUp: function() {
-        this._jump = true;
-    },
-    
-    cancelUp: function() {
-        this._jump = false;
-    },
-    
-    
-    
-    impulseForward: function() {
-        var amount = 0.08;
-        var accelerationZ = (-amount) * Math.cos(this.rotationY);
-        var accelerationX = (-amount) * Math.sin(this.rotationY);
-        var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
-        vec3.add(this._velocity, acceleration);
-    },
-    impulseBackward: function() {
-        var amount = 0.05;
-        var accelerationZ = (amount) * Math.cos(this.rotationY);
-        var accelerationX = (amount) * Math.sin(this.rotationY);
-        var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
-        vec3.add(this._velocity, acceleration);
-    },
-    impulseLeft: function() {
-        var amount = 0.05;
-        this.rotationY += amount;
-    },
-    impulseRight: function() {
-        var amount = 0.05;
-        this.rotationY -= amount;
-    },
-    impulseUp: function() {
-        var amount = 0.25;
-        var terrain = this._scene.getEntity("terrain");
-        
-        var terrainHeight = terrain.getHeightAt(this.position[0], this.position[2]);
-        var heightDelta = this.position[1] - terrainHeight;
-        
-        if(heightDelta < 20.0) {
-            this._velocity[1] += amount;
-        }
-    },
-    
-    processInput: function() {
-        if(this._left) {
-            this.impulseLeft();
-        }
-        else if(this._right) {
-            this.impulseRight();
-        }
-        
-        if(this._forward) {
-            this.impulseForward();
-        } 
-        else if( this._backward) {
-            this.impulseBackward();
-        };
-        
-        if(this._jump) {
-         this.impulseUp();   
-        }
-    },
-    
-    doLogic: function() {
-        this.processInput();
-        
-        var terrain = this._scene.getEntity("terrain");
-        vec3.add(this.position, this._velocity);
-                     
-        var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(this.position[0], this.position[2]);  
-        var heightDelta = this.position[1] - terrainHeight;
-        
-        if(heightDelta < 0) {
-            this.position[1] = terrainHeight;   
-        }
+	self._velocity = vec3.create([0.01,0,0.01]);
+  self._decay = 0.97;
 
-		if(Math.abs(this._velocity[1]) < 0.0001)
-			this._velocity[1] = 0;
-         
-         if(heightDelta < 10.0){
-               this._velocity[1] += (10.0 - heightDelta) * 0.03;
-         }
-         this._velocity[1] -= 0.025;              
-         vec3.scale(this._velocity, this._decay);
+  self._left = false;
+  self._right = false;
+  self._jump = false;
+  self._forward = false;
+  self._backward = false;
 
-    },
-    
-    updateSync: function(sync) {
-	  sync.position = this.position;
-	  sync.rotationY = this.rotationY;
-    }
+  
+  self.getSphere = function() {
+      return self._model.boundingSphere.translate(self.position);
+  };
+  
+  self.startForward = function() {
+    self._forward = true;  
+  };
+  
+  self.cancelForward = function() {
+    self._forward  = false;  
+  };
+  
+  self.startLeft = function() {
+      self._left = true;
+  };
+  
+  self.cancelLeft = function() {
+      self._left = false;
+  };
+  
+  self.startRight = function() {
+    self._right = true;  
+  };
+  
+  self.cancelRight = function() {
+      self._right = false;
+  };
+  
+  self.startBackward = function() {
+      self._backward = true;
+  };
+  
+  self.cancelBackward = function() {
+      self._backward = false;
+  };
+  
+  self.startUp = function() {
+      self._jump = true;
+  };
+  
+  self.cancelUp = function() {
+      self._jump = false;
+  };
+  
+  
+  
+  self.impulseForward = function() {
+      var amount = 0.08;
+      var accelerationZ = (-amount) * Math.cos(self.rotationY);
+      var accelerationX = (-amount) * Math.sin(self.rotationY);
+      var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
+      vec3.add(self._velocity, acceleration);
+  };
+  self.impulseBackward = function() {
+      var amount = 0.05;
+      var accelerationZ = (amount) * Math.cos(self.rotationY);
+      var accelerationX = (amount) * Math.sin(self.rotationY);
+      var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
+      vec3.add(self._velocity, acceleration);
+  };
+  self.impulseLeft = function() {
+      var amount = 0.05;
+      self.rotationY += amount;
+  };
+  self.impulseRight = function() {
+      var amount = 0.05;
+      self.rotationY -= amount;
+  };
+  self.impulseUp = function() {
+      var amount = 0.25;
+      var terrain = self._scene.getEntity("terrain");
+      
+      var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
+      var heightDelta = self.position[1] - terrainHeight;
+      
+      if(heightDelta < 20.0) {
+          self._velocity[1] += amount;
+      }
+  };
+  
+  self.processInput = function() {
+      if(self._left) {
+          self.impulseLeft();
+      }
+      else if(self._right) {
+          self.impulseRight();
+      }
+      
+      if(self._forward) {
+          self.impulseForward();
+      } 
+      else if( self._backward) {
+          self.impulseBackward();
+      };
+      
+      if(self._jump) {
+       self.impulseUp();   
+      }
+  };
+  
+  self.doLogic = function() {
+      self.processInput();
+      
+      var terrain = self._scene.getEntity("terrain");
+      vec3.add(self.position, self._velocity);
+                   
+      var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
+      var heightDelta = self.position[1] - terrainHeight;
+      
+      if(heightDelta < 0) {
+          self.position[1] = terrainHeight;   
+      }
+
+	if(Math.abs(self._velocity[1]) < 0.0001)
+		self._velocity[1] = 0;
+       
+       if(heightDelta < 10.0){
+             self._velocity[1] += (10.0 - heightDelta) * 0.03;
+       }
+       self._velocity[1] -= 0.025;              
+       vec3.scale(self._velocity, self._decay);
+
+  };
+  
+  self.updateSync = function(sync) {
+    sync.position = self.position;
+    sync.rotationY = self.rotationY;
+  };
 }
          
 exports.Hovercraft = Hovercraft;
@@ -2997,7 +3000,7 @@ exports.Hud = function(app) {
 exports.Hud.ID = "HUDEntity";
 exports.Hud.create = function(app) {
   var hudEntity = new Entity(exports.Hud.ID);
-  hudEntity.attach(new exports.Hud(app));
+  hudEntity.attach(exports.Hud, [app]);
 
   app.scene.addEntity(hudEntity);
 };
@@ -3009,25 +3012,25 @@ exports.KeyboardStates = KeyboardStates;}, "landchunk": function(exports, requir
 var mat4 = require('./glmatrix').mat4;
 
 var LandChunk = function(width, height, maxHeight, scale,x,y){
-    this._maxHeight = maxHeight;
-	this._width = width;
-	this._height = height;
-	this._x = x;
-	this._y = y;
-    this._scale = scale;
+  this._maxHeight = maxHeight;
+  this._width = width;
+  this._height = height;
+  this._x = x;
+  this._y = y;
+  this._scale = scale;
 
-	this._vertexBuffer = null;
-	this._indexBuffer = null;
-    this._normalBuffer = null;
-	this._indexCount = 0;
-	this._texturecoordsBuffer = null;
-	
-	this._diffuseTexture = null;
-    this._data = null;
-    
-    this._frame = 0.0;
-    this._playerPosition = vec3.create();
-    this._cameraPosition = vec3.create();
+  this._vertexBuffer = null;
+  this._indexBuffer = null;
+  this._normalBuffer = null;
+  this._indexCount = 0;
+  this._texturecoordsBuffer = null;
+
+  this._diffuseTexture = null;
+  this._data = null;
+
+  this._frame = 0.0;
+  this._playerPosition = vec3.create();
+  this._cameraPosition = vec3.create();
 };
 
 LandChunk.prototype.getProgram = function(){
@@ -3238,10 +3241,10 @@ LandscapeController.prototype.loadChunks = function(x, z){
                y: z               
             })
 
-            var model = app.resources.getModel(data);
+      var model = app.resources.getModel(data);
 			var chunkEntity = new Entity('Chunk_' + key);
-            chunkEntity.setModel(model);
-            chunkEntity.attach(LandChunkEntity);
+      chunkEntity.setModel(model);
+      chunkEntity.attach(LandChunkEntity);
 			chunkEntity.x = x;
 			chunkEntity.z = z;
 
@@ -3251,9 +3254,10 @@ LandscapeController.prototype.loadChunks = function(x, z){
 	}
 };
 
-LandChunkEntity = {
-  getHeightAt: function(x,z){
-   return this._model.getHeightAt(x,z);   
+LandChunkEntity = function() {
+  var self = this;
+  self.getHeightAt = function(x,z){
+   return self._model.getHeightAt(x,z);   
   }
 };
 
@@ -3343,109 +3347,106 @@ MessageDispatcher.prototype.dispatch = function(message) {
 
 exports.MessageDispatcher = MessageDispatcher;}, "missile": function(exports, require, module) {Sphere = require('./bounding').Sphere;
 
-var Missile = 
-{
-   _ctor: function() {
-	 	this.target = null;
-		this.source = null;
-		this._velocity = vec3.create([0,0,0]);	
-		this.bounds = new Sphere(1.0, [0,0,0]);
-    this.isTrackingTarget = false;
-	},
-	setSource: function(sourceid, position) {
-		this.sourceid = sourceid;
-		this.position = vec3.create(position);	
-	},
-  setTarget: function(targetid) {
+var Missile = function() {
+  var self = this;
+ 	self.target = null;
+	self.source = null;
+	self._velocity = vec3.create([0,0,0]);	
+	self.bounds = new Sphere(1.0, [0,0,0]);
+  self.isTrackingTarget = false;
+	
+	self.setSource = function(sourceid, position) {
+		self.sourceid = sourceid;
+		self.position = vec3.create(position);	
+	};
+  self.setTarget = function(targetid) {
       if(!targetid) throw "Tried to set a null target on a missile";
-      this.targetid = targetid;
-      this.isTrackingTarget = true;
-  },
+      self.targetid = targetid;
+      self.isTrackingTarget = true;
+  };
 
-  doLogic: function() {
-   if(this.isTrackingTarget) this.updateTargetReferences();
+  self.doLogic = function() {
+   if(self.isTrackingTarget) self.updateTargetReferences();
 
-    if(this.isTrackingTarget) {   
-		  this.updateVelocityTowardsTarget();
-		  this.performPhysics();
-		  this.determineIfTargetIsReached();
+    if(self.isTrackingTarget) {   
+		  self.updateVelocityTowardsTarget();
+		  self.performPhysics();
+		  self.determineIfTargetIsReached();
     } else {
       
         // Probably still want to do something here in the future
         // At the moment the missile will simply cease to be
         // But simply removing the reference and letting it fly would be much cooler
     }		
-	},
+	};
 
-  updateTargetReferences: function() {
-    this.source = this.getSource();
-    this.target = this.getTarget();
+  self.updateTargetReferences = function() {
+    self.source = self.getSource();
+    self.target = self.getTarget();
 
-    if(!this.source || !this.target) {
-      this.isTrackingTarget = false;
-			this.raiseEvent('missileLost', { 
-				targetid: this.targetid,
-				sourceid: this.sourceid,
-        missileid: this.getId()
+    if(!self.source || !self.target) {
+      self.isTrackingTarget = false;
+			self.raiseEvent('missileLost', { 
+				targetid: self.targetid,
+				sourceid: self.sourceid,
+        missileid: self.getId()
       });
     }
-  },
+  };
 
-  getSource: function() {
-    return this._scene.getEntity(this.sourceid);
-  },
+  self.getSource = function() {
+    return self._scene.getEntity(self.sourceid);
+  };
 
-  getTarget: function() {
-    return this._scene.getEntity(this.targetid);
-  },
+  self.getTarget = function() {
+    return self._scene.getEntity(self.targetid);
+  };
 	
-	determineIfTargetIsReached: function() {
-		var myBounds = this.bounds.translate(this.position);
+	self.determineIfTargetIsReached = function() {
+		var myBounds = self.bounds.translate(self.position);
     
-		var targetSphere = this.target.getSphere();
+		var targetSphere = self.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
-			this.raiseEvent('targetHit', { 
-				targetid: this.targetid,
-				sourceid: this.sourceid,
-        missileid: this.getId() });
+			self.raiseEvent('targetHit', { 
+				targetid: self.targetid,
+				sourceid: self.sourceid,
+        missileid: self.getId() });
 		  }
-	},
+	};
 	
-	performPhysics: function() {
-		vec3.add(this.position, this._velocity);
+	self.performPhysics = function() {
+		vec3.add(self.position, self._velocity);
 		
-		if(!this.isWithinReachOfTarget())
-			this.clipMissileToTerrain();
-	},
+		if(!self.isWithinReachOfTarget())
+			self.clipMissileToTerrain();
+	};
 	
-	isWithinReachOfTarget: function() {
-		var difference = this.calculateVectorToTarget();
+	self.isWithinReachOfTarget = function() {
+		var difference = self.calculateVectorToTarget();
 		difference[1] = 0;
 		var distanceToTargetIgnoringHeight = vec3.length(difference);
 		return distanceToTargetIgnoringHeight < 2;		
-	},
+	};
 	
-	updateVelocityTowardsTarget: function() {
-		var difference = this.calculateVectorToTarget();
-		this.distanceFromTarget = vec3.length(difference);
-		vec3.scale(difference, 2.5 / this.distanceFromTarget, this._velocity);	
-		
-	},
+	self.updateVelocityTowardsTarget = function() {
+		var difference = self.calculateVectorToTarget();
+		self.distanceFromTarget = vec3.length(difference);
+		vec3.scale(difference, 2.5 / self.distanceFromTarget, self._velocity);	
+	};
 	
-	clipMissileToTerrain: function(vectorToTarget) {
-		var terrain = this._scene.getEntity("terrain");
-        var terrainHeight = terrain.getHeightAt(this.position[0], this.position[2]);
-		this.position[1] = terrainHeight;	
-		
-	},
+	self.clipMissileToTerrain = function(vectorToTarget) {
+		var terrain = self._scene.getEntity("terrain");
+    var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
+		self.position[1] = terrainHeight;	
+	};
 	
-	calculateVectorToTarget: function() {	
-	    var targetDestination = this.target.position;
-	    var currentPosition = this.position;
-		  var difference = vec3.create([0,0,0]);
-		  vec3.subtract(targetDestination, currentPosition, difference);
-		  return difference;
-	}
+	self.calculateVectorToTarget = function() {	
+    var targetDestination = self.target.position;
+    var currentPosition = self.position;
+	  var difference = vec3.create([0,0,0]);
+	  vec3.subtract(targetDestination, currentPosition, difference);
+	  return difference;
+	};
 };
 
 exports.Missile = Missile;
@@ -3457,9 +3458,7 @@ var MissileFactory = function(app) {
 };
 
 MissileFactory.prototype.create = function(missileid, sourceid, targetid, position) {
-  var entity = new Entity(missileid);
-
-  
+  var entity = new Entity(missileid); 
   entity.attach(Missile);
   entity.setSource(sourceid, position);
   entity.setTarget(targetid);
@@ -3474,16 +3473,16 @@ var bounding = require('./bounding');
 
 
 var Model = function(data){
-    this._programName = "default";
+  this._programName = "default";
     
-    if(data) { this.setData(data); }
-	this._vertexBuffer = null;
-	this._indexBuffer = null;
-	this._colourBuffer = null;
-    this._textureBuffer = null;
-    this._normalBuffer = null;
-    this._hasData = false;
-	this.boundingSphere = new bounding.Sphere(0.0, [0,0,0]);
+  if(data) { this.setData(data); }
+  this._vertexBuffer = null;
+  this._indexBuffer = null;
+  this._colourBuffer = null;
+  this._textureBuffer = null;
+  this._normalBuffer = null;
+  this._hasData = false;
+  this.boundingSphere = new bounding.Sphere(0.0, [0,0,0]);
 };
 
 Model.prototype.setData = function(data) {
@@ -4449,49 +4448,51 @@ Scene.prototype.render = function(context){
 exports.Scene = Scene;
 }, "smoother": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 
-var Smoother = {
-	_ctor: function() {
-		this.hasInitialState = false;
-	},
-	doLogic: function() {
-		if(!this.hasInitialState) return;
+var Smoother = function() {
+  var self = this;
+  self.hasInitialState = false;
+	
+	self.doLogic = function() {
+		if(!self.hasInitialState) return;
 		
 		var oldpositionDelta = vec3.create([0,0,0]);
-		vec3.subtract(this.position, this.oldposition, oldpositionDelta);
-		vec3.add(this.networkposition, oldpositionDelta);
+		vec3.subtract(self.position, self.oldposition, oldpositionDelta);
+		vec3.add(self.networkposition, oldpositionDelta);
 	
 		var networkpositionDelta = vec3.create([0,0,0]);
-		vec3.subtract(this.networkposition, this.position, networkpositionDelta);
+		vec3.subtract(self.networkposition, self.position, networkpositionDelta);
 		vec3.scale(networkpositionDelta, 0.01);
 	
-		vec3.add(this.position, networkpositionDelta);
+		vec3.add(self.position, networkpositionDelta);
 			
-		var oldrotationDelta = this.rotationY - this.oldrotationy;	
-		this.networkrotationY += oldrotationDelta;
+		var oldrotationDelta = self.rotationY - self.oldrotationy;	
+		self.networkrotationY += oldrotationDelta;
 			
-		var networkrotationDelta = this.networkrotationY - this.rotationY;
+		var networkrotationDelta = self.networkrotationY - self.rotationY;
 		networkrotationDelta *= 0.1;
-		this.rotationY += networkrotationDelta;
+		self.rotationY += networkrotationDelta;
 		
-		this.oldposition = this.position;
-		this.oldrotationy = this.rotationY; 
+		self.oldposition = self.position;
+		self.oldrotationy = self.rotationY; 
 		
-	},	
-	setSync: function(sync) {
-      if(!this.hasInitialState) {
-	  		this.position = sync.position;
-	  		this.rotationY = sync.rotationY;
-			this.hasInitialState = true;
+	};
+
+	self.setSync = function(sync) {
+    if(!self.hasInitialState) {
+	  		self.position = sync.position;
+	  		self.rotationY = sync.rotationY;
+			self.hasInitialState = true;
 		}
 
-	  this.networkposition = sync.position;
-	  this.networkrotationY = sync.rotationY; 
-	  this.oldposition = this.position;
-	  this.oldrotationy = this.rotationY; 
-	}	
+	  self.networkposition = sync.position;
+	  self.networkrotationY = sync.rotationY; 
+	  self.oldposition = self.position;
+	  self.oldrotationy = self.rotationY; 
+	};
 };
 
-exports.Smoother = Smoother;}, "texture": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+exports.Smoother = Smoother;
+}, "texture": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
 var Texture = function(name, image){

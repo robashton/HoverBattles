@@ -1,21 +1,23 @@
-var Clipping = {
-  setBounds: function(min, max){
-    this._min = min;
-    this._max = max;
-  },
+var Clipping = function() {
+  var self = this;
+
+  self.setBounds = function(min, max){
+    self._min = min;
+    self._max = max;
+  };
   
-  doLogic: function(){
+  self.doLogic = function(){
     for(var i = 0 ; i < 3 ; i++){
-        if(this.position[i] < this._min[i]) {
-            this.position[i] = this._min[i];
-            this._velocity[i] = 0;
+        if(self.position[i] < self._min[i]) {
+            self.position[i] = self._min[i];
+            self._velocity[i] = 0;
         }
-        else if(this.position[i] > this._max[i]) {
-            this.position[i] = this._max[i];
-            this._velocity[i] = 0;
+        else if(self.position[i] > self._max[i]) {
+            self.position[i] = self._max[i];
+            self._velocity[i] = 0;
         }
     }
-  }
+  };
     
 };
 

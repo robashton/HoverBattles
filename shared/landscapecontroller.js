@@ -71,10 +71,10 @@ LandscapeController.prototype.loadChunks = function(x, z){
                y: z               
             })
 
-            var model = app.resources.getModel(data);
+      var model = app.resources.getModel(data);
 			var chunkEntity = new Entity('Chunk_' + key);
-            chunkEntity.setModel(model);
-            chunkEntity.attach(LandChunkEntity);
+      chunkEntity.setModel(model);
+      chunkEntity.attach(LandChunkEntity);
 			chunkEntity.x = x;
 			chunkEntity.z = z;
 
@@ -84,9 +84,10 @@ LandscapeController.prototype.loadChunks = function(x, z){
 	}
 };
 
-LandChunkEntity = {
-  getHeightAt: function(x,z){
-   return this._model.getHeightAt(x,z);   
+LandChunkEntity = function() {
+  var self = this;
+  self.getHeightAt = function(x,z){
+   return self._model.getHeightAt(x,z);   
   }
 };
 

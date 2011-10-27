@@ -4,16 +4,16 @@ var bounding = require('./bounding');
 
 
 var Model = function(data){
-    this._programName = "default";
+  this._programName = "default";
     
-    if(data) { this.setData(data); }
-	this._vertexBuffer = null;
-	this._indexBuffer = null;
-	this._colourBuffer = null;
-    this._textureBuffer = null;
-    this._normalBuffer = null;
-    this._hasData = false;
-	this.boundingSphere = new bounding.Sphere(0.0, [0,0,0]);
+  if(data) { this.setData(data); }
+  this._vertexBuffer = null;
+  this._indexBuffer = null;
+  this._colourBuffer = null;
+  this._textureBuffer = null;
+  this._normalBuffer = null;
+  this._hasData = false;
+  this.boundingSphere = new bounding.Sphere(0.0, [0,0,0]);
 };
 
 Model.prototype.setData = function(data) {

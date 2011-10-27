@@ -2,89 +2,89 @@ var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
 
-var ChaseCamera = {
-  cameraMode: "chase",
-  entity: null,
+var ChaseCamera = function() {
+  var self = this;
+  self.cameraMode = "chase";
+  self.entity = null;
 
-  _ctor: function() {
-      this.cameraLocation = vec3.create([0,100,0]);
-      this.cameraLookAt = vec3.create([0,0,0]);
-      this.destinationCameraLocation = vec3.create([0,0,0]);
-      this.destinationCameraLookAt = vec3.create([0,0,0]);
+  self.cameraLocation = vec3.create([0,100,0]);
+  self.cameraLookAt = vec3.create([0,0,0]);
+  self.destinationCameraLocation = vec3.create([0,0,0]);
+  self.destinationCameraLookAt = vec3.create([0,0,0]);
 
-      this.movementDelta = 0.1;
-      this.lookAtDelta = 0.7;
-      this.fixLocation = false;
+  self.movementDelta = 0.1;
+  self.lookAtDelta = 0.7;
+  self.fixLocation = false;
 
-      this.cameraVelocity = vec3.create([0,0,0]);
-      this.lookAtVelocity = vec3.create([0,0,0]);
-  },
+  self.cameraVelocity = vec3.create([0,0,0]);
+  self.lookAtVelocity = vec3.create([0,0,0]); 
 
-  setTrackedEntity: function(entity) {
-    this.entity = entity;
-  },
+  self.setTrackedEntity= function(entity) {
+    self.entity = entity;
+  };
 
-  fixLocationAt: function(position) {
-      this.fixLocation = true;
-      this.destinationCameraLocation = vec3.create(position);
-  },
+  self.fixLocationAt= function(position) {
+      self.fixLocation = true;
+      self.destinationCameraLocation = vec3.create(position);
+  };
 
-  unfixLocation: function() {
-      this.fixLocation = false;
-  },
+  self.unfixLocation= function() {
+      self.fixLocation = false;
+  };
 
-  setMovementDelta: function(delta) {
-    this.movementDelta = delta;
-  },
+  self.setMovementDelta= function(delta) {
+    self.movementDelta = delta;
+  };
   
-  setLookAtDelta: function(delta) {
-    this.lookAtDelta = delta;
-  },
+  self.setLookAtDelta= function(delta) {
+    self.lookAtDelta = delta;
+  };
 
-  doLogic: function(){      
-    this.workOutWhereTargetIs();
-    this.doLogicAfterAscertainingTarget();
-  },
+  self.doLogic= function(){      
+    self.workOutWhereTargetIs();
+    self.doLogicAfterAscertainingTarget();
+  };
 
-  workOutWhereTargetIs: function() {
-     var terrain = this._scene.getEntity("terrain");      
-     var cameraTrail = vec3.create(this.entity._velocity);
+  self.workOutWhereTargetIs= function() {
+     var terrain = self._scene.getEntity("terrain");      
+     var cameraTrail = vec3.create(self.entity._velocity);
 
      cameraTrail[1] = 0;
      vec3.normalize(cameraTrail);
      vec3.scale(cameraTrail, 25);
-     vec3.subtract(this.entity.position, cameraTrail, cameraTrail);
+     vec3.subtract(self.entity.position, cameraTrail, cameraTrail);
 
      var desiredCameraLocation = cameraTrail;
 
-     var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(this._scene.camera.location[0], 
-                                                             this._scene.camera.location[2]);
+     var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(self._scene.camera.location[0], 
+                                                             self._scene.camera.location[2]);
                             
-     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, this.entity.position[1] + 10);
+     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, self.entity.position[1] + 10);
      
      desiredCameraLocation[1] =  cameraHeight;  
     
 
-     this.destinationCameraLookAt = vec3.create(this.entity.position);
+     self.destinationCameraLookAt = vec3.create(self.entity.position);
 
-     if(!this.fixLocation)
-      this.destinationCameraLocation = desiredCameraLocation;
-  },
+     if(!self.fixLocation)
+      self.destinationCameraLocation = desiredCameraLocation;
+  };
 
-  doLogicAfterAscertainingTarget: function() {
+  self.doLogicAfterAscertainingTarget= function() {
     var directionToWhereWeWantToBe = vec3.create([0,0,0]);
-    vec3.subtract(this.destinationCameraLocation, this.cameraLocation, directionToWhereWeWantToBe);
-    vec3.scale(directionToWhereWeWantToBe, this.movementDelta , this.cameraVelocity);
-    vec3.add(this.cameraLocation, this.cameraVelocity); 
+    vec3.subtract(self.destinationCameraLocation, self.cameraLocation, directionToWhereWeWantToBe);
+    vec3.scale(directionToWhereWeWantToBe, self.movementDelta , self.cameraVelocity);
+    vec3.add(self.cameraLocation, self.cameraVelocity); 
 
     var directionToWhereWeWantToLookAt = vec3.create([0,0,0]);
-    vec3.subtract(this.destinationCameraLookAt, this.cameraLookAt, directionToWhereWeWantToLookAt);
-    vec3.scale(directionToWhereWeWantToLookAt, this.lookAtDelta , this.lookAtVelocity);
-    vec3.add(this.cameraLookAt, this.lookAtVelocity); 
+    vec3.subtract(self.destinationCameraLookAt, self.cameraLookAt, directionToWhereWeWantToLookAt);
+    vec3.scale(directionToWhereWeWantToLookAt, self.lookAtDelta , self.lookAtVelocity);
+    vec3.add(self.cameraLookAt, self.lookAtVelocity); 
 
-    this._scene.camera.lookAt = vec3.create(this.cameraLookAt);
-    this._scene.camera.location = vec3.create(this.cameraLocation);
-  },  
+    self._scene.camera.lookAt = vec3.create(self.cameraLookAt);
+    self._scene.camera.location = vec3.create(self.cameraLocation);
+  };
+
 };
 
 exports.ChaseCamera = ChaseCamera;

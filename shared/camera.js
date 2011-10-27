@@ -2,7 +2,7 @@ var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var Frustum = require('./frustum').Frustum;
 
-var Camera = function(location){
+var Camera = function(location) {
     this.location = location || vec3.create();
     this.lookAt = vec3.create();
     this.width = 800;

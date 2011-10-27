@@ -2,16 +2,6 @@ var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var mat3 = require('./glmatrix').mat3;
 
-function cloneObject(obj) {
-    if(obj === null) return null;
-    var clone = {};
-    for(var i in obj) {
-        if(typeof(obj[i]) !=="object")
-            clone[i] = obj[i];
-    }
-    return clone;
-}
-
 var Entity = function(id){
   this._model = null;
 	this._id = id;
@@ -49,46 +39,56 @@ Entity.prototype.raiseEvent = function(eventName, data) {
 	}
 };
 
-Entity.prototype.attach = function(component) {
+Entity.prototype.attach = function(component, args) {
   this.components.push(component);
-	var ctor = null;
-    for(i in component){
-        if(i == "doLogic"){
-            var newLogic = component[i];
-            var oldLogic = this.doLogic;
-            this.doLogic = function(){
-              oldLogic.call(this);
-              newLogic.call(this);
-            };
-        }
-        else if(i == "updateSync"){
-            var newSendSync = component[i];
-            var oldSendSync = this[i];
-            this[i] = function(sync) {
-              newSendSync.call(this, sync);
-              oldSendSync.call(this, sync);
-            };
-        }
-        else if(i == "setSync") {
-            var newRecvSync = component[i];
-            var oldRecvSync = this[i];
-            this[i] = function(sync) {
-              newRecvSync.call(this, sync);
-              oldRecvSync.call(this, sync);
-            };
-        }
-		else if(i == "_ctor") {
-			ctor = component[i];
-		}
-        else {
-            if(typeof component[i] !== "object"){
-                this[i] = component[i];
-            }
-        }
-    }
 
-	if(ctor)
-	 	ctor.call(this);
+  var oldProperties = {};
+  for(var i in this) {
+    oldProperties[i] = this[i];
+  }
+
+  if(!component.apply){
+    console.warn("Cannot apply component, it's written in the old style");
+    return;
+  }
+
+  component.apply(this, args);
+
+  // Note: We've ended up here because of the natural evolution of 
+  // how these components have traditionally worked
+  // clearly this code is sub-optimal, and it'll get fixed next time
+  // these entities become painful to deal with (just like how this happened
+  // last time these entities became painful to deal with)
+  for(var i in this) {
+    if(oldProperties[i] && oldProperties[i] !== this[i]) {
+       if(i === 'doLogic') {
+          var newLogic = this[i];
+          var oldLogic = oldProperties[i];
+          this.doLogic = function() {
+            oldLogic.call(this);
+            newLogic.call(this);
+          }
+       }
+       else if(i === 'updateSync') {
+          var newSendSync = this[i];
+          var oldSendSync = oldProperties[i];
+          this.updateSync = function(sync) {
+            newSendSync.call(this, sync);
+            oldSendSync.call(this, sync);
+          };
+       }
+       else if(i === 'setSync') {
+          var newRecvSync = this[i];
+          var oldRecvSync = oldProperties[i];
+          this.setSync = function(sync) {
+            newRecvSync.call(this, sync);
+            oldRecvSync.call(this, sync);
+          };
+       } else {
+        console.warn("Detected a potentially unacceptable overwrite of " + i + 'on ' + this.getId());
+      }
+    }
+  }
 };
 
 Entity.prototype.doLogic = function() {
