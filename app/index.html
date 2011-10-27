@@ -7,36 +7,42 @@
       <script src="../bootstrap.js"></script>
       <script src="../client/lazyload.js"></script>
         
-		<script type="text/javascript">
+		  <script type="text/javascript">
 			
-			$app(function(){
-                
-                var app = new blah.Application('game');             
-                app.init(function() {
-                    app.scene.camera.setLocation([0, 1000, -10]);
-                    var landscapeController = new LandscapeController(app);    
-                    
-                    var clientOne = new ClientCommunication(app);
-                                    
-                    app.resources.onAllAssetsLoaded(function(){
-                        setInterval(function() {  app.render(); }, 1000 / 30);
-                    });
-                    
-                    setInterval(function() {  app.tick(); }, 1000 / 30); 
+			$app(function(){                
+        var app = new blah.Application('game');             
+        app.init(function() {
+            app.scene.camera.setLocation([0, 1000, -10]);
+            var landscapeController = new LandscapeController(app);    
+            
+            var clientOne = new ClientCommunication(app);
+                            
+            app.resources.onAllAssetsLoaded(function(){
+                setInterval(function() {  app.render(); }, 1000 / 30);
+            });
+            
+            setInterval(function() {  app.tick(); }, 1000 / 30); 
 
-                });
+        });
 			});
 
 		</script>
+
+    <link rel="stylesheet" type="text/css" href="style.css" />
 	</head>
 	<body>		
-		<h1>HOVERBATTLES!!!</h1>
-		<p><strong>WASD</strong> to move around, <strong>SPACE</strong> to jump, <strong>LCTRL</strong> to fire once locked on</p>
-    	<p>FFS be patient, it'll all be white for a while and then there will be colour and stuff.</p>
-		<canvas id="game" style="border: none; float: left;" width="750" height="500" >
-		</canvas>
-        
-        <div style="float: left;">
+    <div id="header">
+		  <div id="header-title"><h1>Hoverbattles</h1><p>(A muckaround project by @robashton)</p></div>
+		  <div id="header-instructions"><p><strong>WASD</strong> to move around, <strong>SPACE</strong> to jump, <strong>LCTRL</strong> to fire once locked on</p></div>
+    </div>
+
+    <div id="gameContainer">
+		  <canvas id="game"  width="750"  height="500" >
+        <blink>Loading...</blink>
+		  </canvas>
+    </div>
+    
+        <div id="status" style="float: left;">
             <div id="targettingStatus">
               
             </div>

@@ -30,7 +30,6 @@ exports.ClientGameReceiver = function(app, server) {
   self._destroyTarget = function(data) {
 
 	  if(craft.getId() === data.targetid) {    
-      createExplosionForCraftWithId(data.targetid);
 
       // Remove entity from scene
 		  app.scene.removeEntity(craft);
@@ -54,7 +53,6 @@ exports.ClientGameReceiver = function(app, server) {
 		
 	  }
 	  else {
-      createExplosionForCraftWithId(data.targetid);
 		  removeHovercraftFromScene(data.targetid);
 	  }	
   };
@@ -115,15 +113,6 @@ exports.ClientGameReceiver = function(app, server) {
 		  return;
 	  }
       entity.setSync(data.sync);
-  };
-  
-  createExplosionForCraftWithId = function(craftId) {
-    app.scene.withEntity(craftId, function(explodingCraft) {
-      var explosion = new Explosion(app, {
-        position: explodingCraft.position,
-        initialVelocity: explodingCraft._velocity        
-      });
-    });
   };
 
   var removeCraftEmitter = function(craft) {

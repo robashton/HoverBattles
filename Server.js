@@ -58,9 +58,9 @@ server = http.createServer(function(req, res){
 		}
 	});
 });
-server.listen(1220);
+server.listen(1222);
 
-console.log("Listening on port 1220");
+console.log("Listening on port 1222");
 
 var app = new ServerApp();
 var controller = new Controller(app.scene);

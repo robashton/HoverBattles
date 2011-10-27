@@ -59,6 +59,9 @@ exports.Tracking = function() {
 	self.targetsInSight = {};
 
 	self.doLogic = function() {		
+
+   self.tidyUpFirst();
+
    for(var i in self._scene._entities){
       var entity = self._scene._entities[i];
       if(entity === this) continue;
@@ -90,6 +93,17 @@ exports.Tracking = function() {
       }
     }		
 	};
+
+  self.tidyUpFirst = function() {
+    for(var i in self.targetsInSight) {
+      var entity = self._scene.getEntity(i);
+      if(!entity) {
+        delete self.targetsInSight[i];
+        if(this._currentTarget && this._currentTarget.getId() === i)
+          this._currentTarget = null;
+      }
+    }
+  };
 	
 	self.notifyAimingAt = function(entity) {
     var id = entity.getId();
@@ -738,6 +752,8 @@ exports.Explosion = function(app, details) {
     app.scene.removeEntity(emitter);
   }, 10000); 
 };
+
+
 }, "frustum": function(exports, require, module) {mat4 = require('./glmatrix').mat4;
 debug = require('./debug');
 
@@ -2896,11 +2912,13 @@ HovercraftController.prototype.processInput = function(){
 };
 
 document.onkeydown = function(event) { 
-    KeyboardStates[event.keyCode] = true;   
+    KeyboardStates[event.keyCode] = true;
+    return false;
 
 };
 document.onkeyup = function(event) { 
     KeyboardStates[event.keyCode] = false;
+    return false;
 };
 
 exports.HovercraftController = HovercraftController;
@@ -2975,11 +2993,33 @@ exports.Hud = function(app) {
       onPlayerEvadedMissile();
   };
 
+  self.notifyOfLockLost = function(data) {
+      if(data.sourceid === playerId)
+      onPlayerUnlocked();
+    else if(data.targetid === playerId)
+      onOpponentUnlocked();
+  };
+
   self.notifyOfMissileLock = function(data) {
     if(data.sourceid === playerId)
       onPlayerLocked();
     else if(data.targetid === playerId)
       onOpponentLocked();
+  };
+
+  self.notifyOfHovercraftDestruction = function(data) {
+    if(data.sourceid === playerId)
+      onPlayerHitTarget();
+    else if(data.targetid === playerId)
+      onPlayerKilled();
+  };
+
+  onPlayerUnlocked = function() {
+    $('#targettingStatus').html('');
+  };
+
+  onOpponentUnlocked = function() {
+    $('#targettedStatus').html(''); 
   };
 
   onPlayerLocked = function() {
@@ -2998,14 +3038,6 @@ exports.Hud = function(app) {
     $('#targettedStatus').html('You\'re being targetted');
   };
 
-  onPlayerCancelledBeingTracked = function() {
-    $('#targettedStatus').html('<p>Home free</p>');
-  };
-
-  onPlayerCancelledTrackingTarget = function() {
-    $('#targettingStatus').html('<p>Lost the lock :(</p>');
-  };
-
   onPlayerFired = function() {
     $('#targettingStatus').html('<p>Fired on target!</p>');
   };
@@ -3018,8 +3050,24 @@ exports.Hud = function(app) {
     $('#targettingStatus').html('<p>Target lost, missile destroyed</p>');
   };
 
+  onPlayerKilled = function () {
+    $('#targettedStatus').html('');
+  };
+
+  onPlayerHitTarget = function() {
+     $('#targettingStatus').html('');
+  };
+
+  onPlayerCancelledBeingTracked = function() {
+    $('#targettedStatus').html('');
+  };
+
+  onPlayerCancelledTrackingTarget = function() {
+    $('#targettingStatus').html('');
+  };
+
   onPlayerEvadedMissile = function() {
-    $('#targettedStatus').html('<p>They missed you, good job!</p>'); 
+    $('#targettedStatus').html(''); 
   };
 };
 
@@ -3386,9 +3434,13 @@ var Missile = function() {
 		self.position = vec3.create(position);	
 	};
   self.setTarget = function(targetid) {
-      if(!targetid) throw "Tried to set a null target on a missile";
-      self.targetid = targetid;
-      self.isTrackingTarget = true;
+    self.targetid = targetid;
+    self.isTrackingTarget = true;
+  };
+
+  self.clearTarget = function() {
+    self.targetid = null;
+    self.isTrackingTarget = false;
   };
 
   self.doLogic = function() {
@@ -3399,10 +3451,7 @@ var Missile = function() {
 		  self.performPhysics();
 		  self.determineIfTargetIsReached();
     } else {
-      
-        // Probably still want to do something here in the future
-        // At the moment the missile will simply cease to be
-        // But simply removing the reference and letting it fly would be much cooler
+      self.performPhysics();
     }		
 	};
 
@@ -3436,16 +3485,31 @@ var Missile = function() {
 			self.raiseEvent('targetHit', { 
 				targetid: self.targetid,
 				sourceid: self.sourceid,
-        missileid: self.getId() });
-		  }
+        missileid: self.getId() 
+      });		  
+    }
 	};
 	
 	self.performPhysics = function() {
 		vec3.add(self.position, self._velocity);
-		
-		if(!self.isWithinReachOfTarget())
-			self.clipMissileToTerrain();
+
+    if(self.isTrackingTarget)
+		  if(!self.isWithinReachOfTarget())
+			  self.clipMissileToTerrain();
+    else 
+		    self.checkIfMissileHasHitTerrain();
+    	
 	};
+
+  self.checkIfMissileHasHitTerrain = function() {
+    var terrain = self._scene.getEntity("terrain");
+    var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
+    if(terrainHeight > self.position[1]) {
+		  self.raiseEvent('missileExpired', { 
+        missileid: self.getId() 
+      });
+	  }
+  };
 	
 	self.isWithinReachOfTarget = function() {
 		var difference = self.calculateVectorToTarget();
@@ -3457,13 +3521,18 @@ var Missile = function() {
 	self.updateVelocityTowardsTarget = function() {
 		var difference = self.calculateVectorToTarget();
 		self.distanceFromTarget = vec3.length(difference);
-		vec3.scale(difference, 2.5 / self.distanceFromTarget, self._velocity);	
+
+    vec3.normalize(difference);
+    var speed = 0.8;  
+		vec3.scale(difference, speed);	
+    vec3.add(this._velocity, difference);
+    vec3.scale(this._velocity, 0.8);
 	};
 	
 	self.clipMissileToTerrain = function(vectorToTarget) {
 		var terrain = self._scene.getEntity("terrain");
     var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
-		self.position[1] = terrainHeight;	
+		self.position[1] =  Math.max(terrainHeight, self.position[1]);	
 	};
 	
 	self.calculateVectorToTarget = function() {	
@@ -3473,6 +3542,7 @@ var Missile = function() {
 	  vec3.subtract(targetDestination, currentPosition, difference);
 	  return difference;
 	};
+
 };
 
 exports.Missile = Missile;
@@ -3686,7 +3756,6 @@ exports.ClientGameReceiver = function(app, server) {
   self._destroyTarget = function(data) {
 
 	  if(craft.getId() === data.targetid) {    
-      createExplosionForCraftWithId(data.targetid);
 
       // Remove entity from scene
 		  app.scene.removeEntity(craft);
@@ -3710,7 +3779,6 @@ exports.ClientGameReceiver = function(app, server) {
 		
 	  }
 	  else {
-      createExplosionForCraftWithId(data.targetid);
 		  removeHovercraftFromScene(data.targetid);
 	  }	
   };
@@ -3771,15 +3839,6 @@ exports.ClientGameReceiver = function(app, server) {
 		  return;
 	  }
       entity.setSync(data.sync);
-  };
-  
-  createExplosionForCraftWithId = function(craftId) {
-    app.scene.withEntity(craftId, function(explodingCraft) {
-      var explosion = new Explosion(app, {
-        position: explodingCraft.position,
-        initialVelocity: explodingCraft._velocity        
-      });
-    });
   };
 
   var removeCraftEmitter = function(craft) {
@@ -3928,6 +3987,18 @@ exports.HudReceiver = function(app, communication) {
     });
   };
 
+  self._missileLockLost = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+        hud.notifyOfLockLost(data);
+    });
+  };
+  
+  self._destroyTarget = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+        hud.notifyOfHovercraftDestruction(data);
+    });
+  };
+
   self._missileLock = function(data) {
     app.scene.withEntity(Hud.ID, function(hud) {
       hud.notifyOfMissileLock(data);
@@ -3935,7 +4006,9 @@ exports.HudReceiver = function(app, communication) {
   };
    
 };
-}, "network/missilereceiver": function(exports, require, module) {var MissileReceiver = function(app, communication, missileFactory) {
+}, "network/missilereceiver": function(exports, require, module) {var Explosion = require('../explosion').Explosion;
+
+var MissileReceiver = function(app, communication, missileFactory) {
   this.app = app;    
 	this.missileFactory = missileFactory;
 	this.communication = communication;
@@ -3946,52 +4019,43 @@ MissileReceiver.prototype._fireMissile = function(data) {
   var source = this.app.scene.getEntity(data.sourceid);
   var target = this.app.scene.getEntity(data.targetid);
  
-  if(!source) return;
-  if(!target) return;
+  if(!source) { console.warn('Erk, could not find source of missile firing'); return; };
+  if(!target) { console.warn('Erk, could not find target of missile firing'); return; };
 
   var missile = this.missileFactory.create(data.missileid, data.sourceid, data.targetid, source.position);
   this.app.scene.addEntity(missile);
-
-  // Not 100% sure about this, but going to give it a go
-  // May just be a better idea to modularise smarter
-  if(this.app.isClient) {
-  	this.attachEmitterToMissile(missile);
-  }
-  else {
-	this.attachHandlersToCoordinateMissile(missile);
-  }
+  this.attachEmitterToMissile(missile);
 };
 
-MissileReceiver.prototype.attachHandlersToCoordinateMissile = function(missile) {
-	var self = this;
-	missile.addEventHandler('targetHit', function(data) { self.onTargetHit(data); });
-  missile.addEventHandler('missileLost', function(data) { self.onMissileLost(data); });
-};
-
-MissileReceiver.prototype.onTargetHit = function(data) {
-	this.communication.sendMessage('destroyTarget', data);
-};
-
-MissileReceiver.prototype.onMissileLost = function(data) {
-	this.communication.sendMessage('destroyMissile', data);
+MissileReceiver.prototype._missileLockLost = function(data) {
+  this.makeMissileAwol(data.missileid);
 };
 
 MissileReceiver.prototype._destroyMissile = function(data) {
   this.removeMissileFromScene(data.missileid);
 }; 
 
-MissileReceiver.prototype._destroyTarget = function(data) {
-  this.removeMissileFromScene(data.missileid);
+MissileReceiver.prototype.makeMissileAwol = function(missileid) {
+   this.app.scene.withEntity(missileid, function(missile) {
+      missile.clearTarget();
+   });  
 };
 
 MissileReceiver.prototype.removeMissileFromScene = function(id) {
   var self = this;
   self.app.scene.withEntity(id, function(missile) {
 	  self.app.scene.removeEntity(missile);
-	
-	  if(self.app.isClient)
-		  self.app.scene.removeEntity(missile.emitter);
+		self.app.scene.removeEntity(missile.emitter);
+    self.createExplosionForMissile(missile);
   });	
+};
+
+MissileReceiver.prototype.createExplosionForMissile = function(missile) {
+  var self = this;
+  var explosion = new Explosion(self.app, {
+    position: missile.position,    
+    initialVelocity: vec3.create([0,0,0])
+  });
 };
 
 MissileReceiver.prototype.attachEmitterToMissile = function(missile) {
@@ -4428,7 +4492,7 @@ Scene.prototype.withEntity = function(id, callback) {
   var entity = this.getEntity(id);
   if(entity) {
     callback(entity);
-  } else console.log('Failed to find entity ' + id);
+  } else { console.log('Failed to find entity ' + id); console.trace() }
 };
 
 Scene.prototype.getEntity = function(id) {

@@ -23,6 +23,18 @@ exports.HudReceiver = function(app, communication) {
     });
   };
 
+  self._missileLockLost = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+        hud.notifyOfLockLost(data);
+    });
+  };
+  
+  self._destroyTarget = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+        hud.notifyOfHovercraftDestruction(data);
+    });
+  };
+
   self._missileLock = function(data) {
     app.scene.withEntity(Hud.ID, function(hud) {
       hud.notifyOfMissileLock(data);

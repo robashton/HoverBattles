@@ -9,6 +9,9 @@ exports.Tracking = function() {
 	self.targetsInSight = {};
 
 	self.doLogic = function() {		
+
+   self.tidyUpFirst();
+
    for(var i in self._scene._entities){
       var entity = self._scene._entities[i];
       if(entity === this) continue;
@@ -40,6 +43,17 @@ exports.Tracking = function() {
       }
     }		
 	};
+
+  self.tidyUpFirst = function() {
+    for(var i in self.targetsInSight) {
+      var entity = self._scene.getEntity(i);
+      if(!entity) {
+        delete self.targetsInSight[i];
+        if(this._currentTarget && this._currentTarget.getId() === i)
+          this._currentTarget = null;
+      }
+    }
+  };
 	
 	self.notifyAimingAt = function(entity) {
     var id = entity.getId();

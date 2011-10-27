@@ -58,11 +58,16 @@ ServerGameReceiver.prototype._ready = function( data) {
 
 ServerGameReceiver.prototype._reviveTarget = function() {}; 
 ServerGameReceiver.prototype._destroyTarget = function(data) {
+  var self = this;
+  
+  // Clear up the appropriate fire controler
+  self.app.scene.withEntity(data.sourceid, function(source) {
+    source._firingController.reset();
+  });
 
 	// Remove the entity from our scene
 	var craft = this.app.scene.getEntity(data.targetid);
 	this.app.scene.removeEntity(craft);
-	var self = this;
 	var sync = craft.getSync();
 
 	// And wait until an appropriate moment to revive it

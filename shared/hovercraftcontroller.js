@@ -74,11 +74,13 @@ HovercraftController.prototype.processInput = function(){
 };
 
 document.onkeydown = function(event) { 
-    KeyboardStates[event.keyCode] = true;   
+    KeyboardStates[event.keyCode] = true;
+    return false;
 
 };
 document.onkeyup = function(event) { 
     KeyboardStates[event.keyCode] = false;
+    return false;
 };
 
 exports.HovercraftController = HovercraftController;

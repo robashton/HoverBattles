@@ -1,3 +1,5 @@
+var Explosion = require('../explosion').Explosion;
+
 var MissileReceiver = function(app, communication, missileFactory) {
   this.app = app;    
 	this.missileFactory = missileFactory;
@@ -9,52 +11,43 @@ MissileReceiver.prototype._fireMissile = function(data) {
   var source = this.app.scene.getEntity(data.sourceid);
   var target = this.app.scene.getEntity(data.targetid);
  
-  if(!source) return;
-  if(!target) return;
+  if(!source) { console.warn('Erk, could not find source of missile firing'); return; };
+  if(!target) { console.warn('Erk, could not find target of missile firing'); return; };
 
   var missile = this.missileFactory.create(data.missileid, data.sourceid, data.targetid, source.position);
   this.app.scene.addEntity(missile);
-
-  // Not 100% sure about this, but going to give it a go
-  // May just be a better idea to modularise smarter
-  if(this.app.isClient) {
-  	this.attachEmitterToMissile(missile);
-  }
-  else {
-	this.attachHandlersToCoordinateMissile(missile);
-  }
+  this.attachEmitterToMissile(missile);
 };
 
-MissileReceiver.prototype.attachHandlersToCoordinateMissile = function(missile) {
-	var self = this;
-	missile.addEventHandler('targetHit', function(data) { self.onTargetHit(data); });
-  missile.addEventHandler('missileLost', function(data) { self.onMissileLost(data); });
-};
-
-MissileReceiver.prototype.onTargetHit = function(data) {
-	this.communication.sendMessage('destroyTarget', data);
-};
-
-MissileReceiver.prototype.onMissileLost = function(data) {
-	this.communication.sendMessage('destroyMissile', data);
+MissileReceiver.prototype._missileLockLost = function(data) {
+  this.makeMissileAwol(data.missileid);
 };
 
 MissileReceiver.prototype._destroyMissile = function(data) {
   this.removeMissileFromScene(data.missileid);
 }; 
 
-MissileReceiver.prototype._destroyTarget = function(data) {
-  this.removeMissileFromScene(data.missileid);
+MissileReceiver.prototype.makeMissileAwol = function(missileid) {
+   this.app.scene.withEntity(missileid, function(missile) {
+      missile.clearTarget();
+   });  
 };
 
 MissileReceiver.prototype.removeMissileFromScene = function(id) {
   var self = this;
   self.app.scene.withEntity(id, function(missile) {
 	  self.app.scene.removeEntity(missile);
-	
-	  if(self.app.isClient)
-		  self.app.scene.removeEntity(missile.emitter);
+		self.app.scene.removeEntity(missile.emitter);
+    self.createExplosionForMissile(missile);
   });	
+};
+
+MissileReceiver.prototype.createExplosionForMissile = function(missile) {
+  var self = this;
+  var explosion = new Explosion(self.app, {
+    position: missile.position,    
+    initialVelocity: vec3.create([0,0,0])
+  });
 };
 
 MissileReceiver.prototype.attachEmitterToMissile = function(missile) {

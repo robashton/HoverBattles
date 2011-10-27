@@ -45,11 +45,33 @@ exports.Hud = function(app) {
       onPlayerEvadedMissile();
   };
 
+  self.notifyOfLockLost = function(data) {
+      if(data.sourceid === playerId)
+      onPlayerUnlocked();
+    else if(data.targetid === playerId)
+      onOpponentUnlocked();
+  };
+
   self.notifyOfMissileLock = function(data) {
     if(data.sourceid === playerId)
       onPlayerLocked();
     else if(data.targetid === playerId)
       onOpponentLocked();
+  };
+
+  self.notifyOfHovercraftDestruction = function(data) {
+    if(data.sourceid === playerId)
+      onPlayerHitTarget();
+    else if(data.targetid === playerId)
+      onPlayerKilled();
+  };
+
+  onPlayerUnlocked = function() {
+    $('#targettingStatus').html('');
+  };
+
+  onOpponentUnlocked = function() {
+    $('#targettedStatus').html(''); 
   };
 
   onPlayerLocked = function() {
@@ -68,14 +90,6 @@ exports.Hud = function(app) {
     $('#targettedStatus').html('You\'re being targetted');
   };
 
-  onPlayerCancelledBeingTracked = function() {
-    $('#targettedStatus').html('<p>Home free</p>');
-  };
-
-  onPlayerCancelledTrackingTarget = function() {
-    $('#targettingStatus').html('<p>Lost the lock :(</p>');
-  };
-
   onPlayerFired = function() {
     $('#targettingStatus').html('<p>Fired on target!</p>');
   };
@@ -88,8 +102,24 @@ exports.Hud = function(app) {
     $('#targettingStatus').html('<p>Target lost, missile destroyed</p>');
   };
 
+  onPlayerKilled = function () {
+    $('#targettedStatus').html('');
+  };
+
+  onPlayerHitTarget = function() {
+     $('#targettingStatus').html('');
+  };
+
+  onPlayerCancelledBeingTracked = function() {
+    $('#targettedStatus').html('');
+  };
+
+  onPlayerCancelledTrackingTarget = function() {
+    $('#targettingStatus').html('');
+  };
+
   onPlayerEvadedMissile = function() {
-    $('#targettedStatus').html('<p>They missed you, good job!</p>'); 
+    $('#targettedStatus').html(''); 
   };
 };
 

@@ -3,7 +3,7 @@ io = require('socket.io');
 MessageDispatcher = require('../shared/messagedispatcher').MessageDispatcher;
 EntityReceiver = require('../shared/network/entityreceiver').EntityReceiver;
 ProxyReceiver = require('./network/proxyreceiver').ProxyReceiver;
-MissileReceiver = require('../shared/network/missilereceiver').MissileReceiver;
+MissileReceiver = require('./network/missilereceiver').MissileReceiver;
 ServerGameReceiver = require('./network/servergamereceiver').ServerGameReceiver;
 ScoreKeepingReceiver = require('./network/scorekeepingreceiver').ScoreKeepingReceiver;
 
@@ -13,8 +13,8 @@ ServerCommunication = function(app, server){
   this.app = app;
   var listener = io.listen(server);
   listener.configure(function(){
-        listener.set('log level', 1);
-      });
+      listener.set('log level', 1);
+    });
   
   this.socket = listener.sockets;
   this.clients = {};
