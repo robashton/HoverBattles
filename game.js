@@ -2962,18 +2962,33 @@ exports.Hud = function(app) {
   };
 
   self.notifyOfMissileFiring = function(data) {
-    if(data.sourceid === this.getId())
+    if(data.sourceid === playerId)
       onPlayerFired();
-    else if(data.targetid === this.getId())
+    else if(data.targetid === playerId)
       onPlayerFiredOn();
   };
 
   self.notifyOfMissileDestruction = function(data) {
-    if(data.sourceid === this.getId())
+    if(data.sourceid === playerId)
       onPlayerLostMissile();
-    else if(data.targetid === this.getId())
+    else if(data.targetid === playerId)
       onPlayerEvadedMissile();
   };
+
+  self.notifyOfMissileLock = function(data) {
+    if(data.sourceid === playerId)
+      onPlayerLocked();
+    else if(data.targetid === playerId)
+      onOpponentLocked();
+  };
+
+  onPlayerLocked = function() {
+    $('#targettingStatus').html('<p>You\'ve locked on, fire fire fire!</p>');
+  };
+
+  onOpponentLocked = function() {
+    $('#targettedStatus').html('<p>You\'re locked onto, get out of there!</p>');
+  }; 
   
   onPlayerTrackingTarget = function(targetId) {
      $('#targettingStatus').html('<p>You\'ve got them in your sights</p>');
@@ -3910,6 +3925,12 @@ exports.HudReceiver = function(app, communication) {
   self._destroyMissile = function(data) {
     app.scene.withEntity(Hud.ID, function(hud) {
       hud.notifyOfMissileDestruction(data);
+    });
+  };
+
+  self._missileLock = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+      hud.notifyOfMissileLock(data);
     });
   };
    

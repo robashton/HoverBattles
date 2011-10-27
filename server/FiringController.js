@@ -29,13 +29,17 @@ FiringController.prototype.onTick = function() {
 	if(!this._trackedTarget || this.fired) return;
 	var currentTime = new Date();
 	var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
-	if(timeElapsedSinceStartedTracking > 3000) {
-		this.locked = true;
+	if(timeElapsedSinceStartedTracking > 3000 && !this._locked) {
+		this._locked = true;
+    this.communication.sendMessage('missileLock', {
+      sourceid: this.entity.getId(),
+      targetid: this._trackedTarget.getId()
+    });
   }
 };
 
 FiringController.prototype.tryFireMissile = function() {
-  if(this.locked === true && this._fired === false) {
+  if(this._locked === true && this._fired === false) {
     this._fired = true;
 		this.communication.sendMessage('fireMissile', { 
         missileid: 'missile-' + this.entity.getId() + this.missileidCounter++, 
