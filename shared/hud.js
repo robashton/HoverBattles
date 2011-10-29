@@ -26,6 +26,10 @@ var TrackedEntity = function(app, sourceid, targetid) {
     if(isLocked) return 5;
     return 2;    
   };
+
+  self.targetid = function() {
+    return targetid;
+  };
   
   self.hudItem = function(item) {
     return hudItem = item || hudItem;
@@ -92,6 +96,9 @@ exports.Hud = function(app) {
       if(entity.hudItem())
         app.overlay.removeItem(entity.hudItem());
     }
+
+    if(trackedEntities[playerId] && trackedEntities[playerId].targetid() === sourceid)
+      clearTrackedEntity(playerId);
   };
 
   var onEntityTrackingTarget = function(data) {

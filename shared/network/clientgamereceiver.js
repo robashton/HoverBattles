@@ -41,7 +41,11 @@ exports.ClientGameReceiver = function(app, server) {
         chaseCamera.setMovementDelta(0.03);
         chaseCamera.setLookAtDelta(0.03);
         chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 100, craft.position[1]]);
-        chaseCamera.setTrackedEntity(source);
+
+        setTimeout(function() {
+          chaseCamera.setTrackedEntity(source);
+        }, 1500);        
+
         setTimeout(function() {
             chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 300, craft.position[1]]);
         }, 5000);

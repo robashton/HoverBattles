@@ -24,13 +24,14 @@ FiringController.prototype.reset = function() {
 	
 FiringController.prototype.onCancelledTrackingTarget = function(ev) {
   if(this._status === "fired") {
-    this.communication.sendMessage('missileLockLost', {
+  /*  this.communication.sendMessage('missileLockLost', {
       sourceid: this.entity.getId(),
       targetid: this._trackedTarget.getId(),
       missileid: this._trackedMissileId
-    });
+    }); */
   }
-  this.reset();
+  else
+    this.reset();
 };
 	
 FiringController.prototype.onTick = function() {

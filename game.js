@@ -2753,7 +2753,7 @@ var Hovercraft = function() {
   var self = this;
 
 	self._velocity = vec3.create([0.01,0,0.01]);
-  self._decay = 0.97;
+  self._decay = 0.99;
 
   self._left = false;
   self._right = false;
@@ -2807,14 +2807,14 @@ var Hovercraft = function() {
   };
   
   self.impulseForward = function() {
-      var amount = 0.1;
+      var amount = 0.05;
       var accelerationZ = (-amount) * Math.cos(self.rotationY);
       var accelerationX = (-amount) * Math.sin(self.rotationY);
       var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
       vec3.add(self._velocity, acceleration);
   };
   self.impulseBackward = function() {
-      var amount = 0.07;
+      var amount = 0.03;
       var accelerationZ = (amount) * Math.cos(self.rotationY);
       var accelerationX = (amount) * Math.sin(self.rotationY);
       var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
@@ -3031,6 +3031,10 @@ var TrackedEntity = function(app, sourceid, targetid) {
     if(isLocked) return 5;
     return 2;    
   };
+
+  self.targetid = function() {
+    return targetid;
+  };
   
   self.hudItem = function(item) {
     return hudItem = item || hudItem;
@@ -3097,6 +3101,9 @@ exports.Hud = function(app) {
       if(entity.hudItem())
         app.overlay.removeItem(entity.hudItem());
     }
+
+    if(trackedEntities[playerId] && trackedEntities[playerId].targetid() === sourceid)
+      clearTrackedEntity(playerId);
   };
 
   var onEntityTrackingTarget = function(data) {
@@ -3856,7 +3863,11 @@ exports.ClientGameReceiver = function(app, server) {
         chaseCamera.setMovementDelta(0.03);
         chaseCamera.setLookAtDelta(0.03);
         chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 100, craft.position[1]]);
-        chaseCamera.setTrackedEntity(source);
+
+        setTimeout(function() {
+          chaseCamera.setTrackedEntity(source);
+        }, 1500);        
+
         setTimeout(function() {
             chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 300, craft.position[1]]);
         }, 5000);
