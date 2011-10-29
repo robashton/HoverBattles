@@ -51,11 +51,11 @@ MissileReceiver.prototype.createExplosionForMissile = function(missile) {
 };
 
 MissileReceiver.prototype.attachEmitterToMissile = function(missile) {
-	var emitter = new ParticleEmitter(missile.getId() + 'trail', 400, this.app,
+	var emitter = new ParticleEmitter(missile.getId() + 'trail', 4000, this.app,
     {
         maxsize: 100,
         maxlifetime: 0.2,
-        rate: 50,
+        rate: 500,
         scatter: vec3.create([1.0, 0.001, 1.0]),
         track: function(){
             this.position = vec3.create(missile.position);

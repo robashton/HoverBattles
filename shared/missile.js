@@ -72,12 +72,15 @@ var Missile = function() {
 	self.performPhysics = function() {
 		vec3.add(self.position, self._velocity);
 
-    if(self.isTrackingTarget)
-		  if(!self.isWithinReachOfTarget())
+    if(self.isTrackingTarget) {
+		  if(!self.isWithinReachOfTarget()) {
 			  self.clipMissileToTerrain();
-    else 
+      }
+    }
+    else {
 		    self.checkIfMissileHasHitTerrain();
-    	
+    }
+
 	};
 
   self.checkIfMissileHasHitTerrain = function() {

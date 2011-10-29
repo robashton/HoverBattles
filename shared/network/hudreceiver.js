@@ -16,10 +16,15 @@ exports.HudReceiver = function(app, communication) {
       hud.notifyOfMissileFiring(data);
     });
   };
-
   self._destroyMissile = function(data) {
     app.scene.withEntity(Hud.ID, function(hud) {
       hud.notifyOfMissileDestruction(data);
+    });
+  };
+  
+  self._missileLock = function(data) {
+    app.scene.withEntity(Hud.ID, function(hud) {
+      hud.notifyOfMissileLock(data);
     });
   };
 
@@ -28,17 +33,12 @@ exports.HudReceiver = function(app, communication) {
         hud.notifyOfLockLost(data);
     });
   };
-  
+
   self._destroyTarget = function(data) {
     app.scene.withEntity(Hud.ID, function(hud) {
         hud.notifyOfHovercraftDestruction(data);
     });
   };
 
-  self._missileLock = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-      hud.notifyOfMissileLock(data);
-    });
-  };
    
 };

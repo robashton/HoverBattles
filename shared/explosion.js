@@ -15,7 +15,7 @@ exports.Explosion = function(app, details) {
   {
       maxsize: 300,
       maxlifetime: 0.8,
-      rate: 1400,
+      rate: 5000,
       position: details.position,
       scatter: vec3.create([0.2, 0.2, 0.2]),
       particleOutwardVelocity: vec3.create([20,20,20]),
