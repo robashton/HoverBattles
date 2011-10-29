@@ -1,6 +1,6 @@
 var Hovercraft = require('./hovercraft').Hovercraft;
 
-var TrackedEntity = function(scene, sourceid, targetid) {
+var TrackedEntity = function(app, sourceid, targetid) {
   var self = this;
   var scene = scene;
   var sourceid = sourceid;
@@ -15,6 +15,9 @@ var TrackedEntity = function(scene, sourceid, targetid) {
   
   self.notifyIsLocked = function() {
     isLocked = true;
+    app.overlay.removeItem(hudItem);
+    hudItem = app.overlay.addItem('lock-' + sourceid, '/data/textures/locked.png');
+    self.updateHudItem();
   };
 
   self.getScore = function() {
@@ -27,9 +30,10 @@ var TrackedEntity = function(scene, sourceid, targetid) {
     return hudItem = item || hudItem;
   };
 
-  self.updateHudItemLocation = function() {
-    scene.withEntity(targetid, function(entity) {
-      var camera = scene.camera;
+  self.updateHudItem = function() {
+    app.scene.withEntity(targetid, function(entity) {    
+
+      var camera = app.scene.camera;
 
       var worldSphere = entity.getSphere();
       var transformedSphere = camera.transformSphereToScreen(worldSphere);
@@ -44,9 +48,11 @@ var TrackedEntity = function(scene, sourceid, targetid) {
       hudItem.top(min[1]);
       hudItem.width(max[0] - min[0]);
       hudItem.height(max[1] - min[1]);   
-
     });
   }
+
+  hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
+  self.updateHudItem();
 };
 
 exports.Hud = function(app) {
@@ -73,7 +79,7 @@ exports.Hud = function(app) {
 
  var createTrackedEntity = function(sourceid, targetid) {
    if(sourceid === playerId || targetid === playerId) {
-      trackedEntities[sourceid] = new TrackedEntity(app.scene, sourceid, targetid);
+      trackedEntities[sourceid] = new TrackedEntity(app, sourceid, targetid);
     }
   };    
 
@@ -129,18 +135,14 @@ exports.Hud = function(app) {
 
   var skipLogicCount = 0;
   self.doLogic = function() {
-    if(skipLogicCount++ % 5 !== 0) return;
-    
-    var targettedPerson =  trackedEntities[playerId];
-    if(!targettedPerson) return;
 
-    var targeter = targettedPerson.hudItem();
-    if(!targeter) {
-      targeter = app.overlay.addItem('track-' + playerId, '/data/textures/testtransparent.png');
-      targettedPerson.hudItem(targeter);
-    }      
-    targettedPerson.updateHudItemLocation(); 
-    
+    for(var i in trackedEntities) {
+      var entity = trackedEntities[i];
+
+      // This means that we'll be able to see other players locking onto us
+      entity.updateHudItem();
+    }
+   
   };
 
   app.scene.onEntityAdded(hookHovercraftEvents);
