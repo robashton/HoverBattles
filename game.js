@@ -261,11 +261,25 @@ Box.Create = function(vertices) {
   return new Box(min, max);  
 };
 
+Box.prototype.transform = function(matrix) {
+  var a, b, i, j;
+  var aMin = vec3.create([0,0,0]);
+  var aMax = vec3.create([0,0,0]);
+  var bMin = vec3.create([0,0,0]);
+  var bMax = vec3.create([0,0,0]);
+
+  
+  
+  
+};
+
 exports.Box = Box;
 exports.Sphere = Sphere;
 }, "camera": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+var vec4 = require('./glmatrix').vec4;
 var mat4 = require('./glmatrix').mat4;
 var Frustum = require('./frustum').Frustum;
+var Sphere = require('./bounding').Sphere;
 
 var Camera = function(location) {
     this.location = location || vec3.create();
@@ -282,7 +296,7 @@ Camera.prototype.setLocation = function(location) {
 };
 
 Camera.prototype.updateMatrices = function(){
-	mat4.perspective(45, this.width / this.height, 1.0, 5000.0, this.projMatrix);
+	  mat4.perspective(45, this.width / this.height, 1.0, 5000.0, this.projMatrix);
     mat4.lookAt(this.location, this.lookAt, this.up, this.viewMatrix); 
     this.frustum = new Frustum(this.projMatrix);
     this.frustum.setTransform(this.viewMatrix);
@@ -294,6 +308,31 @@ Camera.prototype.getProjectionMatrix = function() {
 
 Camera.prototype.getViewMatrix = function(){ 	
     return this.viewMatrix;
+};
+
+Camera.prototype.transformSphereToScreen = function(sphere) {
+  var difference = vec3.create([0,0,0]);
+  vec3.subtract(this.location, sphere.centre, difference);
+  var distance = vec3.length(difference);
+
+  var radius = Math.atan(sphere.radius / distance);
+  radius *= (this.width / (45 * Math.PI / 360.0));
+
+  var transformMatrix = mat4.create();
+  mat4.multiply(this.projMatrix, this.viewMatrix, transformMatrix);
+
+  var centre = [sphere.centre[0], sphere.centre[1], sphere.centre[2], 1.0];
+  mat4.multiplyVec4(this.viewMatrix, centre);
+  mat4.multiplyVec4(this.projMatrix, centre);
+  vec3.scale(centre, 1.0 / centre[3]);
+  
+  var halfWidth = this.width / 2.0;
+  var halfHeight = this.height / 2.0;
+    
+  centre[0] = centre[0] * halfWidth + halfWidth;
+  centre[1] = -centre[1] * halfHeight + halfHeight;
+
+  return new Sphere(radius / 2.0, centre);
 };
 
 exports.Camera = Camera;
@@ -705,13 +744,13 @@ Entity.prototype.render = function(context){
     mat4.toInverseMat3(modelViewMatrix, normalMatrix);
     mat3.transpose(normalMatrix);
     
-	var program = context.setActiveProgram(this._model.getProgram());
-    
-	this._model.upload(context);
+	  var program = context.setActiveProgram(this._model.getProgram());
+      
+	  this._model.upload(context);
 
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
+	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
+	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
+	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
     gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormalMatrix"), false, normalMatrix);
 
 	this._model.render(context);
@@ -2955,6 +2994,7 @@ var TrackedEntity = function(scene, sourceid, targetid) {
   var targetid = targetid;
   var firedMissileId = null;
   var isLocked = false;
+  var hudItem = null;
   
   self.notifyHasFired = function(missileid) {
     firedMissileId = missileid;
@@ -2969,7 +3009,31 @@ var TrackedEntity = function(scene, sourceid, targetid) {
     if(isLocked) return 5;
     return 2;    
   };
+  
+  self.hudItem = function(item) {
+    return hudItem = item || hudItem;
+  };
 
+  self.updateHudItemLocation = function() {
+    scene.withEntity(targetid, function(entity) {
+      var camera = scene.camera;
+
+      var worldSphere = entity.getSphere();
+      var transformedSphere = camera.transformSphereToScreen(worldSphere);
+
+      var radius = transformedSphere.radius;
+      var centre = transformedSphere.centre;
+    
+      var min = [centre[0] - radius, centre[1] - radius];
+      var max = [centre[0] + radius, centre[1] + radius];
+
+      hudItem.left(min[0]);
+      hudItem.top(min[1]);
+      hudItem.width(max[0] - min[0]);
+      hudItem.height(max[1] - min[1]);   
+
+    });
+  }
 };
 
 exports.Hud = function(app) {
@@ -3001,8 +3065,12 @@ exports.Hud = function(app) {
   };    
 
   var clearTrackedEntity = function(sourceid) {
-    if(trackedEntities[sourceid])
+    var entity = trackedEntities[sourceid];
+    if(entity) {
       delete trackedEntities[sourceid];
+      if(entity.hudItem())
+        app.overlay.removeItem(entity.hudItem());
+    }
   };
 
   var onEntityTrackingTarget = function(data) {
@@ -3046,14 +3114,20 @@ exports.Hud = function(app) {
     clearTrackedEntity(data.sourceid);
   };
 
-
   var skipLogicCount = 0;
   self.doLogic = function() {
     if(skipLogicCount++ % 5 !== 0) return;
-
-       
     
+    var targettedPerson =  trackedEntities[playerId];
+    if(!targettedPerson) return;
 
+    var targeter = targettedPerson.hudItem();
+    if(!targeter) {
+      targeter = app.overlay.addItem('track-' + playerId, '/data/textures/testtransparent.png');
+      targettedPerson.hudItem(targeter);
+    }      
+    targettedPerson.updateHudItemLocation(); 
+    
   };
 
   app.scene.onEntityAdded(hookHovercraftEvents);
@@ -3066,6 +3140,7 @@ exports.Hud.create = function(app) {
   hudEntity.attach(exports.Hud, [app]);
 
   app.scene.addEntity(hudEntity);
+  return hudEntity;
 };
 
 
@@ -3576,7 +3651,7 @@ var Model = function(data){
 Model.prototype.setData = function(data) {
     this._vertices = data.vertices;
     this._colours = data.colours;
-	this._indices = data.indices;
+	  this._indices = data.indices;
     this._texCoords = data.texCoords;
     this._normals = data.normals;
     this._texture = data.texture;
@@ -3605,17 +3680,17 @@ Model.prototype.activate = function(context) {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._colours), gl.STATIC_DRAW)
 	}
-    if(this._texCoords) {
-        this._textureBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._texCoords), gl.STATIC_DRAW)
-    }
-    
-    if(this._normals) {
-        this._normalBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._normals), gl.STATIC_DRAW)
-    }
+  if(this._texCoords) {
+    this._textureBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._texCoords), gl.STATIC_DRAW);
+  }
+  
+  if(this._normals) {
+    this._normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._normals), gl.STATIC_DRAW);
+  }
 
 	this._indexBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
@@ -3644,8 +3719,8 @@ Model.prototype.destroyBuffers = function(context) {
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
 	this._colourBuffer = null;
-    this._textureBuffer = null;
-    this._normalBuffer = null;
+  this._textureBuffer = null;
+  this._normalBuffer = null;
 };
 
 
@@ -3667,25 +3742,25 @@ Model.prototype.upload = function(context) {
 		gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexColour'));
 	}
     
-    if(this._textureBuffer) {
-    	gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
-    	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoords'), 2, gl.FLOAT, false, 0, 0);
-    	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
-    }    
-    
-    if(this._normalBuffer) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
-        gl.vertexAttribPointer(gl.getAttribLocation(program, 'aNormals'), 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aNormals'));
-    }
-    
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-    
-    if(this._texture){
-       gl.activeTexture(gl.TEXTURE0);
-       gl.bindTexture(gl.TEXTURE_2D, this._texture.get());
-       gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0);      
-    }
+  if(this._textureBuffer) {
+  	gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
+  	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoords'), 2, gl.FLOAT, false, 0, 0);
+  	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
+  }    
+  
+  if(this._normalBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
+    gl.vertexAttribPointer(gl.getAttribLocation(program, 'aNormals'), 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aNormals'));
+  }
+  
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+  
+  if(this._texture){
+     gl.activeTexture(gl.TEXTURE0);
+     gl.bindTexture(gl.TEXTURE_2D, this._texture.get());
+     gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0);      
+  }
 };
 
 Model.prototype.render = function(context) {
@@ -4081,6 +4156,139 @@ exports.MissileReceiver = MissileReceiver;
   };
 
 };
+}, "overlay": function(exports, require, module) {var mat4 = require('glmatrix').mat4;
+
+var OverlayItem = function(id, texture) {
+  var self = this;
+  var id = id;
+  var texture = texture;
+  var width = 100;
+  var height = 100;
+  var top = 0;
+  var left = 0;
+
+  self.id = function() {
+    return id;
+  };
+
+  self.top = function(value) {
+    return top = value || top;
+  }; 
+
+  self.left = function(value) {
+    return left = value || left;
+  };
+
+  self.width = function(value) {
+    return width = value || width;
+  };
+
+  self.height = function(value) {
+    return height = value || height;
+  };  
+
+  self.texture = function() {
+    return texture.get();
+  };
+};
+
+exports.Overlay = function(app) {
+  var self = this;
+  var app = app;
+  var vertexBuffer = null;
+  var quadTextureBuffer = null;
+  var items = {};
+
+  var texture =  app.resources.getTexture('/data/textures/testtransparent.png');
+
+  var quadVertices =  [
+         0.0,  0.0,  0.0,
+         1.0,  0.0,  0.0,
+         0.0,  1.0,  0.0,
+         1.0,  1.0,  0.0
+    ];
+
+  var quadTextureCoords =  [
+         0.0,  0.0, 
+         1.0,  0.0,
+         0.0,  1.0,
+         1.0,  1.0,
+    ];
+
+  self.addItem = function(id, textureName) {
+    var item = new OverlayItem(id, app.resources.getTexture(textureName));
+    items[id] = item;
+    return item;
+  };
+
+  self.removeItem = function(item) {
+    delete items[item.id()];
+  };
+
+  self.activate = function(context) {
+    var gl = context.gl;
+
+	  vertexBuffer = gl.createBuffer();
+	  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(quadVertices), gl.STATIC_DRAW);
+
+	  quadTextureBuffer = gl.createBuffer();
+	  gl.bindBuffer(gl.ARRAY_BUFFER, quadTextureBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(quadTextureCoords), gl.STATIC_DRAW);
+  };
+
+  self.deactivate = function(context) {
+    gl.destroyBuffer(vertexBuffer);
+  };
+
+  self.render = function(context) {
+    var gl = context.gl;   
+    var program = context.setActiveProgram("hud"); 
+
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.enable(gl.BLEND);
+    gl.depthMask(false);  
+
+    var projectionMatrix = mat4.ortho(0, gl.viewportWidth, gl.viewportHeight, 0, -1, 1);
+    var viewMatrix = mat4.lookAt([0,0,0], [0,0,-1], [0,1,0]);
+
+
+    // Upload the quad
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+	  gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
+	  gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
+    
+    // And the texture coords
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadTextureBuffer);
+  	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoords'), 2, gl.FLOAT, false, 0, 0);
+  	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
+
+    // Set the orthographic projection setup
+    gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
+	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
+
+    for(var i in items) {
+      var item = items[i];
+      var worldMatrix = mat4.create();
+      mat4.identity(worldMatrix);
+      mat4.translate(worldMatrix, [item.left(), item.top(), 0]);
+      mat4.scale(worldMatrix, [item.width(), item.height() , 1.0]);
+      gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
+      
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, item.texture());
+      gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0);  
+
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+       
+    }
+
+    gl.disable(gl.BLEND);
+    gl.depthMask(true);
+
+  }; 
+
+};
 }, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;
@@ -4317,7 +4525,8 @@ RenderContext.prototype.init = function(selector) {
   var canvas =  document.getElementById(selector);
   try
   {
-    this.gl = canvas.getContext("experimental-webgl", {antialias: true});
+    var ctx = canvas.getContext("experimental-webgl", {antialias: true});
+    this.gl =  ctx; //WebGLDebugUtils === undefined ? ctx : WebGLDebugUtils.makeDebugContext(ctx);
   } catch (ex){
     alert("Sorry dude, I couldn't create webgl, try Chrome or something");   
   }
@@ -4523,27 +4732,26 @@ Scene.prototype.doLogic = function() {
 };
 
 Scene.prototype.render = function(context){
-    var gl = context.gl;
+  var gl = context.gl;
 
-	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    
-    // Yuck yuck yuck
-    this.camera.width = gl.viewportWidth;
-    this.camera.height = gl.viewportHeight;
-    this.camera.updateMatrices();
+  gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  
+  // Yuck yuck yuck
+  this.camera.width = gl.viewportWidth;
+  this.camera.height = gl.viewportHeight;
+  this.camera.updateMatrices();
 
-	for(var i in this._entities) {
-		var entity = this._entities[i];
+  for(var i in this._entities) {
+	  var entity = this._entities[i];
         
-        if(entity.getSphere){
-            if(!this.camera.frustum.intersectSphere(entity.getSphere())){
-                continue;
-            }
+    if(entity.getSphere){
+        if(!this.camera.frustum.intersectSphere(entity.getSphere())){
+            continue;
         }
-        
-		entity.render(context);
-	}  
+    }      
+	  entity.render(context);
+  }       
 };
 
 exports.Scene = Scene;

@@ -75,5 +75,17 @@ Box.Create = function(vertices) {
   return new Box(min, max);  
 };
 
+Box.prototype.transform = function(matrix) {
+  var a, b, i, j;
+  var aMin = vec3.create([0,0,0]);
+  var aMax = vec3.create([0,0,0]);
+  var bMin = vec3.create([0,0,0]);
+  var bMax = vec3.create([0,0,0]);
+
+  
+  
+  
+};
+
 exports.Box = Box;
 exports.Sphere = Sphere;

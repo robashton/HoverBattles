@@ -140,13 +140,13 @@ Entity.prototype.render = function(context){
     mat4.toInverseMat3(modelViewMatrix, normalMatrix);
     mat3.transpose(normalMatrix);
     
-	var program = context.setActiveProgram(this._model.getProgram());
-    
-	this._model.upload(context);
+	  var program = context.setActiveProgram(this._model.getProgram());
+      
+	  this._model.upload(context);
 
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
+	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
+	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
+	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
     gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormalMatrix"), false, normalMatrix);
 
 	this._model.render(context);

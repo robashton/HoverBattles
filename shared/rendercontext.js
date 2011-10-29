@@ -11,7 +11,8 @@ RenderContext.prototype.init = function(selector) {
   var canvas =  document.getElementById(selector);
   try
   {
-    this.gl = canvas.getContext("experimental-webgl", {antialias: true});
+    var ctx = canvas.getContext("experimental-webgl", {antialias: true});
+    this.gl =  ctx; //WebGLDebugUtils === undefined ? ctx : WebGLDebugUtils.makeDebugContext(ctx);
   } catch (ex){
     alert("Sorry dude, I couldn't create webgl, try Chrome or something");   
   }

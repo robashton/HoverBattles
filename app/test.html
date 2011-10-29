@@ -1,147 +1,49 @@
 <html>
     <head>
-    	<script src="../client/jquery-1.5.1.min.js"></script>
-        <script src="../bootstrap.js"></script>
-        <script src="../client/lazyload.js"></script>
+      <script src="https://cvs.khronos.org/svn/repos/registry/trunk/public/webgl/sdk/debug/webgl-debug.js"></script>
+    	<script src="jquery-1.5.1.min.js"></script>
+      <script src="hb.ui.js"></script>
+      <script src="../bootstrap.js"></script>
+      <script src="../client/lazyload.js"></script>
         
-		<script type="text/javascript">
+		  <script type="text/javascript">
 			
-			$app(function(){
-                
-                var app = new blah.Application('game');             
-                app.init(function() {
-                    app.scene.camera.setLocation([0, 350, 1]);
-                    app.scene.camera.lookAt = vec3.create([0,0,0]);
-                    
-                    var entity = {
-                            rotation: 0.0,
-                            vertices: [    		
-                				-100.0, 0 , -100.0, 
-                				 100.0, 0 , -100.0, 
-                				 100.0, 0 , 100.0 , 
-                				-100.0, 0 , 100.0
-            				],
-                            normals: [        	
-                				0.0, 1.0, 0, 
-                				0.0, 1.0, 0, 
-                				0.0, 1.0, 0, 
-                				0.0, 1.0, 0
-            				],
-                			texCoords: [
-                    		    0.0, 0.0,
-                        	    1.0, 0.0,
-                                1.0, 1.0,
-                                0.0, 1.0
-                        	 ],
-                            rotationAmount: 0.01,
-                            lightAmount: vec3.create([1.0, 0, 1.0]),
-            				indices: [0, 1, 2, 0, 2, 3],
-                            position: vec3.create(0,0,0),
-                            setScene: function(scene){ entity.scene = scene; },
-                            getId: function() { return "testQuad"; },
-                            light: vec3.create([0, 10, 0]),
-                            doLogic: function() 
-                            { 
-                                entity.rotation += entity.rotationAmount; 
-                                if(entity.rotation > 0.5 || entity.rotation < -0.5) entity.rotationAmount = -entity.rotationAmount;
-                                
-                                vec3.add(entity.light, entity.lightAmount);
-                                
-                                for(var i = 0; i < 3 ; i++){
-                                    if(entity.light[i] > 200 || entity.light[i] < -200){
-                                        entity.lightAmount[i] = -entity.lightAmount[i];    
-                                    }
-                                }
-                                
-                                
-                            },
-                            render: function(context) {                               
-                                var gl = context.gl;
-                                var program = context.setActiveProgram("specular");
-                                
-                                var viewMatrix = entity.scene.camera.getViewMatrix();
-                            	var projectionMatrix = entity.scene.camera.getProjectionMatrix(gl);
-                                
-                            	var worldMatrix = mat4.create();
-                                mat4.identity(worldMatrix);
-                                mat4.rotateZ(worldMatrix, entity.rotation);
-                                
-                                var modelViewMatrix = mat4.create();
-                                mat4.multiply(worldMatrix,viewMatrix, modelViewMatrix);
-                                
-                                var normalMatrix = mat3.create();
-                                mat4.toInverseMat3(worldMatrix, normalMatrix);
-                                mat3.transpose(normalMatrix);
-                                
-                                gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
-                            	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
-                            	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
-                                gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormal"), false, normalMatrix);                                                   
-                                
-                                var cameraPosition = vec3.create(entity.scene.camera.location);
-                                
-                                gl.uniform3f(gl.getUniformLocation(program, "uLightPosition"), entity.light[0], entity.light[1], entity.light[2]);                                 
-                                gl.uniform3f(gl.getUniformLocation(program, "uCameraPosition"), cameraPosition[0], cameraPosition[1], cameraPosition[2]);
-                                                                
-                                gl.bindBuffer(gl.ARRAY_BUFFER, entity.vertexBuffer);
-                            	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
-                            	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));   
-                                
-                                gl.bindBuffer(gl.ARRAY_BUFFER, entity.normalBuffer);
-                                gl.vertexAttribPointer(gl.getAttribLocation(program, 'aNormal'), 3, gl.FLOAT, false, 0, 0);
-                            	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aNormal'));
-                                
-                                gl.bindBuffer(gl.ARRAY_BUFFER, entity.textureBuffer);
-                                gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoord'), 2, gl.FLOAT, false, 0, 0);
-                                gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoord'));
-                                
-                                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entity.indexBuffer);
-                                
-                                gl.activeTexture(gl.TEXTURE0);
-                                gl.bindTexture(gl.TEXTURE_2D, entity.bumpmap.get());
-                                gl.uniform1i(gl.getUniformLocation(program, 'uBumpSampler'), 0);
-  
-                                gl.drawElements(gl.TRIANGLES, entity.indices.length , gl.UNSIGNED_SHORT, 0);
-                                
-                            }                        
-                        };           
-                     
-                    var gl = app.context.gl;
-                    
-                    entity.vertexBuffer = gl.createBuffer();
-                    gl.bindBuffer(gl.ARRAY_BUFFER, entity.vertexBuffer);
-                	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(entity.vertices), gl.STATIC_DRAW);
-                    
-                    entity.normalBuffer = gl.createBuffer();
-                    gl.bindBuffer(gl.ARRAY_BUFFER, entity.normalBuffer);
-                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(entity.normals), gl.STATIC_DRAW);
-                                    
-                    entity.textureBuffer = gl.createBuffer();
-                    gl.bindBuffer(gl.ARRAY_BUFFER, entity.textureBuffer);
-                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(entity.texCoords), gl.STATIC_DRAW);
-                    
-                    entity.indexBuffer = gl.createBuffer();
-                	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entity.indexBuffer);
-                	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(entity.indices), gl.STATIC_DRAW);
-                    
-                    entity.bumpmap = app.resources.getTexture('/textures/testbump.jpg');
-                    
-                     app.scene.addEntity(entity);
-                                    
-                    app.resources.onAllAssetsLoaded(function(){
-                        setInterval(function() {  app.render(); }, 1000 / 30);
-                    });                    
-                    setInterval(function() {  app.tick(); }, 1000 / 30);                    
-                });
+			$app(function(){                
+        var app = new blah.Application('game');             
+        app.init(function() {
+            app.scene.camera.setLocation([0, 1000, -10]);
+                                       
+            app.resources.onAllAssetsLoaded(function(){
+                setInterval(function() {  app.render(); }, 1000 / 30);
+            });
+            
+            setInterval(function() {  app.tick(); }, 1000 / 30); 
+
+            
+        
+
+        });
 			});
 
 		</script>
+
+    <link rel="stylesheet" type="text/css" href="style.css" />
 	</head>
 	<body>		
-		<h1>TEST PAGE!!!</h1>
-    	<p>This is just a test page, nothing to see here, move along</p>
-		<canvas id="game" style="border: none;" width="750" height="500">
+    <div id="header">
+		  <div id="header-title"><h1>Tests</h1><p>(A muckaround project by @robashton)</p></div>
+    </div>
 
-		</canvas>
+    <div id="gameContainer">
+		  <canvas id="game"  width="750"  height="500" >
+        <blink>Loading...</blink>
+		  </canvas>
+    </div>    
+
+    <div id="square">
+      <p>Hello world</p>
+    </div>
+        
+        
     </body>
 </html>

@@ -7,6 +7,7 @@ var TrackedEntity = function(scene, sourceid, targetid) {
   var targetid = targetid;
   var firedMissileId = null;
   var isLocked = false;
+  var hudItem = null;
   
   self.notifyHasFired = function(missileid) {
     firedMissileId = missileid;
@@ -21,7 +22,31 @@ var TrackedEntity = function(scene, sourceid, targetid) {
     if(isLocked) return 5;
     return 2;    
   };
+  
+  self.hudItem = function(item) {
+    return hudItem = item || hudItem;
+  };
 
+  self.updateHudItemLocation = function() {
+    scene.withEntity(targetid, function(entity) {
+      var camera = scene.camera;
+
+      var worldSphere = entity.getSphere();
+      var transformedSphere = camera.transformSphereToScreen(worldSphere);
+
+      var radius = transformedSphere.radius;
+      var centre = transformedSphere.centre;
+    
+      var min = [centre[0] - radius, centre[1] - radius];
+      var max = [centre[0] + radius, centre[1] + radius];
+
+      hudItem.left(min[0]);
+      hudItem.top(min[1]);
+      hudItem.width(max[0] - min[0]);
+      hudItem.height(max[1] - min[1]);   
+
+    });
+  }
 };
 
 exports.Hud = function(app) {
@@ -53,8 +78,12 @@ exports.Hud = function(app) {
   };    
 
   var clearTrackedEntity = function(sourceid) {
-    if(trackedEntities[sourceid])
+    var entity = trackedEntities[sourceid];
+    if(entity) {
       delete trackedEntities[sourceid];
+      if(entity.hudItem())
+        app.overlay.removeItem(entity.hudItem());
+    }
   };
 
   var onEntityTrackingTarget = function(data) {
@@ -98,14 +127,20 @@ exports.Hud = function(app) {
     clearTrackedEntity(data.sourceid);
   };
 
-
   var skipLogicCount = 0;
   self.doLogic = function() {
     if(skipLogicCount++ % 5 !== 0) return;
-
-       
     
+    var targettedPerson =  trackedEntities[playerId];
+    if(!targettedPerson) return;
 
+    var targeter = targettedPerson.hudItem();
+    if(!targeter) {
+      targeter = app.overlay.addItem('track-' + playerId, '/data/textures/testtransparent.png');
+      targettedPerson.hudItem(targeter);
+    }      
+    targettedPerson.updateHudItemLocation(); 
+    
   };
 
   app.scene.onEntityAdded(hookHovercraftEvents);
@@ -118,6 +153,7 @@ exports.Hud.create = function(app) {
   hudEntity.attach(exports.Hud, [app]);
 
   app.scene.addEntity(hudEntity);
+  return hudEntity;
 };
 
 

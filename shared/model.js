@@ -19,7 +19,7 @@ var Model = function(data){
 Model.prototype.setData = function(data) {
     this._vertices = data.vertices;
     this._colours = data.colours;
-	this._indices = data.indices;
+	  this._indices = data.indices;
     this._texCoords = data.texCoords;
     this._normals = data.normals;
     this._texture = data.texture;
@@ -48,17 +48,17 @@ Model.prototype.activate = function(context) {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._colourBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._colours), gl.STATIC_DRAW)
 	}
-    if(this._texCoords) {
-        this._textureBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._texCoords), gl.STATIC_DRAW)
-    }
-    
-    if(this._normals) {
-        this._normalBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._normals), gl.STATIC_DRAW)
-    }
+  if(this._texCoords) {
+    this._textureBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._texCoords), gl.STATIC_DRAW);
+  }
+  
+  if(this._normals) {
+    this._normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._normals), gl.STATIC_DRAW);
+  }
 
 	this._indexBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
@@ -87,8 +87,8 @@ Model.prototype.destroyBuffers = function(context) {
 	this._vertexBuffer = null;
 	this._indexBuffer = null;
 	this._colourBuffer = null;
-    this._textureBuffer = null;
-    this._normalBuffer = null;
+  this._textureBuffer = null;
+  this._normalBuffer = null;
 };
 
 
@@ -110,25 +110,25 @@ Model.prototype.upload = function(context) {
 		gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexColour'));
 	}
     
-    if(this._textureBuffer) {
-    	gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
-    	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoords'), 2, gl.FLOAT, false, 0, 0);
-    	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
-    }    
-    
-    if(this._normalBuffer) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
-        gl.vertexAttribPointer(gl.getAttribLocation(program, 'aNormals'), 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aNormals'));
-    }
-    
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-    
-    if(this._texture){
-       gl.activeTexture(gl.TEXTURE0);
-       gl.bindTexture(gl.TEXTURE_2D, this._texture.get());
-       gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0);      
-    }
+  if(this._textureBuffer) {
+  	gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
+  	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoords'), 2, gl.FLOAT, false, 0, 0);
+  	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
+  }    
+  
+  if(this._normalBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
+    gl.vertexAttribPointer(gl.getAttribLocation(program, 'aNormals'), 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aNormals'));
+  }
+  
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+  
+  if(this._texture){
+     gl.activeTexture(gl.TEXTURE0);
+     gl.bindTexture(gl.TEXTURE_2D, this._texture.get());
+     gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0);      
+  }
 };
 
 Model.prototype.render = function(context) {

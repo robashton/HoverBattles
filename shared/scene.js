@@ -77,27 +77,26 @@ Scene.prototype.doLogic = function() {
 };
 
 Scene.prototype.render = function(context){
-    var gl = context.gl;
+  var gl = context.gl;
 
-	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    
-    // Yuck yuck yuck
-    this.camera.width = gl.viewportWidth;
-    this.camera.height = gl.viewportHeight;
-    this.camera.updateMatrices();
+  gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  
+  // Yuck yuck yuck
+  this.camera.width = gl.viewportWidth;
+  this.camera.height = gl.viewportHeight;
+  this.camera.updateMatrices();
 
-	for(var i in this._entities) {
-		var entity = this._entities[i];
+  for(var i in this._entities) {
+	  var entity = this._entities[i];
         
-        if(entity.getSphere){
-            if(!this.camera.frustum.intersectSphere(entity.getSphere())){
-                continue;
-            }
+    if(entity.getSphere){
+        if(!this.camera.frustum.intersectSphere(entity.getSphere())){
+            continue;
         }
-        
-		entity.render(context);
-	}  
+    }      
+	  entity.render(context);
+  }       
 };
 
 exports.Scene = Scene;
