@@ -37,7 +37,7 @@ FiringController.prototype.onTick = function() {
 	if(!this._trackedTarget || this.fired) return;
 	var currentTime = new Date();
 	var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
-	if(timeElapsedSinceStartedTracking > 3000 && this._status === "tracking") {
+	if(timeElapsedSinceStartedTracking > 1500 && this._status === "tracking") {
 		this._status = "locked";
     this.communication.sendMessage('missileLock', {
       sourceid: this.entity.getId(),

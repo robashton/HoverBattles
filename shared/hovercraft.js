@@ -58,28 +58,26 @@ var Hovercraft = function() {
       self._jump = false;
   };
   
-  
-  
   self.impulseForward = function() {
-      var amount = 0.08;
+      var amount = 0.1;
       var accelerationZ = (-amount) * Math.cos(self.rotationY);
       var accelerationX = (-amount) * Math.sin(self.rotationY);
       var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
       vec3.add(self._velocity, acceleration);
   };
   self.impulseBackward = function() {
-      var amount = 0.05;
+      var amount = 0.07;
       var accelerationZ = (amount) * Math.cos(self.rotationY);
       var accelerationX = (amount) * Math.sin(self.rotationY);
       var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
       vec3.add(self._velocity, acceleration);
   };
   self.impulseLeft = function() {
-      var amount = 0.05;
+      var amount = 0.07;
       self.rotationY += amount;
   };
   self.impulseRight = function() {
-      var amount = 0.05;
+      var amount = 0.07;
       self.rotationY -= amount;
   };
   self.impulseUp = function() {

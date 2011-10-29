@@ -8,6 +8,7 @@ var TrackedEntity = function(app, sourceid, targetid) {
   var firedMissileId = null;
   var isLocked = false;
   var hudItem = null;
+  var rotation = 0;
   
   self.notifyHasFired = function(missileid) {
     firedMissileId = missileid;
@@ -48,6 +49,7 @@ var TrackedEntity = function(app, sourceid, targetid) {
       hudItem.top(min[1]);
       hudItem.width(max[0] - min[0]);
       hudItem.height(max[1] - min[1]);   
+      hudItem.rotation(rotation += 0.03);
     });
   }
 

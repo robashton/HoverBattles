@@ -83,7 +83,7 @@ exports.Tracking = function() {
       // We must both be within a certain angle of the other entity
       // and within a certain distance
       var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
-      if(quotient > 0.75 && distanceToOtherEntity < 128) 
+      if(quotient > 0.75 && distanceToOtherEntity < 160) 
       {
           self.notifyAimingAt(entity);
       }
@@ -2786,28 +2786,26 @@ var Hovercraft = function() {
       self._jump = false;
   };
   
-  
-  
   self.impulseForward = function() {
-      var amount = 0.08;
+      var amount = 0.1;
       var accelerationZ = (-amount) * Math.cos(self.rotationY);
       var accelerationX = (-amount) * Math.sin(self.rotationY);
       var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
       vec3.add(self._velocity, acceleration);
   };
   self.impulseBackward = function() {
-      var amount = 0.05;
+      var amount = 0.07;
       var accelerationZ = (amount) * Math.cos(self.rotationY);
       var accelerationX = (amount) * Math.sin(self.rotationY);
       var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
       vec3.add(self._velocity, acceleration);
   };
   self.impulseLeft = function() {
-      var amount = 0.05;
+      var amount = 0.07;
       self.rotationY += amount;
   };
   self.impulseRight = function() {
-      var amount = 0.05;
+      var amount = 0.07;
       self.rotationY -= amount;
   };
   self.impulseUp = function() {
@@ -2995,6 +2993,7 @@ var TrackedEntity = function(app, sourceid, targetid) {
   var firedMissileId = null;
   var isLocked = false;
   var hudItem = null;
+  var rotation = 0;
   
   self.notifyHasFired = function(missileid) {
     firedMissileId = missileid;
@@ -3035,6 +3034,7 @@ var TrackedEntity = function(app, sourceid, targetid) {
       hudItem.top(min[1]);
       hudItem.width(max[0] - min[0]);
       hudItem.height(max[1] - min[1]);   
+      hudItem.rotation(rotation += 0.03);
     });
   }
 
@@ -4168,6 +4168,7 @@ var OverlayItem = function(id, texture) {
   var height = 100;
   var top = 0;
   var left = 0;
+  var rotation = 0;
 
   self.id = function() {
     return id;
@@ -4191,6 +4192,10 @@ var OverlayItem = function(id, texture) {
 
   self.texture = function() {
     return texture.get();
+  };
+
+  self.rotation = function(value) {
+    return rotation = value || rotation;
   };
 };
 
@@ -4273,8 +4278,12 @@ exports.Overlay = function(app) {
       var item = items[i];
       var worldMatrix = mat4.create();
       mat4.identity(worldMatrix);
-      mat4.translate(worldMatrix, [item.left(), item.top(), 0]);
+
+      mat4.translate(worldMatrix, [item.left() + (0.5 * item.width()), item.top() + (0.5 * item.height()), 0.0]);
+      mat4.rotateZ(worldMatrix, item.rotation());
+      mat4.translate(worldMatrix, [-(0.5 * item.width()), -(0.5 * item.height()), 0.0]);
       mat4.scale(worldMatrix, [item.width(), item.height() , 1.0]);
+      
       gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
       
       gl.activeTexture(gl.TEXTURE0);
