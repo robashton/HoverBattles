@@ -83,7 +83,7 @@ exports.Tracking = function() {
       // We must both be within a certain angle of the other entity
       // and within a certain distance
       var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
-      if(quotient > 0.75 && distanceToOtherEntity < 160) 
+      if(quotient > 0.75 && distanceToOtherEntity < 250) 
       {
           self.notifyAimingAt(entity);
       }
@@ -385,27 +385,25 @@ var ChaseCamera = function() {
 
   self.workOutWhereTargetIs= function() {
      var terrain = self._scene.getEntity("terrain");      
-     var cameraTrail = vec3.create(self.entity._velocity);
-
-     cameraTrail[1] = 0;
-     vec3.normalize(cameraTrail);
-     vec3.scale(cameraTrail, 25);
-     vec3.subtract(self.entity.position, cameraTrail, cameraTrail);
-
-     var desiredCameraLocation = cameraTrail;
-
-     var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(self._scene.camera.location[0], 
-                                                             self._scene.camera.location[2]);
-                            
-     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 15, self.entity.position[1] + 10);
      
-     desiredCameraLocation[1] =  cameraHeight;  
-    
+     var craftRotation = self.entity.rotationY;
+     var distanceBack = 20;
+     var directionBackZ = distanceBack * Math.cos(craftRotation);
+     var directionBackX = distanceBack * Math.sin(craftRotation);
 
+     var vectorToDesiredLocation = vec3.create([directionBackX, 0, directionBackZ]);
+     var desiredLocation = vec3.create([0,0,0]);
+     vec3.add(self.entity.position, vectorToDesiredLocation, desiredLocation);
+
+     var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(self.cameraLocation[0], self.cameraLocation[2]);
+     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 5, self.entity.position[1] + 5);
+     
+     desiredLocation[1] =  cameraHeight;  
+    
      self.destinationCameraLookAt = vec3.create(self.entity.position);
 
      if(!self.fixLocation)
-      self.destinationCameraLocation = desiredCameraLocation;
+      self.destinationCameraLocation = desiredLocation;
   };
 
   self.doLogicAfterAscertainingTarget= function() {
@@ -770,26 +768,48 @@ exports.Explosion = function(app, details) {
     vec3.scale(directionOfExplosion, 30.0);
   }
 
-  var emitter = new ParticleEmitter('Explosion-' + date, 10000, app,
+  var fireEmitter = new ParticleEmitter('Explosion-' + date, 5000, app,
   {
-      maxsize: 300,
-      maxlifetime: 0.8,
-      rate: 5000,
+      maxsize: 1500,
+      maxlifetime: 0.7,
+      rate: 2000,
       position: details.position,
       scatter: vec3.create([0.2, 0.2, 0.2]),
-      particleOutwardVelocity: vec3.create([20,20,20]),
-      particleTrajectoryVelocity: directionOfExplosion
+      particleOutwardVelocityMin: vec3.create([-12,-12,-12]),
+      particleOutwardVelocityMax: vec3.create([12,12,12]),
+      particleTrajectoryVelocity: directionOfExplosion,
+      textureName: '/data/textures/explosion.png'
+  });
+  app.scene.addEntity(fireEmitter);
+  setTimeout(function() {
+    fireEmitter.stop();
+  }, 150);
+  setTimeout(function() {
+    app.scene.removeEntity(fireEmitter);
+  }, 10000); 
+
+  var smokeEmitter = new ParticleEmitter('Smoke-' + date, 1000, app,
+  {
+      maxsize: 1500,
+      maxlifetime: 3.0,
+      rate: 30,
+      position: details.position,
+      scatter: vec3.create([0.2, 0.2, 0.2]),
+      particleOutwardVelocityMin: vec3.create([-5.0,0.5,-5.0]),
+      particleOutwardVelocityMax: vec3.create([5.0,10.0,5.0]),
+      textureName: '/data/textures/smoke.png'
   });
 
-  app.scene.addEntity(emitter);
+  app.scene.addEntity(smokeEmitter);
 
   setTimeout(function() {
-    emitter.stop();
-  }, 150);
+    smokeEmitter.stop();
+  }, 500);
 
   setTimeout(function() {
-    app.scene.removeEntity(emitter);
-  }, 10000); 
+    app.scene.removeEntity(smokeEmitter);
+  }, 10000);
+
 };
 
 
@@ -3178,7 +3198,7 @@ LandChunk.prototype.getProgram = function(){
 };
 
 LandChunk.prototype.loadTextures = function(resources) {
-    this._diffuseTexture = resources.getTexture('/data/textures/cartoonterrain.jpg');
+    this._diffuseTexture = resources.getTexture('/data/textures/grass.jpg');
 };
 
 LandChunk.prototype.setData = function(data) {
@@ -3836,10 +3856,9 @@ exports.ClientGameReceiver = function(app, server) {
         chaseCamera.setMovementDelta(0.03);
         chaseCamera.setLookAtDelta(0.03);
         chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 100, craft.position[1]]);
-
+        chaseCamera.setTrackedEntity(source);
         setTimeout(function() {
             chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 300, craft.position[1]]);
-            chaseCamera.setTrackedEntity(source);
         }, 5000);
       });
 
@@ -3917,14 +3936,16 @@ exports.ClientGameReceiver = function(app, server) {
   var attachEmitterToCraft = function(craft) {
     var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, app,
     {
-        maxsize: 40,
-        maxlifetime: 0.2,
-        rate: 50,
-        scatter: vec3.create([1.0, 0.001, 1.0]),
-        particleVelocity: vec3.create([0.1, -0.3, 0.1]),
+        maxsize: 50,
+        maxlifetime: 0.3,
+        rate: 30,
+        scatter: vec3.create([1.2, 0.001, 1.2]),
+        particleOutwardVelocityMin: vec3.create([-0.1,-0.5,-0.1]),
+        particleOutwardVelocityMax: vec3.create([0.1,0,0.1]),
         track: function(){
-            this.position = vec3.create(craft.position);
-        }
+            this.position = vec3.create([craft.position[0],craft.position[1]-0.3, craft.position[2] ]);
+        },
+        textureName: '/data/textures/trail.png'
     });
     craft.emitter = emitter;
     app.scene.addEntity(emitter);
@@ -4134,6 +4155,7 @@ MissileReceiver.prototype.attachEmitterToMissile = function(missile) {
         maxlifetime: 0.2,
         rate: 500,
         scatter: vec3.create([1.0, 0.001, 1.0]),
+        textureName: '/data/textures/missile.png',
         track: function(){
             this.position = vec3.create(missile.position);
         }
@@ -4300,7 +4322,20 @@ exports.Overlay = function(app) {
   }; 
 
 };
-}, "particleemitter": function(exports, require, module) {ParticleEmitter = function(id, capacity, app, config) {
+}, "particleemitter": function(exports, require, module) {var randoms = new Array(randomsCount);
+var randomsCount = 100000;
+
+for(var x = 0; x < 100000; x++) {
+  randoms[x] = Math.random();
+}
+var currentRandom = 0;
+
+var currentValue = 0.000001;
+nextRandom = function(){
+  return Math.random();
+}
+
+ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;
     this.active = true;
@@ -4324,24 +4359,45 @@ exports.Overlay = function(app) {
     this.creationTimes = new Float32Array(capacity);
     
     this.position =  config.position || vec3.create([0,0,0]);
-    this.particleOutwardVelocity = config.particleOutwardVelocity || vec3.create([1,1,1]);
+
+    this.particleOutwardVelocityMin = config.particleOutwardVelocityMin || vec3.create([-1,-1,-1]);
+    this.particleOutwardVelocityMax = config.particleOutwardVelocityMax || vec3.create([1,1,1]);
     this.particleTrajectoryVelocity = config.particleTrajectoryVelocity || vec3.create([0,0,0]);
-        
+
+    this.textureName = config.textureName || '/data/textures/particle.png';
+
+    if(this.textureName) {
+      this.texture = this.app.resources.getTexture(this.textureName);
+    }
+
+
+    var randoms = [];
+    var variance = vec3.create([1.0, 1.0, 1.0]);
+    vec3.subtract(this.particleOutwardVelocityMax, this.particleOutwardVelocityMin, variance);
+    
     for(var x = 0 ; x < capacity; x++) {
         var vertex = x * 3;
         var colour = x * 3;
         
-        this.positions[vertex] = 0;
-        this.positions[vertex+1] = 0;
-        this.positions[vertex+1] = 0;
-      
-        this.velocities[vertex] = this.particleTrajectoryVelocity[0] + (this.particleOutwardVelocity[0] - (Math.random() * this.particleOutwardVelocity[0] * 2)); 
-        this.velocities[vertex+1] =  this.particleTrajectoryVelocity[1] + (this.particleOutwardVelocity[1] - (Math.random() * this.particleOutwardVelocity[1] * 2)); 
-        this.velocities[vertex+2] = this.particleTrajectoryVelocity[2] + (this.particleOutwardVelocity[2] - (Math.random() * this.particleOutwardVelocity[2] * 2)); 
-        
-        this.colours[colour] = Math.random();
-        this.colours[colour+1] = Math.random();
-        this.colours[colour+2] = Math.random();
+        this.positions[vertex] = this.position[0];
+        this.positions[vertex+1] = this.position[1];
+        this.positions[vertex+2] = this.position[2];
+
+
+     
+        this.velocities[vertex] = this.particleTrajectoryVelocity[0] +
+                                     (this.particleOutwardVelocityMax[0] - (nextRandom() * variance[0])); 
+
+        this.velocities[vertex+1] =  this.particleTrajectoryVelocity[1] + 
+                                    (this.particleOutwardVelocityMax[1] - (nextRandom()  * variance[1])); 
+
+        this.velocities[vertex+2] =  this.particleTrajectoryVelocity[2] + 
+                                   (this.particleOutwardVelocityMax[2] - (nextRandom() * variance[2])); 
+
+
+        this.colours[colour] = 1.0;
+        this.colours[colour+1] = 1.0;
+        this.colours[colour+2] = 1.0; 
           
         this.sizes[x] = Math.random();
         this.creationTimes[x] = -1000;
@@ -4363,10 +4419,7 @@ ParticleEmitter.prototype.createBuffers = function(){
   var gl = this.app.context.gl;
   
   this.createConstantBuffers(gl);
-  this.createVariableBuffers(gl); 
-
-  this.texture = this.app.resources.getTexture('/data/textures/particle.png');
-  
+  this.createVariableBuffers(gl);  
 };
 
 ParticleEmitter.prototype.createVariableBuffers = function(gl) {
@@ -4409,7 +4462,8 @@ ParticleEmitter.prototype.doLogic = function() {
     this.ticks++;
 
     if(!this.active) return;
-        
+     
+
     var lastPosition = vec3.create(this.position);
     var interpolation = vec3.create();
     this.track.call(this);
@@ -4429,7 +4483,7 @@ ParticleEmitter.prototype.doLogic = function() {
         if(age > this.lifetimes[x]) {
 
             this.creationTimes[x] = this.time;
-                    
+
             this.positions[vertex] = this.position[0] + countFound * interpolation[0];
             this.positions[vertex+1] = this.position[1] + countFound * interpolation[1];
             this.positions[vertex+2] = this.position[2] + countFound * interpolation[2];
@@ -4437,7 +4491,7 @@ ParticleEmitter.prototype.doLogic = function() {
             this.positions[vertex] += this.scatter[0] - (Math.random() * this.scatter[0] * 2);
             this.positions[vertex+1] += this.scatter[1] - (Math.random() * this.scatter[1] * 2);
             this.positions[vertex+2] += this.scatter[2] - (Math.random() * this.scatter[2] * 2);
-            
+
             if(countFound++ == this.rate) { break; }            
         }
     }
@@ -4502,7 +4556,7 @@ ParticleEmitter.prototype.render = function(context) {
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
         
     var gl = context.gl;
-	gl.drawArrays(gl.POINTS, 0, this.capacity);
+	  gl.drawArrays(gl.POINTS, 0, this.capacity);
     
     gl.disable(gl.BLEND);
     gl.depthMask(true);

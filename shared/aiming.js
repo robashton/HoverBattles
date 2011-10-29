@@ -33,7 +33,7 @@ exports.Tracking = function() {
       // We must both be within a certain angle of the other entity
       // and within a certain distance
       var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
-      if(quotient > 0.75 && distanceToOtherEntity < 160) 
+      if(quotient > 0.75 && distanceToOtherEntity < 250) 
       {
           self.notifyAimingAt(entity);
       }

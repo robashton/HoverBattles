@@ -10,6 +10,6 @@ uniform float time;
 
 void main(void) {
     vec4 texColor = texture2D(uSampler, gl_PointCoord);
-    vec4 colour = vec4(vColour, life);
-    gl_FragColor = colour * texColor;
+    vec4 colour = vec4(texColor.r, texColor.g, texColor.b, texColor.a * life);
+    gl_FragColor =  colour;
 }

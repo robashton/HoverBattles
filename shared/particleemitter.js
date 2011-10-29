@@ -1,3 +1,16 @@
+var randoms = new Array(randomsCount);
+var randomsCount = 100000;
+
+for(var x = 0; x < 100000; x++) {
+  randoms[x] = Math.random();
+}
+var currentRandom = 0;
+
+var currentValue = 0.000001;
+nextRandom = function(){
+  return Math.random();
+}
+
 ParticleEmitter = function(id, capacity, app, config) {
     this.id = id;
     this.app = app;
@@ -22,24 +35,45 @@ ParticleEmitter = function(id, capacity, app, config) {
     this.creationTimes = new Float32Array(capacity);
     
     this.position =  config.position || vec3.create([0,0,0]);
-    this.particleOutwardVelocity = config.particleOutwardVelocity || vec3.create([1,1,1]);
+
+    this.particleOutwardVelocityMin = config.particleOutwardVelocityMin || vec3.create([-1,-1,-1]);
+    this.particleOutwardVelocityMax = config.particleOutwardVelocityMax || vec3.create([1,1,1]);
     this.particleTrajectoryVelocity = config.particleTrajectoryVelocity || vec3.create([0,0,0]);
-        
+
+    this.textureName = config.textureName || '/data/textures/particle.png';
+
+    if(this.textureName) {
+      this.texture = this.app.resources.getTexture(this.textureName);
+    }
+
+
+    var randoms = [];
+    var variance = vec3.create([1.0, 1.0, 1.0]);
+    vec3.subtract(this.particleOutwardVelocityMax, this.particleOutwardVelocityMin, variance);
+    
     for(var x = 0 ; x < capacity; x++) {
         var vertex = x * 3;
         var colour = x * 3;
         
-        this.positions[vertex] = 0;
-        this.positions[vertex+1] = 0;
-        this.positions[vertex+1] = 0;
-      
-        this.velocities[vertex] = this.particleTrajectoryVelocity[0] + (this.particleOutwardVelocity[0] - (Math.random() * this.particleOutwardVelocity[0] * 2)); 
-        this.velocities[vertex+1] =  this.particleTrajectoryVelocity[1] + (this.particleOutwardVelocity[1] - (Math.random() * this.particleOutwardVelocity[1] * 2)); 
-        this.velocities[vertex+2] = this.particleTrajectoryVelocity[2] + (this.particleOutwardVelocity[2] - (Math.random() * this.particleOutwardVelocity[2] * 2)); 
-        
-        this.colours[colour] = Math.random();
-        this.colours[colour+1] = Math.random();
-        this.colours[colour+2] = Math.random();
+        this.positions[vertex] = this.position[0];
+        this.positions[vertex+1] = this.position[1];
+        this.positions[vertex+2] = this.position[2];
+
+
+     
+        this.velocities[vertex] = this.particleTrajectoryVelocity[0] +
+                                     (this.particleOutwardVelocityMax[0] - (nextRandom() * variance[0])); 
+
+        this.velocities[vertex+1] =  this.particleTrajectoryVelocity[1] + 
+                                    (this.particleOutwardVelocityMax[1] - (nextRandom()  * variance[1])); 
+
+        this.velocities[vertex+2] =  this.particleTrajectoryVelocity[2] + 
+                                   (this.particleOutwardVelocityMax[2] - (nextRandom() * variance[2])); 
+
+
+        this.colours[colour] = 1.0;
+        this.colours[colour+1] = 1.0;
+        this.colours[colour+2] = 1.0; 
           
         this.sizes[x] = Math.random();
         this.creationTimes[x] = -1000;
@@ -61,10 +95,7 @@ ParticleEmitter.prototype.createBuffers = function(){
   var gl = this.app.context.gl;
   
   this.createConstantBuffers(gl);
-  this.createVariableBuffers(gl); 
-
-  this.texture = this.app.resources.getTexture('/data/textures/particle.png');
-  
+  this.createVariableBuffers(gl);  
 };
 
 ParticleEmitter.prototype.createVariableBuffers = function(gl) {
@@ -107,7 +138,8 @@ ParticleEmitter.prototype.doLogic = function() {
     this.ticks++;
 
     if(!this.active) return;
-        
+     
+
     var lastPosition = vec3.create(this.position);
     var interpolation = vec3.create();
     this.track.call(this);
@@ -127,7 +159,7 @@ ParticleEmitter.prototype.doLogic = function() {
         if(age > this.lifetimes[x]) {
 
             this.creationTimes[x] = this.time;
-                    
+
             this.positions[vertex] = this.position[0] + countFound * interpolation[0];
             this.positions[vertex+1] = this.position[1] + countFound * interpolation[1];
             this.positions[vertex+2] = this.position[2] + countFound * interpolation[2];
@@ -135,7 +167,7 @@ ParticleEmitter.prototype.doLogic = function() {
             this.positions[vertex] += this.scatter[0] - (Math.random() * this.scatter[0] * 2);
             this.positions[vertex+1] += this.scatter[1] - (Math.random() * this.scatter[1] * 2);
             this.positions[vertex+2] += this.scatter[2] - (Math.random() * this.scatter[2] * 2);
-            
+
             if(countFound++ == this.rate) { break; }            
         }
     }
@@ -200,7 +232,7 @@ ParticleEmitter.prototype.render = function(context) {
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
         
     var gl = context.gl;
-	gl.drawArrays(gl.POINTS, 0, this.capacity);
+	  gl.drawArrays(gl.POINTS, 0, this.capacity);
     
     gl.disable(gl.BLEND);
     gl.depthMask(true);

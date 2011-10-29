@@ -41,10 +41,9 @@ exports.ClientGameReceiver = function(app, server) {
         chaseCamera.setMovementDelta(0.03);
         chaseCamera.setLookAtDelta(0.03);
         chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 100, craft.position[1]]);
-
+        chaseCamera.setTrackedEntity(source);
         setTimeout(function() {
             chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 300, craft.position[1]]);
-            chaseCamera.setTrackedEntity(source);
         }, 5000);
       });
 
@@ -122,14 +121,16 @@ exports.ClientGameReceiver = function(app, server) {
   var attachEmitterToCraft = function(craft) {
     var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, app,
     {
-        maxsize: 40,
-        maxlifetime: 0.2,
-        rate: 50,
-        scatter: vec3.create([1.0, 0.001, 1.0]),
-        particleVelocity: vec3.create([0.1, -0.3, 0.1]),
+        maxsize: 50,
+        maxlifetime: 0.3,
+        rate: 30,
+        scatter: vec3.create([1.2, 0.001, 1.2]),
+        particleOutwardVelocityMin: vec3.create([-0.1,-0.5,-0.1]),
+        particleOutwardVelocityMax: vec3.create([0.1,0,0.1]),
         track: function(){
-            this.position = vec3.create(craft.position);
-        }
+            this.position = vec3.create([craft.position[0],craft.position[1]-0.3, craft.position[2] ]);
+        },
+        textureName: '/data/textures/trail.png'
     });
     craft.emitter = emitter;
     app.scene.addEntity(emitter);

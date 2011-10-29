@@ -11,26 +11,48 @@ exports.Explosion = function(app, details) {
     vec3.scale(directionOfExplosion, 30.0);
   }
 
-  var emitter = new ParticleEmitter('Explosion-' + date, 10000, app,
+  var fireEmitter = new ParticleEmitter('Explosion-' + date, 5000, app,
   {
-      maxsize: 300,
-      maxlifetime: 0.8,
-      rate: 5000,
+      maxsize: 1500,
+      maxlifetime: 0.7,
+      rate: 2000,
       position: details.position,
       scatter: vec3.create([0.2, 0.2, 0.2]),
-      particleOutwardVelocity: vec3.create([20,20,20]),
-      particleTrajectoryVelocity: directionOfExplosion
+      particleOutwardVelocityMin: vec3.create([-12,-12,-12]),
+      particleOutwardVelocityMax: vec3.create([12,12,12]),
+      particleTrajectoryVelocity: directionOfExplosion,
+      textureName: '/data/textures/explosion.png'
+  });
+  app.scene.addEntity(fireEmitter);
+  setTimeout(function() {
+    fireEmitter.stop();
+  }, 150);
+  setTimeout(function() {
+    app.scene.removeEntity(fireEmitter);
+  }, 10000); 
+
+  var smokeEmitter = new ParticleEmitter('Smoke-' + date, 1000, app,
+  {
+      maxsize: 1500,
+      maxlifetime: 3.0,
+      rate: 30,
+      position: details.position,
+      scatter: vec3.create([0.2, 0.2, 0.2]),
+      particleOutwardVelocityMin: vec3.create([-5.0,0.5,-5.0]),
+      particleOutwardVelocityMax: vec3.create([5.0,10.0,5.0]),
+      textureName: '/data/textures/smoke.png'
   });
 
-  app.scene.addEntity(emitter);
+  app.scene.addEntity(smokeEmitter);
 
   setTimeout(function() {
-    emitter.stop();
-  }, 150);
+    smokeEmitter.stop();
+  }, 500);
 
   setTimeout(function() {
-    app.scene.removeEntity(emitter);
-  }, 10000); 
+    app.scene.removeEntity(smokeEmitter);
+  }, 10000);
+
 };
 
 
