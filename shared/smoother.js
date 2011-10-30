@@ -30,16 +30,17 @@ var Smoother = function() {
 	};
 
 	self.setSync = function(sync) {
-    if(!self.hasInitialState) {
+    if(!self.hasInitialState || sync.force) {
 	  		self.position = sync.position;
 	  		self.rotationY = sync.rotationY;
-			self.hasInitialState = true;
+			  self.hasInitialState = true;
 		}
 
 	  self.networkposition = sync.position;
 	  self.networkrotationY = sync.rotationY; 
 	  self.oldposition = self.position;
 	  self.oldrotationy = self.rotationY; 
+
 	};
 };
 

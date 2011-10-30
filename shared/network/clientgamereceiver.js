@@ -24,7 +24,11 @@ exports.ClientGameReceiver = function(app, server) {
     chaseCamera.setTrackedEntity(craft);
     app.scene.addEntity(chaseCamera);
 
-	  server.sendMessage('ready');
+
+    // Wait till we're actually ready before telling the server we are
+	  app.resources.onAllAssetsLoaded(function() {
+      server.sendMessage('ready');    
+    });
   };
 
   self._destroyTarget = function(data) {
@@ -69,7 +73,7 @@ exports.ClientGameReceiver = function(app, server) {
 		  craft.setSync(data.sync);
 
       // Reset camera
-      chaseCamera.setMovementDelta(0.1);
+      chaseCamera.setMovementDelta(0.2);
       chaseCamera.setLookAtDelta(0.7);
 		  chaseCamera.setTrackedEntity(craft);
       chaseCamera.unfixLocation();
@@ -140,8 +144,12 @@ exports.ClientGameReceiver = function(app, server) {
     app.scene.addEntity(emitter);
    };
 
-  self._addplayer = function(data) {
-	  addHovercraftToScene(data.id, data.sync);
+  self._updateplayer = function(data) {
+    var entity = app.scene.getEntity(data.id);
+    if(!entity)
+	    addHovercraftToScene(data.id, data.sync);
+    else
+      entity.setSync(data.sync);
   };
 
   self._removeplayer = function(data) {

@@ -14,7 +14,6 @@ ServerGameReceiver.prototype.addPlayer = function(id) {
 	var newCraft = this.hovercraftFactory.create(id);
 	newCraft._firingController = new FiringController(newCraft, this.communication);
 	this.craft[id] = newCraft;
-	this.app.scene.addEntity(newCraft);
 };
 
 ServerGameReceiver.prototype.removePlayer = function(id) {
@@ -56,7 +55,21 @@ ServerGameReceiver.prototype._fireRequest = function(data) {
 };
 
 ServerGameReceiver.prototype._ready = function( data) {
-	this.communication.syncPlayerFull(data.source);
+  var craft = this.craft[data.source];
+  this.spawnCraft(craft);
+	this.communication.syncPlayerFull(craft.getId());
+  this.communication.sendMessage('updateplayer', {
+    id: craft.getId(),
+    sync: craft.getSync()
+  });
+};
+
+ServerGameReceiver.prototype.spawnCraft = function(craft) {
+  craft.position[0] = Math.random() * 400 - 200;
+  craft.position[1] = 100;
+  craft.position[2] = Math.random() * 400 - 200;
+  craft.reset();
+  this.app.scene.addEntity(craft);
 };
 
 ServerGameReceiver.prototype._reviveTarget = function() {}; 
@@ -71,19 +84,21 @@ ServerGameReceiver.prototype._destroyTarget = function(data) {
 	// Remove the entity from our scene
 	var craft = this.app.scene.getEntity(data.targetid);
 	this.app.scene.removeEntity(craft);
-	var sync = craft.getSync();
 
 	// And wait until an appropriate moment to revive it
 	setTimeout(function() {
     if(!self.craft[craft.getId()]) return;
 
 		// Re-add the craft on our side
-		self.app.scene.addEntity(craft);
+    self.spawnCraft(craft);
+
+    var sync = craft.getSync()
+    sync.force = true;
 
 		// And tell everyone else to do likewise
 		self.communication.sendMessage('reviveTarget', { 
 			id: craft.getId(),
-			sync: sync
+      sync: sync
 		});		
 		
 	}, 10000);	

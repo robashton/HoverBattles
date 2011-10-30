@@ -12,7 +12,7 @@ var ChaseCamera = function() {
   self.destinationCameraLocation = vec3.create([0,0,0]);
   self.destinationCameraLookAt = vec3.create([0,0,0]);
 
-  self.movementDelta = 0.1;
+  self.movementDelta = 0.2;
   self.lookAtDelta = 0.7;
   self.fixLocation = false;
 

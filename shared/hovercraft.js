@@ -4,15 +4,18 @@ var mat4 = require('./glmatrix').mat4;
 var Hovercraft = function() {
   var self = this;
 
-	self._velocity = vec3.create([0.01,0,0.01]);
   self._decay = 0.99;
 
-  self._left = false;
-  self._right = false;
-  self._jump = false;
-  self._forward = false;
-  self._backward = false;
-
+  self.reset = function() {
+    self._velocity = vec3.create([0.01,0,0.01]);
+    self._left = false;
+    self._right = false;
+    self._jump = false;
+    self._forward = false;
+    self._backward = false;
+  };
+  
+  self.reset();
   
   self.getSphere = function() {
       return self._model.boundingSphere.translate(self.position);

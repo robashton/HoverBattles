@@ -350,7 +350,7 @@ var ChaseCamera = function() {
   self.destinationCameraLocation = vec3.create([0,0,0]);
   self.destinationCameraLookAt = vec3.create([0,0,0]);
 
-  self.movementDelta = 0.1;
+  self.movementDelta = 0.2;
   self.lookAtDelta = 0.7;
   self.fixLocation = false;
 
@@ -2752,15 +2752,18 @@ var mat4 = require('./glmatrix').mat4;
 var Hovercraft = function() {
   var self = this;
 
-	self._velocity = vec3.create([0.01,0,0.01]);
   self._decay = 0.99;
 
-  self._left = false;
-  self._right = false;
-  self._jump = false;
-  self._forward = false;
-  self._backward = false;
-
+  self.reset = function() {
+    self._velocity = vec3.create([0.01,0,0.01]);
+    self._left = false;
+    self._right = false;
+    self._jump = false;
+    self._forward = false;
+    self._backward = false;
+  };
+  
+  self.reset();
   
   self.getSphere = function() {
       return self._model.boundingSphere.translate(self.position);
@@ -2900,7 +2903,13 @@ exports.Hovercraft = Hovercraft;
     D: 68, 
     A: 65, 
     Space: 32,
-    RCTRL: 17
+    RCTRL: 17,
+    UP: 38,
+    LEFT: 37,
+    RIGHT: 39,
+    DOWN: 40,
+    SHIFT: 16,
+    X: 88
 };
 
 KeyboardStates = {};
@@ -2925,12 +2934,12 @@ var HovercraftController = function(targetId, server){
 
 HovercraftController.prototype.registerKeyboardMappings = function() {
   this.keyboardMappings = {};
-  this.registerKeyboardMapping(KeyCodes.W, 'startForward', 'cancelForward');
-  this.registerKeyboardMapping(KeyCodes.S, 'startBackward', 'cancelBackward');
-  this.registerKeyboardMapping(KeyCodes.A, 'startLeft', 'cancelLeft');
-  this.registerKeyboardMapping(KeyCodes.D, 'startRight', 'cancelRight');
+  this.registerKeyboardMapping(KeyCodes.UP, 'startForward', 'cancelForward');
+  this.registerKeyboardMapping(KeyCodes.DOWN, 'startBackward', 'cancelBackward');
+  this.registerKeyboardMapping(KeyCodes.LEFT, 'startLeft', 'cancelLeft');
+  this.registerKeyboardMapping(KeyCodes.RIGHT, 'startRight', 'cancelRight');
   this.registerKeyboardMapping(KeyCodes.Space, 'startUp', 'cancelUp');
-  this.registerKeyboardMapping(KeyCodes.RCTRL, 'fireRequest', null);
+  this.registerKeyboardMapping(KeyCodes.X, 'fireRequest', null);
 };
 
 HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboardDown, onKeyboardUp){
@@ -3003,7 +3012,8 @@ HovercraftFactory.prototype.create = function(id) {
   return entity;
 };
 
-exports.HovercraftFactory = HovercraftFactory;}, "hud": function(exports, require, module) {var Hovercraft = require('./hovercraft').Hovercraft;
+exports.HovercraftFactory = HovercraftFactory;
+}, "hud": function(exports, require, module) {var Hovercraft = require('./hovercraft').Hovercraft;
 
 var TrackedEntity = function(app, sourceid, targetid) {
   var self = this;
@@ -3846,7 +3856,11 @@ exports.ClientGameReceiver = function(app, server) {
     chaseCamera.setTrackedEntity(craft);
     app.scene.addEntity(chaseCamera);
 
-	  server.sendMessage('ready');
+
+    // Wait till we're actually ready before telling the server we are
+	  app.resources.onAllAssetsLoaded(function() {
+      server.sendMessage('ready');    
+    });
   };
 
   self._destroyTarget = function(data) {
@@ -3891,7 +3905,7 @@ exports.ClientGameReceiver = function(app, server) {
 		  craft.setSync(data.sync);
 
       // Reset camera
-      chaseCamera.setMovementDelta(0.1);
+      chaseCamera.setMovementDelta(0.2);
       chaseCamera.setLookAtDelta(0.7);
 		  chaseCamera.setTrackedEntity(craft);
       chaseCamera.unfixLocation();
@@ -3962,8 +3976,12 @@ exports.ClientGameReceiver = function(app, server) {
     app.scene.addEntity(emitter);
    };
 
-  self._addplayer = function(data) {
-	  addHovercraftToScene(data.id, data.sync);
+  self._updateplayer = function(data) {
+    var entity = app.scene.getEntity(data.id);
+    if(!entity)
+	    addHovercraftToScene(data.id, data.sync);
+    else
+      entity.setSync(data.sync);
   };
 
   self._removeplayer = function(data) {
@@ -4777,9 +4795,9 @@ Scene.prototype.getEntity = function(id) {
 };
 
 Scene.prototype.addEntity = function(entity){
-    this._entities[entity.getId()] = entity;
-	  entity.setScene(this);
-    this.raiseEntityAdded(entity);
+  this._entities[entity.getId()] = entity;
+  entity.setScene(this);
+  this.raiseEntityAdded(entity);
 };
 
 Scene.prototype.removeEntity = function(entity) {
@@ -4868,16 +4886,17 @@ var Smoother = function() {
 	};
 
 	self.setSync = function(sync) {
-    if(!self.hasInitialState) {
+    if(!self.hasInitialState || sync.force) {
 	  		self.position = sync.position;
 	  		self.rotationY = sync.rotationY;
-			self.hasInitialState = true;
+			  self.hasInitialState = true;
 		}
 
 	  self.networkposition = sync.position;
 	  self.networkrotationY = sync.rotationY; 
 	  self.oldposition = self.position;
 	  self.oldrotationy = self.rotationY; 
+
 	};
 };
 

@@ -5,7 +5,13 @@ var KeyCodes = {
     D: 68, 
     A: 65, 
     Space: 32,
-    RCTRL: 17
+    RCTRL: 17,
+    UP: 38,
+    LEFT: 37,
+    RIGHT: 39,
+    DOWN: 40,
+    SHIFT: 16,
+    X: 88
 };
 
 KeyboardStates = {};
@@ -30,12 +36,12 @@ var HovercraftController = function(targetId, server){
 
 HovercraftController.prototype.registerKeyboardMappings = function() {
   this.keyboardMappings = {};
-  this.registerKeyboardMapping(KeyCodes.W, 'startForward', 'cancelForward');
-  this.registerKeyboardMapping(KeyCodes.S, 'startBackward', 'cancelBackward');
-  this.registerKeyboardMapping(KeyCodes.A, 'startLeft', 'cancelLeft');
-  this.registerKeyboardMapping(KeyCodes.D, 'startRight', 'cancelRight');
+  this.registerKeyboardMapping(KeyCodes.UP, 'startForward', 'cancelForward');
+  this.registerKeyboardMapping(KeyCodes.DOWN, 'startBackward', 'cancelBackward');
+  this.registerKeyboardMapping(KeyCodes.LEFT, 'startLeft', 'cancelLeft');
+  this.registerKeyboardMapping(KeyCodes.RIGHT, 'startRight', 'cancelRight');
   this.registerKeyboardMapping(KeyCodes.Space, 'startUp', 'cancelUp');
-  this.registerKeyboardMapping(KeyCodes.RCTRL, 'fireRequest', null);
+  this.registerKeyboardMapping(KeyCodes.X, 'fireRequest', null);
 };
 
 HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboardDown, onKeyboardUp){
