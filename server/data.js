@@ -12,7 +12,7 @@ var Data = function() {
 
   self.createUser = function(username, password, email, callback) {
      bcrypt.encrypt(password, salt, function(err, hash){
-      db.save({
+     db.save({
         type:"user", 
         username: username,
         password: hash,
@@ -53,6 +53,17 @@ var Data = function() {
         callback(result);
       }
     });
+  };
+  
+  self.storeEvent = function(eventName, data) {
+      db.save({
+        type:"event",
+        eventType: eventName,
+        data: data           
+      },
+      function(err, data) {
+        if(err) console.trace(err);
+      });
   };
 };
 

@@ -61,7 +61,6 @@ server = http.createServer(function(req, res){
         "Location": "/app/login.html"
     });
     
-		res.write("Log in please");
 		res.end();
 
   })

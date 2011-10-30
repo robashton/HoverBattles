@@ -6,6 +6,7 @@ ProxyReceiver = require('./network/proxyreceiver').ProxyReceiver;
 MissileReceiver = require('./network/missilereceiver').MissileReceiver;
 ServerGameReceiver = require('./network/servergamereceiver').ServerGameReceiver;
 ScoreKeepingReceiver = require('./network/scorekeepingreceiver').ScoreKeepingReceiver;
+PersistenceReceiver = require('./network/persistencereceiver').PersistenceReceiver;
 
 ServerCommunication = function(app, server){
   var self = this;
@@ -26,6 +27,7 @@ ServerCommunication = function(app, server){
   this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
   this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
   this.dispatcher.addReceiver(new ScoreKeepingReceiver(this.app, this));
+  this.dispatcher.addReceiver(new PersistenceReceiver(this.app, this));
   this.socket.on('connection', function(socket) { self.onConnection(socket); });
 };
 
