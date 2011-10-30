@@ -124,15 +124,16 @@ var Hovercraft = function() {
       var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
       var heightDelta = self.position[1] - terrainHeight;
       
-      if(heightDelta < 0) {
-          self.position[1] = terrainHeight;   
+      if(heightDelta < 0.1) {
+          self.position[1] = terrainHeight + 0.1;
+          self._velocity[1] = -self._velocity[1] * 0.5;
       }
 
-	if(Math.abs(self._velocity[1]) < 0.0001)
-		self._velocity[1] = 0;
+	    if(Math.abs(self._velocity[1]) < 0.0001)
+		    self._velocity[1] = 0;
        
-       if(heightDelta < 10.0){
-             self._velocity[1] += (10.0 - heightDelta) * 0.03;
+       if(heightDelta < 5.0){
+             self._velocity[1] += (5.0 - heightDelta) * 0.03;
        }
        self._velocity[1] -= 0.025;              
        vec3.scale(self._velocity, self._decay);

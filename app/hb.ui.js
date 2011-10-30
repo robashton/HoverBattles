@@ -2,13 +2,19 @@
 
   var MainPage = function() {
     var self = this;
+
+    var names = {};
+
+    self.setNameFor = function(id, username) {
+       names[id] = username;
+    };
     
     self.setScores = function(scores) {
 
       var orderedScores = [];
       for(var playerid in scores) {
         orderedScores.push({
-          playerid: playerid,
+          playerid: names[playerid] || scores[playerid],          
           score: scores[playerid]
         });
       }     
@@ -17,22 +23,20 @@
         return x.score > y.score ? -1 : 1;
       });    
 
-      var html = '<ul>';
+      var scores = $('<ul></ul>');
 
       for(var x = 0; x < orderedScores.length; x++) {
-        var item = orderedScores[x];
-        html += '<li>';
+        var value = orderedScores[x];
 
-        html += item.playerid;
-        html += ' : ';
-        html += item.score;
+        var text = value.playerid;
+        text += ' : ';
+        text += value.score;
 
-        html += '</li>';
-      }    
+        var item = $('<li/>').text(text);
+        scores.append(item);
+      }
 
-      html += '</ul>';
-
-      $('#scores').html(html);      
+      $('#scores').html(scores);      
     };
 
   };

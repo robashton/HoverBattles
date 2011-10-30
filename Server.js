@@ -4,12 +4,16 @@ io = require('socket.io'),
 fs = require('fs');
 paperboy = require('paperboy');
 var stitch  = require('stitch');
+var Identity = require('./server/identity').Identity;
 
 landscapeHandle = require('./server/LandscapeGeneration').handle;
 shaders = require('./server/ShaderGeneration');
 ServerApp = require('./server/application').ServerApp;
 ServerCommunication = require('./server/communication').ServerCommunication;
 LandscapeController = require('./shared/landscapecontroller').LandscapeController;
+Services = require('./server/services').Services;
+
+var serviceHandler = new Services();
 
 var pkg = stitch.createPackage({
   paths: ['./shared']
@@ -30,10 +34,28 @@ buildPackages = function(callback) {
 buildPackages(function() { console.log("Packages built"); });
 
 server = http.createServer(function(req, res){ 
-    var query = querystring.parse(req.url);
+   
+  var query = querystring.parse(req.url);
+  
+  // Services first
+  if(serviceHandler.handle(req, res)) return;
 
+  // Then paperboy
 	paperboy
 	.deliver(ROOT, req, res)
+  .before(function() {
+    if(req.url.indexOf("/app/index.html") !== 0) return;
+      if(Identity.isSignedIn(req, res)) return;
+
+		res.writeHead(302, { 
+        "Content-Type": "text/plain",
+        "Location": "/app/login.html"
+    });
+    
+		res.write("Log in please");
+		res.end();
+
+  })
 	.addHeader('Cache-Control', 'no-cache')
 	.otherwise(function(){
         

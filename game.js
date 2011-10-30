@@ -2872,15 +2872,16 @@ var Hovercraft = function() {
       var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
       var heightDelta = self.position[1] - terrainHeight;
       
-      if(heightDelta < 0) {
-          self.position[1] = terrainHeight;   
+      if(heightDelta < 0.1) {
+          self.position[1] = terrainHeight + 0.1;
+          self._velocity[1] = -self._velocity[1] * 0.5;
       }
 
-	if(Math.abs(self._velocity[1]) < 0.0001)
-		self._velocity[1] = 0;
+	    if(Math.abs(self._velocity[1]) < 0.0001)
+		    self._velocity[1] = 0;
        
-       if(heightDelta < 10.0){
-             self._velocity[1] += (10.0 - heightDelta) * 0.03;
+       if(heightDelta < 5.0){
+             self._velocity[1] += (5.0 - heightDelta) * 0.03;
        }
        self._velocity[1] -= 0.025;              
        vec3.scale(self._velocity, self._decay);
@@ -3856,10 +3857,17 @@ exports.ClientGameReceiver = function(app, server) {
     chaseCamera.setTrackedEntity(craft);
     app.scene.addEntity(chaseCamera);
 
-
     // Wait till we're actually ready before telling the server we are
 	  app.resources.onAllAssetsLoaded(function() {
-      server.sendMessage('ready');    
+      
+      var username = $.cookie('username');
+      var sign = ''; // $.cookie('sign');
+
+      server.sendMessage('ready', {
+        username: username,
+        sign: sign
+      });    
+
     });
   };
 
@@ -4197,6 +4205,11 @@ exports.MissileReceiver = MissileReceiver;
 }, "network/scorereceiver": function(exports, require, module) {exports.ScoreReceiver = function(app, communication) {
   var self = this;
   var scores = { };
+
+
+  self._playerNamed = function(data) {
+    GlobalViewModel.setNameFor(data.id, data.username);
+  };
 
   self._updateScore = function(data) {
       scores[data.playerid] = data.score;

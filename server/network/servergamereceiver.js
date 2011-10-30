@@ -2,6 +2,7 @@ HovercraftFactory = require('../../shared/hovercraftfactory').HovercraftFactory;
 MissileFactory = require('../../shared/missilefactory').MissileFactory;
 FiringController = require('../FiringController').FiringController;
 Hovercraft = require('../../shared/hovercraft').Hovercraft;
+Identity = require('../identity').Identity;
 
 ServerGameReceiver = function(app, communication) {
 	this.app = app;
@@ -56,11 +57,25 @@ ServerGameReceiver.prototype._fireRequest = function(data) {
 
 ServerGameReceiver.prototype._ready = function( data) {
   var craft = this.craft[data.source];
+
+  // This is effectively a verification of authentication for this socket
+  if(!Identity.verifyUsername(data.username, data.sign)) {
+    communication.disconnect(data.source);
+    return;
+  }
+
+  // Then we can create the craft we desire
   this.spawnCraft(craft);
 	this.communication.syncPlayerFull(craft.getId());
   this.communication.sendMessage('updateplayer', {
     id: craft.getId(),
     sync: craft.getSync()
+  });
+
+  // Let everybody know about this id/username pair
+  this.communication.sendMessage('playerNamed', {
+    id: craft.getId(),
+    username: data.username
   });
 };
 

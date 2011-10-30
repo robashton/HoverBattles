@@ -1,6 +1,8 @@
 body {
   background-color: #000;
   color: #EEE;
+  font-family: Ubuntu, arial, serif;
+  font-size: 18px;
 }
 
 #gameContainer {
@@ -8,7 +10,7 @@ body {
   margin-left: 10px;
   width: 750px;
   height: 500px;
-  border: 5px solid #FFF;
+  border: 5px solid #DDD;
 }
 
 #status {
@@ -29,3 +31,85 @@ body {
 h1 {
   margin: 0;
 }
+
+div.break {
+  clear: both;
+}
+
+#email-disclaimer { 
+  display: block;
+  float: none;
+  clear: both;
+  font-size: 12px;
+  margin: 2px;
+}
+
+#identification-container {
+  margin-left: 20px;
+  margin-top: 20px;
+  width: 950px;
+  height: 400px;
+  background-color: #222;
+  border: 3px solid #BBB;
+}
+
+#identification-container h2 {
+  margin-left: 20px;
+  margin-top: 20px;
+}
+
+#identification-container input {
+  margin-top: 10px;
+  margin-right: 10px;
+  font-size: 20px;
+  height: 30px;
+  float: right;
+}
+
+#identification-container input[type=button] {
+  float: right;
+}
+
+#user-feedback {
+  margin-left: 20px;
+  background-color: #552222;
+  width: 950px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  display: none;
+}
+
+#user-feedback p{
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+#identification-container label {
+  float: left;
+  margin-top: 10px;
+  margin-left: 10px;
+  font-size: 20px;
+  height: 30px;
+  vertical-align: center;
+}
+
+#register {
+  margin-left: 20px;
+  margin-top: 20px;
+  width: 440px;
+  height: 360px;
+  float: left;
+  background-color: #002244;
+  border: 2px solid #BBB;
+}
+
+#login {
+  margin-left: 20px;
+  margin-top: 20px;
+  width: 440px;
+  height: 360px;
+  float: left;
+  background-color: #002244;
+  border: 2px solid #BBB;
+}
+

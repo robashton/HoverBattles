@@ -24,10 +24,17 @@ exports.ClientGameReceiver = function(app, server) {
     chaseCamera.setTrackedEntity(craft);
     app.scene.addEntity(chaseCamera);
 
-
     // Wait till we're actually ready before telling the server we are
 	  app.resources.onAllAssetsLoaded(function() {
-      server.sendMessage('ready');    
+      
+      var username = $.cookie('username');
+      var sign = ''; // $.cookie('sign');
+
+      server.sendMessage('ready', {
+        username: username,
+        sign: sign
+      });    
+
     });
   };
 
