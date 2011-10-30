@@ -60,7 +60,7 @@ ServerGameReceiver.prototype._ready = function( data) {
 
   // This is effectively a verification of authentication for this socket
   if(!Identity.verifyUsername(data.username, data.sign)) {
-    communication.disconnect(data.source);
+    this.communication.rejectClient(data.source);
     return;
   }
 

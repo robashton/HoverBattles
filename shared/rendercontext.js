@@ -12,10 +12,16 @@ RenderContext.prototype.init = function(selector) {
   try
   {
     var ctx = canvas.getContext("experimental-webgl", {antialias: true});
-    this.gl =  ctx; //WebGLDebugUtils === undefined ? ctx : WebGLDebugUtils.makeDebugContext(ctx);
+    this.gl = ctx;
   } catch (ex){
-    alert("Sorry dude, I couldn't create webgl, try Chrome or something");   
+    alert("Sorry dude, I couldn't create webgl, try Chrome or something: " + ex);   
   }
+
+  if(!this.gl){
+    console.log("Wasn't able to create an OpenGL context - what browser/version/etc?");
+    return;
+  }
+
   this.gl.viewportWidth = canvas.width;
   this.gl.viewportHeight = canvas.height;  
 
