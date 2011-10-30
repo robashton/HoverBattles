@@ -46,9 +46,9 @@ Scene.prototype.getEntity = function(id) {
 };
 
 Scene.prototype.addEntity = function(entity){
-    this._entities[entity.getId()] = entity;
-	  entity.setScene(this);
-    this.raiseEntityAdded(entity);
+  this._entities[entity.getId()] = entity;
+  entity.setScene(this);
+  this.raiseEntityAdded(entity);
 };
 
 Scene.prototype.removeEntity = function(entity) {

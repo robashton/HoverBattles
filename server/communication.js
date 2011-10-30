@@ -89,13 +89,14 @@ ServerCommunication.prototype.broadcast = function(command, data, from) {
 ServerCommunication.prototype.syncPlayerFull = function(id) {
 	var socket = this.clients[id];
 	var sceneData = this.game.getSceneState();
-    this.broadcast('syncscene', sceneData);
+  this.broadcast('syncscene', sceneData);
 };
 
 ServerCommunication.prototype.syncPlayer = function(id) {
 	var socket = this.clients[id];
 	var sync = this.game.getSyncForPlayer(id);
   if(!sync) return; // This is valid, the player might not be currently in the scene
+
   this.broadcast('sync', {
        id: id,
        sync: sync

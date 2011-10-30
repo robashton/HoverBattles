@@ -75,6 +75,7 @@ ServerGameReceiver.prototype._destroyTarget = function(data) {
 
 	// And wait until an appropriate moment to revive it
 	setTimeout(function() {
+    if(!self.craft[craft.getId()]) return;
 
 		// Re-add the craft on our side
 		self.app.scene.addEntity(craft);
