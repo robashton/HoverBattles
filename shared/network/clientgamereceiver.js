@@ -28,7 +28,7 @@ exports.ClientGameReceiver = function(app, server) {
 	  app.resources.onAllAssetsLoaded(function() {
       
       var username = $.cookie('username');
-      var sign = ''; // $.cookie('sign');
+      var sign = $.cookie('sign');
 
       server.sendMessage('ready', {
         username: username,
@@ -36,6 +36,10 @@ exports.ClientGameReceiver = function(app, server) {
       });    
 
     });
+  };
+
+  self._noauth = function(data) {
+     document.location = 'login.html'; 
   };
 
   self._destroyTarget = function(data) {

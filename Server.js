@@ -2,6 +2,14 @@ http = require('http'),
 path = require('path'),
 io = require('socket.io'), 
 fs = require('fs');
+startup = require('./startup');
+
+DB_CONFIG_FILE = "config/db.json"
+KEYS_CONFIG_FILE = "config/keys.json"
+ENV = startup.get_env()
+startup.check_config_exists(DB_CONFIG_FILE)
+startup.check_config_exists(KEYS_CONFIG_FILE)
+
 paperboy = require('paperboy');
 var stitch  = require('stitch');
 var Identity = require('./server/identity').Identity;
@@ -12,6 +20,7 @@ ServerApp = require('./server/application').ServerApp;
 ServerCommunication = require('./server/communication').ServerCommunication;
 LandscapeController = require('./shared/landscapecontroller').LandscapeController;
 Services = require('./server/services').Services;
+
 
 var serviceHandler = new Services();
 

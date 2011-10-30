@@ -40,6 +40,12 @@ ServerCommunication.prototype.synchronise = function(){
    }
 };
 
+ServerCommunication.prototype.rejectClient = function(id) {
+  var socket = this.clients[id];
+  delete this.clients[id];  
+  this.sendMessageToClient(socket, 'noauth');
+};
+
 ServerCommunication.prototype.hookClient = function(socket) {
     var server = this;
 	  this.game.addPlayer(socket.id);

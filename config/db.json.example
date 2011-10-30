@@ -1,0 +1,4 @@
+{
+  "development": "http://localhost:5984/youngmindsdb",
+  "production": "http://localhost:5984/youngmindsdb"
+}

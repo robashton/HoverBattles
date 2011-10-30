@@ -13,8 +13,8 @@
 
             var showFeedback = function(feedback) {
               $('#user-feedback > p').text(feedback);
-            };
-          
+              $('#user-feedback').show();
+            };          
         
             $('#btnregister').click(function() {    
               $.post('/services/register', {
@@ -50,7 +50,7 @@
 	<body>		
     <div id="header">
 		  <div id="header-title"><h1>Hoverbattles</h1><p>This is a muck-around game by <a href="http://twitter.com/robashton">@robashton</a>, you'll need an username to play.</p></div>
-		  <div id="header-instructions"><p>E-mail address is entirely optional, I'm not going to do anything with it* - but if you forgot your password without an e-mail address then you're not getting the account back unless you're my friend.</p></div>
+		  <div id="header-instructions"><p>E-mail address is <strong>entirely optional</strong>, I'm not going to do anything with it* - but if you forgot your password without an e-mail address then you're not getting the account back unless you're my friend.</p></div>
     </div>
 
     <div id="user-feedback">
@@ -76,6 +76,7 @@
       <p>I'll not give your e-mail address to anybody, I'll not use it to send advertisements or spam. I may however use it to get in touch personally if you're hitting me up regularly and ask for a feedback session, or I may not. I'm fickle like that.</p>
       <p>And yes, I have every intention of hooking up the Twitters and using that for identity purposes, but one thing at a time - the game is barely even started yet</p>
       <p>Also, I'm aware that my CSS/HTML sucks donkey balls, if you want to fix it then send me a pull request</p>
+      <p>And hey, because i'm not a complete and utter idiot, I don't store your password in any sort of retrievable format and I haven't written a forgotten password functionality anyway, so don't lose it yeah?</p>
     </div>      
     </body>
 </html>

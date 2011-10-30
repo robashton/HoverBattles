@@ -7,6 +7,8 @@
 	    "stitch": "",
 	    "gzip": "",
       "cookies": "",
-      "keygrip": ""
+      "keygrip": "",
+      "couch-client": "",
+      "bcrypt": ""
     }
 }
