@@ -1,0 +1,12 @@
+{
+   "_id": "_design/users",
+   "language": "javascript",
+   "views": {
+       "by_username": {
+           "map": "function(doc) {\n  emit(doc.username, doc);\n}"
+       },
+       "by_email": {
+           "map": "function(doc) {\n  emit(doc.email, doc);\n}"
+       }
+   }
+}
