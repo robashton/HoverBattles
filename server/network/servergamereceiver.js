@@ -1,6 +1,7 @@
 HovercraftFactory = require('../../shared/hovercraftfactory').HovercraftFactory;
 MissileFactory = require('../../shared/missilefactory').MissileFactory;
 FiringController = require('../FiringController').FiringController;
+Hovercraft = require('../../shared/hovercraft').Hovercraft;
 
 ServerGameReceiver = function(app, communication) {
 	this.app = app;
@@ -26,20 +27,22 @@ ServerGameReceiver.prototype.removePlayer = function(id) {
 };
 
 ServerGameReceiver.prototype.getSyncForPlayer = function(id) {
-	var craft = this.craft[id];
-	return craft.getSync();
+  var craft = this.app.scene.getEntity(id);
+	if(craft)
+	  return craft.getSync();
+  return null;
 };
 
 ServerGameReceiver.prototype.getSceneState = function() {
 	var state = {};
 	state.craft = [];
-	for(i in this.craft) {
-		var craft = this.craft[i];
+  this.app.scene.forEachEntity(function(entity) {
+    if(!entity.is(Hovercraft)) return;
 		var craftState = {};
-		craftState.id = craft.getId();
-		craftState.sync = craft.getSync();
-		state.craft.push(craftState);
-	};
+		craftState.id = entity.getId();
+		craftState.sync = entity.getSync();
+		state.craft.push(craftState);   
+  });
 	return state;	
 };
 

@@ -76,6 +76,11 @@ Scene.prototype.doLogic = function() {
     }
 };
 
+Scene.prototype.forEachEntity = function(callback) {
+  for(var i in this._entities)
+      callback(this._entities[i]);
+};
+
 Scene.prototype.render = function(context){
   var gl = context.gl;
 
