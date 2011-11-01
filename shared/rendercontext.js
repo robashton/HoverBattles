@@ -18,7 +18,7 @@ RenderContext.prototype.init = function(selector) {
   }
 
   if(!this.gl){
-    console.log("Wasn't able to create an OpenGL context - what browser/version/etc?");
+    alert("Wasn't able to create a rendering context dude, sorry - what browser/version/etc?");
     return;
   }
  

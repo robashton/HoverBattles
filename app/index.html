@@ -13,17 +13,32 @@
 			$app(function(){                
         var app = new blah.Application('game');             
         app.init(function() {
-            app.scene.camera.setLocation([0, 1000, -10]);
-            var landscapeController = new LandscapeController(app);    
-            
-            var clientOne = new ClientCommunication(app);
-                            
-            app.resources.onAllAssetsLoaded(function(){
-                setInterval(function() {  app.render(); }, 1000 / 30);
-            });
-            
+        
+            // Create the splash screen
+            var backdrop = app.overlay.addItem('loading-backdrop', '/data/textures/splashscreenbackground.jpg');
+            var backdropspinner = app.overlay.addItem('loading-spinner', '/data/textures/loadingcircle.png');
+
+            backdrop.left(0); backdrop.width(800);
+            backdrop.top(0);backdrop.height(600);  
+
+            backdropspinner.left(740); backdropspinner.width(64);
+            backdropspinner.top(0);backdropspinner.height(64);   
+
+            var spinnerInterval = setInterval(function() {  backdropspinner.rotation( backdropspinner.rotation() + 0.1 ); }, 1000 / 30);               
+
+            setInterval(function() {  app.render(); }, 1000 / 30);            
             setInterval(function() {  app.tick(); }, 1000 / 30); 
 
+            app.scene.camera.setLocation([0, 1000, -10]);
+            var landscapeController = new LandscapeController(app);    
+            var clientOne = new ClientCommunication(app);
+   
+            // On all resources loaded, hide the splash screen
+            app.resources.onAllAssetsLoaded(function() {
+              app.overlay.removeItem(backdrop);
+              app.overlay.removeItem(backdropspinner);
+              cancelInterval(spinnerInterval);
+            });
         });
 			});
 
@@ -35,11 +50,10 @@
     <div id="header">
 		  <div id="header-title"><h1>Hoverbattles</h1><p>(A muckaround project by <a href="http://twitter.com/robashton">@robashton</a> : <a href="https://github.com/robashton/HoverBattles">https://github.com/robashton/HoverBattles</a>)</p></div>
 		  <div id="header-instructions"><p><strong>ARROW KEYS</strong> to move around, <strong>SPACE</strong> to jump, <strong>X</strong> to fire once locked on</p></div>
-      <p>It takes TIME to LOAD, and I haven't got a LOADING SCREEN, so BE PATIENT</p>
     </div>
 
     <div id="gameContainer">
-		  <canvas id="game"  width="750"  height="500" >
+		  <canvas id="game"  width="800"  height="600" >
         <blink>Loading...</blink>
 		  </canvas>
     </div>
