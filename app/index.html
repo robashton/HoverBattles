@@ -16,15 +16,22 @@
         
             // Create the splash screen
             var backdrop = app.overlay.addItem('loading-backdrop', '/data/textures/splashscreenbackground.jpg');
-            var backdropspinner = app.overlay.addItem('loading-spinner', '/data/textures/loadingcircle.png');
+            var backdropspinner = app.overlay.addItem('loading-spinner', '/data/textures/locked.png');
 
             backdrop.left(0); backdrop.width(800);
             backdrop.top(0);backdrop.height(600);  
 
-            backdropspinner.left(740); backdropspinner.width(64);
-            backdropspinner.top(0);backdropspinner.height(64);   
+            backdropspinner.left(280); backdropspinner.width(100);
+            backdropspinner.top(240);backdropspinner.height(100);   
 
-            var spinnerInterval = setInterval(function() {  backdropspinner.rotation( backdropspinner.rotation() + 0.1 ); }, 1000 / 30);               
+            var spinnerInterval = setInterval(
+                function() {  
+  
+                  backdropspinner.rotation( backdropspinner.rotation() + 0.1 ); 
+              
+                
+                }, 
+          1000 / 30);               
 
             setInterval(function() {  app.render(); }, 1000 / 30);            
             setInterval(function() {  app.tick(); }, 1000 / 30); 
