@@ -124,9 +124,10 @@ var Hovercraft = function() {
       var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
       var heightDelta = self.position[1] - terrainHeight;
       
-      if(heightDelta < 0.1) {
-          self.position[1] = terrainHeight + 0.1;
-          self._velocity[1] = -self._velocity[1] * 0.5;
+      if(heightDelta < 0.5) {
+          self.position[1] = terrainHeight + (0.5 - heightDelta);
+          if(self._velocity[1] < 0)
+            self._velocity[1] = -self._velocity[1] * 0.5;
       }
 
 	    if(Math.abs(self._velocity[1]) < 0.0001)

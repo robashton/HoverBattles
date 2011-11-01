@@ -7,22 +7,9 @@ varying vec3 vNormal;
 varying float vDistance;
 uniform sampler2D uSampler;
 
-bool isEdge(float value) {
-    return false;
-    if(floor(mod(value,10.0) * 5.0) == 0.0) { return true; }
-    return false;
-}
-
 void main(void) {    
-    float x = vTexCoords.x * 100.0;
-    float y = vTexCoords.y * 100.0;
 
-    vec4 grid = vec4(1,1,1,1);
-    if(isEdge(x) || isEdge(y)) {
-        grid = vec4(0.4, 0.4, 0.4, 1.0);
-    }
+    // Multiplying up the texture coords so we repeat the texture a bit more often
+    gl_FragColor = texture2D(uSampler, vec2(vTexCoords.s * 10.0, vTexCoords.t * 10.0));
 
-    gl_FragColor = texture2D(uSampler, vec2(vTexCoords.s, vTexCoords.t));
-    gl_FragColor *= grid;
-    gl_FragColor.g *= (vNormal.y * vNormal.y); // Want it a little darker k?
 }

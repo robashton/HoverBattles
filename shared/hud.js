@@ -61,6 +61,34 @@ var TrackedEntity = function(app, sourceid, targetid) {
   self.updateHudItem();
 };
 
+// TODO: Turn off when locked
+// TODO: Turn into a green triangle
+// TODO: Stop it rendering when behind the camera!
+
+var OtherPlayer = function(app, entity) {
+  var hudItem = app.overlay.addItem('trace-' + entity.getId(), '/data/textures/targeting.png');
+  
+  entity.addEventHandler('tick', function() {
+      var camera = app.scene.camera;
+
+      var worldSphere = entity.getSphere();
+      var transformedSphere = camera.transformSphereToScreen(worldSphere);
+
+      if(transformedSphere[2] < 0) 
+        transformedSphere.radius *= 0.1;
+      var radius = transformedSphere.radius * 5.0;
+      var centre = transformedSphere.centre;
+    
+      var min = [centre[0] - radius, centre[1] - radius];
+      var max = [centre[0] + radius, centre[1] + radius];
+
+      hudItem.left(min[0]);
+      hudItem.top(min[1]);
+      hudItem.width(max[0] - min[0]);
+      hudItem.height(max[1] - min[1]);   
+  });
+};
+
 exports.Hud = function(app) {
   var self = this;
   var app = app;
@@ -76,6 +104,9 @@ exports.Hud = function(app) {
     if(!entity.is(Hovercraft)) return;
     entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+
+    if(entity.getId() !== playerId)
+      var tracket = new OtherPlayer(app, entity);
   };
 
   var unHookHovercraftEvents = function(entity) {

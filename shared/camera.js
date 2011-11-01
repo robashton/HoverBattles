@@ -54,7 +54,7 @@ Camera.prototype.transformSphereToScreen = function(sphere) {
     
   centre[0] = centre[0] * halfWidth + halfWidth;
   centre[1] = -centre[1] * halfHeight + halfHeight;
-
+  centre[2] = centre[3];
   return new Sphere(radius / 2.0, centre);
 };
 

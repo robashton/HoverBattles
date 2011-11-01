@@ -331,7 +331,7 @@ Camera.prototype.transformSphereToScreen = function(sphere) {
     
   centre[0] = centre[0] * halfWidth + halfWidth;
   centre[1] = -centre[1] * halfHeight + halfHeight;
-
+  centre[2] = centre[3];
   return new Sphere(radius / 2.0, centre);
 };
 
@@ -768,11 +768,11 @@ exports.Explosion = function(app, details) {
     vec3.scale(directionOfExplosion, 30.0);
   }
 
-  var fireEmitter = new ParticleEmitter('Explosion-' + date, 5000, app,
+  var fireEmitter = new ParticleEmitter('Explosion-' + date, 1000, app,
   {
       maxsize: 1500,
-      maxlifetime: 0.7,
-      rate: 2000,
+      maxlifetime: 1.0,
+      rate: 400,
       position: details.position,
       scatter: vec3.create([0.2, 0.2, 0.2]),
       particleOutwardVelocityMin: vec3.create([-12,-12,-12]),
@@ -788,10 +788,10 @@ exports.Explosion = function(app, details) {
     app.scene.removeEntity(fireEmitter);
   }, 10000); 
 
-  var smokeEmitter = new ParticleEmitter('Smoke-' + date, 1000, app,
+  var smokeEmitter = new ParticleEmitter('Smoke-' + date, 250, app,
   {
       maxsize: 1500,
-      maxlifetime: 3.0,
+      maxlifetime: 2.5,
       rate: 30,
       position: details.position,
       scatter: vec3.create([0.2, 0.2, 0.2]),
@@ -804,7 +804,7 @@ exports.Explosion = function(app, details) {
 
   setTimeout(function() {
     smokeEmitter.stop();
-  }, 500);
+  }, 250);
 
   setTimeout(function() {
     app.scene.removeEntity(smokeEmitter);
@@ -2872,9 +2872,10 @@ var Hovercraft = function() {
       var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
       var heightDelta = self.position[1] - terrainHeight;
       
-      if(heightDelta < 0.1) {
-          self.position[1] = terrainHeight + 0.1;
-          self._velocity[1] = -self._velocity[1] * 0.5;
+      if(heightDelta < 0.5) {
+          self.position[1] = terrainHeight + (0.5 - heightDelta);
+          if(self._velocity[1] < 0)
+            self._velocity[1] = -self._velocity[1] * 0.5;
       }
 
 	    if(Math.abs(self._velocity[1]) < 0.0001)
@@ -3077,6 +3078,34 @@ var TrackedEntity = function(app, sourceid, targetid) {
   self.updateHudItem();
 };
 
+// TODO: Turn off when locked
+// TODO: Turn into a green triangle
+// TODO: Stop it rendering when behind the camera!
+
+var OtherPlayer = function(app, entity) {
+  var hudItem = app.overlay.addItem('trace-' + entity.getId(), '/data/textures/targeting.png');
+  
+  entity.addEventHandler('tick', function() {
+      var camera = app.scene.camera;
+
+      var worldSphere = entity.getSphere();
+      var transformedSphere = camera.transformSphereToScreen(worldSphere);
+
+      if(transformedSphere[2] < 0) 
+        transformedSphere.radius *= 0.1;
+      var radius = transformedSphere.radius * 5.0;
+      var centre = transformedSphere.centre;
+    
+      var min = [centre[0] - radius, centre[1] - radius];
+      var max = [centre[0] + radius, centre[1] + radius];
+
+      hudItem.left(min[0]);
+      hudItem.top(min[1]);
+      hudItem.width(max[0] - min[0]);
+      hudItem.height(max[1] - min[1]);   
+  });
+};
+
 exports.Hud = function(app) {
   var self = this;
   var app = app;
@@ -3092,6 +3121,9 @@ exports.Hud = function(app) {
     if(!entity.is(Hovercraft)) return;
     entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+
+    if(entity.getId() !== playerId)
+      var tracket = new OtherPlayer(app, entity);
   };
 
   var unHookHovercraftEvents = function(entity) {
@@ -3216,7 +3248,7 @@ LandChunk.prototype.getProgram = function(){
 };
 
 LandChunk.prototype.loadTextures = function(resources) {
-    this._diffuseTexture = resources.getTexture('/data/textures/grass.jpg');
+    this._diffuseTexture = resources.getTexture('/data/textures/grid.png');
 };
 
 LandChunk.prototype.setData = function(data) {
@@ -3970,17 +4002,18 @@ exports.ClientGameReceiver = function(app, server) {
     app.scene.removeEntity(craft.emitter);
   };  
 
+  var terrain = app.scene.getEntity('terrain');
   var attachEmitterToCraft = function(craft) {
-    var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, app,
+    var emitter = new ParticleEmitter(craft.getId() + 'trail', 250, app,
     {
         maxsize: 50,
         maxlifetime: 0.3,
-        rate: 30,
+        rate: 10,
         scatter: vec3.create([1.2, 0.001, 1.2]),
-        particleOutwardVelocityMin: vec3.create([-0.1,-0.5,-0.1]),
-        particleOutwardVelocityMax: vec3.create([0.1,0,0.1]),
+        particleOutwardVelocityMin: vec3.create([-0.9,-50.0,-0.9]),
+        particleOutwardVelocityMax: vec3.create([0.9, -4.0,0.9]),
         track: function(){
-            this.position = vec3.create([craft.position[0],craft.position[1]-0.3, craft.position[2] ]);
+            this.position = vec3.create([craft.position[0], craft.position[1] - 0.3 , craft.position[2]]);
         },
         textureName: '/data/textures/trail.png'
     });
@@ -4269,8 +4302,6 @@ exports.Overlay = function(app) {
   var quadTextureBuffer = null;
   var items = {};
 
-  var texture =  app.resources.getTexture('/data/textures/testtransparent.png');
-
   var quadVertices =  [
          0.0,  0.0,  0.0,
          1.0,  0.0,  0.0,
@@ -4285,7 +4316,7 @@ exports.Overlay = function(app) {
          1.0,  1.0,
     ];
 
-  self.addItem = function(id, textureName) {
+  self.addItem = function(id, texture) {
     var item = new OverlayItem(id, app.resources.getTexture(textureName));
     items[id] = item;
     return item;
@@ -4319,9 +4350,8 @@ exports.Overlay = function(app) {
     gl.enable(gl.BLEND);
     gl.depthMask(false);  
 
-    var projectionMatrix = mat4.ortho(0, gl.viewportWidth, gl.viewportHeight, 0, -1, 1);
+    var projectionMatrix = mat4.ortho(0, context.currentWidth(), context.currentHeight(), 0, -1, 1);
     var viewMatrix = mat4.lookAt([0,0,0], [0,0,-1], [0,1,0]);
-
 
     // Upload the quad
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
@@ -4624,14 +4654,14 @@ var mat4 = require('./glmatrix').mat4;
 
 var RenderContext = function(resourceLoader){
     this.gl = null;
-	this.programs = {};
+	  this.programs = {};
 };
 
 RenderContext.prototype.init = function(selector) {
   var canvas =  document.getElementById(selector);
   try
   {
-    var ctx = canvas.getContext("experimental-webgl", {antialias: true});
+    var ctx = canvas.getContext("experimental-webgl", {antialias: false});
     this.gl = ctx;
   } catch (ex){
     alert("Sorry dude, I couldn't create webgl, try Chrome or something: " + ex);   
@@ -4641,12 +4671,29 @@ RenderContext.prototype.init = function(selector) {
     console.log("Wasn't able to create an OpenGL context - what browser/version/etc?");
     return;
   }
+ 
+  this._canvasWidth = canvas.width;
+  this._canvasHeight = canvas.height;  
+  this._currentWidth = canvas.width;
+  this._currentHeight = canvas.height;  
 
-  this.gl.viewportWidth = canvas.width;
-  this.gl.viewportHeight = canvas.height;  
-
-  this.gl.clearColor(0.0, 0.5, 0.5, 1.0);
+  this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
   this.gl.enable(this.gl.DEPTH_TEST);  
+};
+
+RenderContext.prototype.currentWidth = function() { return this._currentWidth; };
+RenderContext.prototype.currentHeight = function() { return this._currentHeight; };
+RenderContext.prototype.canvasWidth = function() { return this._canvasWidth; };
+RenderContext.prototype.canvasHeight = function() { return this._canvasHeight; };
+
+RenderContext.prototype.setDimensions = function(width, height) {
+  this._currentWidth = width;
+  this._currentHeight = height;  
+};
+
+RenderContext.prototype.resetDimensions = function() {
+  this._currentWidth = this._canvasWidth;
+  this._currentHeight = this._canvasHeight;  
 };
 
 RenderContext.prototype.createProgram = function(programName) {
@@ -4668,7 +4715,7 @@ RenderContext.prototype.createProgram = function(programName) {
 	}
 
    var program = this.gl.createProgram();
-	this.gl.attachShader(program, vertexShader);
+	 this.gl.attachShader(program, vertexShader);
    this.gl.attachShader(program, fragmentShader);
    this.gl.linkProgram(program);	
 
@@ -4691,6 +4738,229 @@ RenderContext.prototype.setActiveProgram = function(programName) {
 
 exports.RenderContext = RenderContext;
 
+}, "renderpipeline": function(exports, require, module) {var RenderTarget = require('rendertarget').RenderTarget;
+
+exports.RenderPipeline = function(app) {
+  var self = this;
+  var app = app;
+  var vertexBuffer = null;
+  var textureBuffer = null;
+
+  var initialSceneRenderTarget = new RenderTarget(128, 128);
+  var blurxRenderTarget = new RenderTarget(128, 128);
+  var bluryRenderTarget = new RenderTarget(128, 128);
+
+  var fullSizeScreenRenderTarget = new RenderTarget(700, 500, true);
+  var outputRenderTarget = new RenderTarget(700, 500, true);
+
+  self.init = function(context) {
+    var gl = context.gl;
+
+    vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(quadVertices), gl.STATIC_DRAW);
+
+    quadTextureBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadTextureBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(quadTextureCoords), gl.STATIC_DRAW);
+
+    initialSceneRenderTarget.init(context);
+    blurxRenderTarget.init(context);
+    bluryRenderTarget.init(context);
+    fullSizeScreenRenderTarget.init(context);
+    outputRenderTarget.init(context);    
+  };
+
+
+  self.render = function(context) {
+    renderSceneToInitialTarget(context);
+    passThroughXFilter(context);
+    passThroughYFilter(context);
+    renderToFullsizeScreen(context);
+    renderToScreen(context);
+  };
+
+  var renderToFullsizeScreen = function(context) {
+    fullSizeScreenRenderTarget.upload(context);
+    clearCurrentRenderTarget(context);
+    app.scene.render(context);
+    fullSizeScreenRenderTarget.clear(context);
+  };
+
+  var renderSceneToInitialTarget = function(context) {
+    initialSceneRenderTarget.upload(context);
+    clearCurrentRenderTarget(context);
+    app.scene.render(context);
+    initialSceneRenderTarget.clear(context);
+  };
+
+  var passThroughXFilter = function(context) {
+    blurxRenderTarget.upload(context);
+    renderTextureToQuad(context, 'blurx', initialSceneRenderTarget.getTexture());
+    blurxRenderTarget.clear(context);
+  };
+
+  var passThroughYFilter = function(context) {
+    bluryRenderTarget.upload(context);
+    renderTextureToQuad(context, 'blury', blurxRenderTarget.getTexture());
+    bluryRenderTarget.clear(context);
+  };
+
+  var renderToScreen = function(context) {
+    var gl = context.gl;
+    context.resetDimensions();   
+ //   renderTextureToQuad(context, 'hud',  fullSizeScreenRenderTarget.getTexture());
+
+
+    clearCurrentRenderTarget(context);
+
+    var program = app.context.setActiveProgram('glow'); 
+
+    uploadMatrices(program, context);
+    uploadBuffers(program, context);
+    
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, fullSizeScreenRenderTarget.getTexture());
+    gl.uniform1i(gl.getUniformLocation(program, 'uScene'), 0);  
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, bluryRenderTarget.getTexture());
+    gl.uniform1i(gl.getUniformLocation(program, 'uBlurred'), 1);  
+
+    drawQuad(context);  
+  };
+
+  var renderTextureToQuad = function(context, shader, texture) {
+    var gl = context.gl;
+    clearCurrentRenderTarget(context);
+
+    var program = app.context.setActiveProgram(shader); 
+
+    uploadMatrices(program, context);
+    uploadBuffers(program, context);
+    
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0);  
+
+    drawQuad(context); 
+  };
+  
+  var clearCurrentRenderTarget = function(context) {
+    var gl = context.gl;
+    gl.viewport(0, 0, context.currentWidth(), context.currentHeight());
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  };
+
+  var uploadMatrices = function(program, context) {
+    var gl = context.gl;
+
+    // Set the orthographic projection setup
+    var projectionMatrix = mat4.ortho(0, context.currentWidth(), context.currentHeight(), 0, -1, 1);
+    var viewMatrix = mat4.lookAt([0,0,0], [0,0,-1], [0,1,0]);
+    var worldMatrix = mat4.create();
+    
+    mat4.identity(worldMatrix);
+    mat4.scale(worldMatrix, [context.currentWidth(), context.currentHeight(), 1.0]);
+    gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
+	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
+    gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
+  };
+
+  var uploadBuffers = function(program, context) {
+    var gl = context.gl;
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+	  gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
+	  gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadTextureBuffer);
+  	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoords'), 2, gl.FLOAT, false, 0, 0);
+  	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoords'));
+  };
+
+  var drawQuad = function(context) {
+    var gl = context.gl;
+    gl.depthMask(false);  
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.depthMask(true);  
+  };
+  
+
+
+
+  var quadVertices =  [
+       0.0,  0.0,  0.0,
+       1.0,  0.0,  0.0,
+       0.0,  1.0,  0.0,
+       1.0,  1.0,  0.0
+  ];
+
+  var quadTextureCoords =  [
+         0.0,  1.0, 
+         1.0,  1.0,
+         0.0,  0.0,
+         1.0,  0.0,
+    ];
+
+
+
+};
+}, "rendertarget": function(exports, require, module) {exports.RenderTarget = function(width, height, allowNsot) {
+  var self = this;
+  var width = width;
+  var height = height;
+  var rttFramebuffer = null;
+  var rttTexture = null;
+  var renderbuffer  = null;
+
+  self.upload = function(context) {
+    var gl = context.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+    context.setDimensions(width, height);
+  };
+
+  self.clear = function(context) {
+   var gl = context.gl;
+   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  };
+
+  self.getTexture = function() {
+    return rttTexture;
+  };
+
+  self.init = function(context) {
+    var gl = context.gl;
+
+    rttFramebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+
+    rttTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, rttTexture);
+
+    if(allowNsot) {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+    else {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    }
+    
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    renderbuffer = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture, 0);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  };
+};
 }, "resources": function(exports, require, module) {var DefaultModelLoader = require('./defaultmodelloader').DefaultModelLoader;
 var DefaultTextureLoader = require('./defaulttextureloader').DefaultTextureLoader;
 
@@ -4850,13 +5120,9 @@ Scene.prototype.forEachEntity = function(callback) {
 
 Scene.prototype.render = function(context){
   var gl = context.gl;
-
-  gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   
-  // Yuck yuck yuck
-  this.camera.width = gl.viewportWidth;
-  this.camera.height = gl.viewportHeight;
+  this.camera.width = context.canvasWidth();
+  this.camera.height = context.canvasHeight();
   this.camera.updateMatrices();
 
   for(var i in this._entities) {

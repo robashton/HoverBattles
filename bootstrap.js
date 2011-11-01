@@ -69,17 +69,46 @@ blah.Application.prototype.go = function(context) {
   app.overlay.activate(context);
 
   var Hud = require('hud').Hud;
-
   app.hud = Hud.create(this);
 
+  var RenderPipeline = require('renderpipeline').RenderPipeline;
 
+  this.rendering = new RenderPipeline(this);
+  this.rendering.init(app.context);
 };
 
 blah.Application.prototype.tick = function(){
   this.controller.tick();  
 };
 
-blah.Application.prototype.render = function(){
-   this.scene.render(this.context);  
+blah.Application.prototype.render = function(){  
+   this.rendering.render(this.context);
    this.overlay.render(this.context);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

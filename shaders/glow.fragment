@@ -1,0 +1,14 @@
+#ifdef GL_ES
+precision highp float;
+#endif
+
+varying vec2 vTextureCoords;
+uniform sampler2D uBlurred;
+uniform sampler2D uScene;
+
+void main(void) {
+  vec4 rawBlurColour = texture2D(uBlurred, vec2(vTextureCoords.s, vTextureCoords.t));
+  vec4 rawSceneColour =  texture2D(uScene, vec2(vTextureCoords.s, vTextureCoords.t));
+
+	gl_FragColor = vec4((rawBlurColour.rgb + rawSceneColour.rgb) * 1.5, 1.0);
+}

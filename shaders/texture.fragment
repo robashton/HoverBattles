@@ -13,7 +13,7 @@ void main(void) {
 
   vec4 colour =  texture2D(uSampler, vec2(vTextureCoords.s, vTextureCoords.t));
   float diffuse = max(dot(normal, vector), 0.0);
-  vec4 lightColour = vec4(colour.rgb * 0.8 * diffuse, 0.5);
-  vec4 ambientColour = vec4(colour.rgb * 0.2, 0.5);
+  vec4 lightColour = vec4(colour.rgb * diffuse, 0.5);
+  vec4 ambientColour = vec4(colour.rgb * 0.1, 0.5);
   gl_FragColor = lightColour + ambientColour;
 }

@@ -46,8 +46,6 @@ exports.Overlay = function(app) {
   var quadTextureBuffer = null;
   var items = {};
 
-  var texture =  app.resources.getTexture('/data/textures/testtransparent.png');
-
   var quadVertices =  [
          0.0,  0.0,  0.0,
          1.0,  0.0,  0.0,
@@ -62,7 +60,7 @@ exports.Overlay = function(app) {
          1.0,  1.0,
     ];
 
-  self.addItem = function(id, textureName) {
+  self.addItem = function(id, texture) {
     var item = new OverlayItem(id, app.resources.getTexture(textureName));
     items[id] = item;
     return item;
@@ -96,9 +94,8 @@ exports.Overlay = function(app) {
     gl.enable(gl.BLEND);
     gl.depthMask(false);  
 
-    var projectionMatrix = mat4.ortho(0, gl.viewportWidth, gl.viewportHeight, 0, -1, 1);
+    var projectionMatrix = mat4.ortho(0, context.currentWidth(), context.currentHeight(), 0, -1, 1);
     var viewMatrix = mat4.lookAt([0,0,0], [0,0,-1], [0,1,0]);
-
 
     // Upload the quad
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);

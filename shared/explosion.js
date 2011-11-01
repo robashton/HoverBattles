@@ -11,11 +11,11 @@ exports.Explosion = function(app, details) {
     vec3.scale(directionOfExplosion, 30.0);
   }
 
-  var fireEmitter = new ParticleEmitter('Explosion-' + date, 5000, app,
+  var fireEmitter = new ParticleEmitter('Explosion-' + date, 1000, app,
   {
       maxsize: 1500,
-      maxlifetime: 0.7,
-      rate: 2000,
+      maxlifetime: 1.0,
+      rate: 400,
       position: details.position,
       scatter: vec3.create([0.2, 0.2, 0.2]),
       particleOutwardVelocityMin: vec3.create([-12,-12,-12]),
@@ -31,10 +31,10 @@ exports.Explosion = function(app, details) {
     app.scene.removeEntity(fireEmitter);
   }, 10000); 
 
-  var smokeEmitter = new ParticleEmitter('Smoke-' + date, 1000, app,
+  var smokeEmitter = new ParticleEmitter('Smoke-' + date, 250, app,
   {
       maxsize: 1500,
-      maxlifetime: 3.0,
+      maxlifetime: 2.5,
       rate: 30,
       position: details.position,
       scatter: vec3.create([0.2, 0.2, 0.2]),
@@ -47,7 +47,7 @@ exports.Explosion = function(app, details) {
 
   setTimeout(function() {
     smokeEmitter.stop();
-  }, 500);
+  }, 250);
 
   setTimeout(function() {
     app.scene.removeEntity(smokeEmitter);

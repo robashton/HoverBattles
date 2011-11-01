@@ -137,17 +137,18 @@ exports.ClientGameReceiver = function(app, server) {
     app.scene.removeEntity(craft.emitter);
   };  
 
+  var terrain = app.scene.getEntity('terrain');
   var attachEmitterToCraft = function(craft) {
-    var emitter = new ParticleEmitter(craft.getId() + 'trail', 1000, app,
+    var emitter = new ParticleEmitter(craft.getId() + 'trail', 250, app,
     {
         maxsize: 50,
         maxlifetime: 0.3,
-        rate: 30,
+        rate: 10,
         scatter: vec3.create([1.2, 0.001, 1.2]),
-        particleOutwardVelocityMin: vec3.create([-0.1,-0.5,-0.1]),
-        particleOutwardVelocityMax: vec3.create([0.1,0,0.1]),
+        particleOutwardVelocityMin: vec3.create([-0.9,-50.0,-0.9]),
+        particleOutwardVelocityMax: vec3.create([0.9, -4.0,0.9]),
         track: function(){
-            this.position = vec3.create([craft.position[0],craft.position[1]-0.3, craft.position[2] ]);
+            this.position = vec3.create([craft.position[0], craft.position[1] - 0.3 , craft.position[2]]);
         },
         textureName: '/data/textures/trail.png'
     });

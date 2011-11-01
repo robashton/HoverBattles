@@ -12,7 +12,7 @@ varying vec3 vNormal;
 varying vec3 vVectorToLight;
 
 void main(void){
-    vec4 lightPosition = vec4(0.0 ,1000.0, 0.0, 0.0);
+    vec4 lightPosition = vec4(0.0,250.0, 0.0, 0.0);
     vec4 transformedPosition =  uView * uWorld * vec4(aVertexPosition, 1.0);
     gl_Position =  uProjection * transformedPosition;
 

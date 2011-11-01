@@ -4,14 +4,14 @@ var mat4 = require('./glmatrix').mat4;
 
 var RenderContext = function(resourceLoader){
     this.gl = null;
-	this.programs = {};
+	  this.programs = {};
 };
 
 RenderContext.prototype.init = function(selector) {
   var canvas =  document.getElementById(selector);
   try
   {
-    var ctx = canvas.getContext("experimental-webgl", {antialias: true});
+    var ctx = canvas.getContext("experimental-webgl", {antialias: false});
     this.gl = ctx;
   } catch (ex){
     alert("Sorry dude, I couldn't create webgl, try Chrome or something: " + ex);   
@@ -21,12 +21,29 @@ RenderContext.prototype.init = function(selector) {
     console.log("Wasn't able to create an OpenGL context - what browser/version/etc?");
     return;
   }
+ 
+  this._canvasWidth = canvas.width;
+  this._canvasHeight = canvas.height;  
+  this._currentWidth = canvas.width;
+  this._currentHeight = canvas.height;  
 
-  this.gl.viewportWidth = canvas.width;
-  this.gl.viewportHeight = canvas.height;  
-
-  this.gl.clearColor(0.0, 0.5, 0.5, 1.0);
+  this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
   this.gl.enable(this.gl.DEPTH_TEST);  
+};
+
+RenderContext.prototype.currentWidth = function() { return this._currentWidth; };
+RenderContext.prototype.currentHeight = function() { return this._currentHeight; };
+RenderContext.prototype.canvasWidth = function() { return this._canvasWidth; };
+RenderContext.prototype.canvasHeight = function() { return this._canvasHeight; };
+
+RenderContext.prototype.setDimensions = function(width, height) {
+  this._currentWidth = width;
+  this._currentHeight = height;  
+};
+
+RenderContext.prototype.resetDimensions = function() {
+  this._currentWidth = this._canvasWidth;
+  this._currentHeight = this._canvasHeight;  
 };
 
 RenderContext.prototype.createProgram = function(programName) {
@@ -48,7 +65,7 @@ RenderContext.prototype.createProgram = function(programName) {
 	}
 
    var program = this.gl.createProgram();
-	this.gl.attachShader(program, vertexShader);
+	 this.gl.attachShader(program, vertexShader);
    this.gl.attachShader(program, fragmentShader);
    this.gl.linkProgram(program);	
 
