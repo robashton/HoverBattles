@@ -53,15 +53,17 @@ server = http.createServer(function(req, res){
 	paperboy
 	.deliver(ROOT, req, res)
   .before(function() {
-    if(req.url.indexOf("/app/index.html") !== 0) return;
+  /*   if(req.url.indexOf("/app/index.html") !== 0) return;
+
+     
       if(Identity.isSignedIn(req, res)) return;
 
-		res.writeHead(302, { 
-        "Content-Type": "text/plain",
-        "Location": "/app/login.html"
-    });
+		  res.writeHead(302, { 
+          "Content-Type": "text/plain",
+          "Location": "/app/login.html"
+      });
     
-		res.end();
+		res.end(); */
 
   })
 	.addHeader('Cache-Control', 'no-cache')

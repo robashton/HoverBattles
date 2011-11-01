@@ -16,8 +16,12 @@ body {
 #status {
   float: left;
   width: 250px;
-};
+}
 
+p.guest {
+  font-size: 28px;
+
+}
 #game {
   border: none;
   background-color: #111;

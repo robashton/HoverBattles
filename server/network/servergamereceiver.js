@@ -9,6 +9,7 @@ ServerGameReceiver = function(app, communication) {
 	this.communication = communication;
 	this.hovercraftFactory = new HovercraftFactory(this.app);
 	this.craft = {};
+  this.guestCount = 0;
 };
 
 ServerGameReceiver.prototype.addPlayer = function(id) {
@@ -58,11 +59,15 @@ ServerGameReceiver.prototype._fireRequest = function(data) {
 ServerGameReceiver.prototype._ready = function( data) {
   var craft = this.craft[data.source];
 
-  // This is effectively a verification of authentication for this socket
-  if(!Identity.verifyUsername(data.username, data.sign)) {
-    this.communication.rejectClient(data.source);
-    return;
-  }
+  if(data.username) {
+    // This is effectively a verification of authentication for this socket
+    if(!Identity.verifyUsername(data.username, data.sign)) {
+      this.communication.rejectClient(data.source);
+      return;
+    }
+  } else {
+    data.username = 'guest-' + this.guestCount++;
+  };
 
   // Then we can create the craft we desire
   this.spawnCraft(craft);

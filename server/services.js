@@ -20,8 +20,14 @@ exports.Services = function() {
 
       var userValidation = [
         function(next) {
-          if(!username || username.length < 6 || username.length > 10)
-            writeValidationError(req, res, 'Username is required, 6 <= length <= 10');
+          if(!username || username.length < 6 || username.length > 15)
+            writeValidationError(req, res, 'Username is required, 6 <= length <= 15');
+          else 
+            next();
+        },
+        function(next) {
+          if(username.toLowerCase().indexOf('guest') >= 0)
+            writeValidationError(req, res, 'Guest is a reserved name');
           else 
             next();
         },
