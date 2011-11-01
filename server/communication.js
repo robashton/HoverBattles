@@ -81,10 +81,15 @@ ServerCommunication.prototype.sendMessage = function(command, data) {
 };
 
 ServerCommunication.prototype.sendMessageToClient = function(socket, command, data){
+  try {
   socket.json.send({
       command: command,
       data: data
   });
+  } catch(ex) {
+    console.log('Failed to write to a socket for id: ' + socket.id + ', closing socket');
+    this.unhookClient(socket);
+  };
 };
 
 ServerCommunication.prototype.broadcast = function(command, data, from) {
