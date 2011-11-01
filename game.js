@@ -517,7 +517,7 @@ ClientCommunication.prototype.onConnected = function() {
 };
 
 ClientCommunication.prototype.onDisconnected = function() {
-  throw "Disconnected";
+  alert('Sorry dude, you\'ve been disconnected, try to refresh to rejoin the action');
 };
 
 ClientCommunication.prototype.dispatchMessage = function(msg) {
