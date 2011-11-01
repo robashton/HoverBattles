@@ -22,9 +22,19 @@ p.guest {
   font-size: 28px;
 
 }
+
 #game {
   border: none;
   background-color: #111;
+}
+
+h4 {
+  margin-left: 20px;
+}
+
+li.current-player {
+  color: #F55;
+  text-decoration: bold;
 }
 
 #header {

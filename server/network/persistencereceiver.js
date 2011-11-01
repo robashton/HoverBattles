@@ -3,7 +3,6 @@ var data = require('../data').Data;
 exports.PersistenceReceiver = function() {
   var self = this;
   var playerNameMap = {};
-
   
   self._fireMissile = function(data) {
     storeEvent('missileFired', {

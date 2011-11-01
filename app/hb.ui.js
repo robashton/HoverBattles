@@ -2,6 +2,13 @@
 
   var MainPage = function() {
     var self = this;
+    var playerId = null;
+    var playerName = null;
+
+    self.setPlayerInfo = function(id, username) {
+      playerId = id;
+      playerName = username;      
+    };
     
     self.setScores = function(scores) {
 
@@ -28,6 +35,10 @@
         text += value.value;
 
         var item = $('<li/>').text(text);
+
+         if(value.name === playerName)
+            item.addClass('current-player');
+
         scores.append(item);
       }
 
