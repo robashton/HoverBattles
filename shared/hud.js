@@ -66,8 +66,8 @@ var TrackedEntity = function(app, sourceid, targetid) {
 // TODO: Stop it rendering when behind the camera!
 
 var OtherPlayer = function(app, entity) {
-  var hudItem = app.overlay.addItem('trace-' + entity.getId(), '/data/textures/targeting.png');
-  
+ // var hudItem = app.overlay.addItem('trace-' + entity.getId(), '/data/textures/targeting.png');
+  /*
   entity.addEventHandler('tick', function() {
       var camera = app.scene.camera;
 
@@ -86,7 +86,7 @@ var OtherPlayer = function(app, entity) {
       hudItem.top(min[1]);
       hudItem.width(max[0] - min[0]);
       hudItem.height(max[1] - min[1]);   
-  });
+  }); */
 };
 
 exports.Hud = function(app) {

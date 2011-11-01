@@ -139,11 +139,11 @@ exports.ClientGameReceiver = function(app, server) {
 
   var terrain = app.scene.getEntity('terrain');
   var attachEmitterToCraft = function(craft) {
-    var emitter = new ParticleEmitter(craft.getId() + 'trail', 250, app,
+    var emitter = new ParticleEmitter(craft.getId() + 'trail', 100, app,
     {
         maxsize: 50,
         maxlifetime: 0.3,
-        rate: 10,
+        rate: 20,
         scatter: vec3.create([1.2, 0.001, 1.2]),
         particleOutwardVelocityMin: vec3.create([-0.9,-50.0,-0.9]),
         particleOutwardVelocityMax: vec3.create([0.9, -4.0,0.9]),

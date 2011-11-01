@@ -10,6 +10,6 @@ uniform sampler2D uSampler;
 void main(void) {    
 
     // Multiplying up the texture coords so we repeat the texture a bit more often
-    gl_FragColor = texture2D(uSampler, vec2(vTexCoords.s * 10.0, vTexCoords.t * 10.0));
+    gl_FragColor = texture2D(uSampler, vec2(vTexCoords.s * 20.0, vTexCoords.t * 20.0));
 
 }

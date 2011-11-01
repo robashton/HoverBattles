@@ -771,8 +771,8 @@ exports.Explosion = function(app, details) {
   var fireEmitter = new ParticleEmitter('Explosion-' + date, 1000, app,
   {
       maxsize: 1500,
-      maxlifetime: 1.0,
-      rate: 400,
+      maxlifetime: 1.5,
+      rate: 500,
       position: details.position,
       scatter: vec3.create([0.2, 0.2, 0.2]),
       particleOutwardVelocityMin: vec3.create([-12,-12,-12]),
@@ -788,7 +788,7 @@ exports.Explosion = function(app, details) {
     app.scene.removeEntity(fireEmitter);
   }, 10000); 
 
-  var smokeEmitter = new ParticleEmitter('Smoke-' + date, 250, app,
+  var smokeEmitter = new ParticleEmitter('Smoke-' + date, 150, app,
   {
       maxsize: 1500,
       maxlifetime: 2.5,
@@ -3083,8 +3083,8 @@ var TrackedEntity = function(app, sourceid, targetid) {
 // TODO: Stop it rendering when behind the camera!
 
 var OtherPlayer = function(app, entity) {
-  var hudItem = app.overlay.addItem('trace-' + entity.getId(), '/data/textures/targeting.png');
-  
+ // var hudItem = app.overlay.addItem('trace-' + entity.getId(), '/data/textures/targeting.png');
+  /*
   entity.addEventHandler('tick', function() {
       var camera = app.scene.camera;
 
@@ -3103,7 +3103,7 @@ var OtherPlayer = function(app, entity) {
       hudItem.top(min[1]);
       hudItem.width(max[0] - min[0]);
       hudItem.height(max[1] - min[1]);   
-  });
+  }); */
 };
 
 exports.Hud = function(app) {
@@ -4004,11 +4004,11 @@ exports.ClientGameReceiver = function(app, server) {
 
   var terrain = app.scene.getEntity('terrain');
   var attachEmitterToCraft = function(craft) {
-    var emitter = new ParticleEmitter(craft.getId() + 'trail', 250, app,
+    var emitter = new ParticleEmitter(craft.getId() + 'trail', 100, app,
     {
         maxsize: 50,
         maxlifetime: 0.3,
-        rate: 10,
+        rate: 20,
         scatter: vec3.create([1.2, 0.001, 1.2]),
         particleOutwardVelocityMin: vec3.create([-0.9,-50.0,-0.9]),
         particleOutwardVelocityMax: vec3.create([0.9, -4.0,0.9]),
@@ -4316,7 +4316,7 @@ exports.Overlay = function(app) {
          1.0,  1.0,
     ];
 
-  self.addItem = function(id, texture) {
+  self.addItem = function(id, textureName) {
     var item = new OverlayItem(id, app.resources.getTexture(textureName));
     items[id] = item;
     return item;

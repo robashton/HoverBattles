@@ -14,8 +14,8 @@ exports.Explosion = function(app, details) {
   var fireEmitter = new ParticleEmitter('Explosion-' + date, 1000, app,
   {
       maxsize: 1500,
-      maxlifetime: 1.0,
-      rate: 400,
+      maxlifetime: 1.5,
+      rate: 500,
       position: details.position,
       scatter: vec3.create([0.2, 0.2, 0.2]),
       particleOutwardVelocityMin: vec3.create([-12,-12,-12]),
@@ -31,7 +31,7 @@ exports.Explosion = function(app, details) {
     app.scene.removeEntity(fireEmitter);
   }, 10000); 
 
-  var smokeEmitter = new ParticleEmitter('Smoke-' + date, 250, app,
+  var smokeEmitter = new ParticleEmitter('Smoke-' + date, 150, app,
   {
       maxsize: 1500,
       maxlifetime: 2.5,

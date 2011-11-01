@@ -60,7 +60,7 @@ exports.Overlay = function(app) {
          1.0,  1.0,
     ];
 
-  self.addItem = function(id, texture) {
+  self.addItem = function(id, textureName) {
     var item = new OverlayItem(id, app.resources.getTexture(textureName));
     items[id] = item;
     return item;
