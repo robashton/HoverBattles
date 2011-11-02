@@ -2995,6 +2995,7 @@ var Hovercraft = require('./hovercraft').Hovercraft;
 var Clipping = require('./clipping').Clipping;
 var Tracking = require('./aiming').Tracking;
 var Targeting = require('./aiming').Targeting;
+var NamedItem = require('./nameditem').NamedItem;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -3008,6 +3009,7 @@ HovercraftFactory.prototype.create = function(id) {
   entity.attach(Hovercraft);
   entity.attach(Tracking);
   entity.attach(Targeting);
+  entity.attach(NamedItem);
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
@@ -3025,6 +3027,7 @@ var TrackedEntity = function(app, sourceid, targetid) {
   var firedMissileId = null;
   var isLocked = false;
   var hudItem = null;
+  var textItem = null;
   var rotation = 0;
   
   self.notifyHasFired = function(missileid) {
@@ -3052,6 +3055,13 @@ var TrackedEntity = function(app, sourceid, targetid) {
     return hudItem = item || hudItem;
   };
 
+  self.clearHud = function() {
+    if(hudItem)
+       app.overlay.removeItem(hudItem);
+    if(textItem)
+       app.overlay.removeItem(textItem);
+  };
+
   self.updateHudItem = function() {
     app.scene.withEntity(targetid, function(entity) {    
 
@@ -3071,11 +3081,24 @@ var TrackedEntity = function(app, sourceid, targetid) {
       hudItem.width(max[0] - min[0]);
       hudItem.height(max[1] - min[1]);   
       hudItem.rotation(rotation += 0.03);
+
+      var textLeft = min[0] + (max[0] - min[0]) + 5.0;
+      var textTop = min[1] - 48;
+
+      textItem.left(textLeft);
+      textItem.top(textTop);
+      textItem.width(128);
+      textItem.height(128);   
     });
   }
 
-  hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
+  app.scene.withEntity(targetid, function(entity) {    
+    hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
+    textItem = app.overlay.addTextItem('text-' + sourceid, entity.displayName(), 128, 128, 'red');
+  });
+
   self.updateHudItem();
+  
 };
 
 // TODO: Turn off when locked
@@ -3141,8 +3164,7 @@ exports.Hud = function(app) {
     var entity = trackedEntities[sourceid];
     if(entity) {
       delete trackedEntities[sourceid];
-      if(entity.hudItem())
-        app.overlay.removeItem(entity.hudItem());
+      entity.clearHud();
     }
 
     if(trackedEntities[playerId] && trackedEntities[playerId].targetid() === sourceid)
@@ -3863,6 +3885,33 @@ Model.Quad = function()
 
 exports.Model = Model;
 
+}, "nameditem": function(exports, require, module) {exports.NamedItem = function() {
+  var self = this;
+  var displayName = null;
+  var displayNameChanged = false;
+
+  self.displayName = function(name) {
+    if(name) {
+      displayName = name;
+      displayNameChanged = true;
+    }
+    return displayName;
+  }; 
+
+  self.updateSync = function(sync) {
+   // if(displayNameChanged) {
+   //   displayNameChanged = false;
+      sync.displayName = displayName;
+  //  }
+  };
+
+  self.setSync = function(sync) {
+	  displayName = sync.displayName || displayName;
+	};
+
+};
+
+
 }, "network/clientgamereceiver": function(exports, require, module) {var Explosion = require('../explosion').Explosion;
 
 exports.ClientGameReceiver = function(app, server) {
@@ -3872,6 +3921,7 @@ exports.ClientGameReceiver = function(app, server) {
   var server = server;
   var started = false;
   var craft = null;
+  var allCraft = {};
   var playerId = null;
   var chaseCamera = null;
   var controller = null;
@@ -3958,12 +4008,12 @@ exports.ClientGameReceiver = function(app, server) {
 		  controller.enable();
 	  }
 	  else {
-
-		  // Re-add entity to scene
-		  addHovercraftToScene(data.id, data.sync);
+      var craft = allCraft[data.id];
+      app.scene.addEntity(craft);
+      app.scene.addEntity(craft.emitter);
+      craft.setSync(sync);
 	  }
-  };  
-  
+  };    
 
   self._syncscene = function(data) {
 
@@ -4030,6 +4080,7 @@ exports.ClientGameReceiver = function(app, server) {
   };
 
   self._removeplayer = function(data) {
+      delete allCraft[data.id];
       removeHovercraftFromScene(data.id);
   };
 
@@ -4046,6 +4097,7 @@ exports.ClientGameReceiver = function(app, server) {
       craftToAdd.setSync(sync);
       app.scene.addEntity(craftToAdd);
       attachEmitterToCraft(craftToAdd);
+      allCraft[id] = craftToAdd;
 	    return craftToAdd;
   };
 };
@@ -4327,14 +4379,45 @@ exports.Overlay = function(app) {
          1.0,  1.0,
     ];
 
-  self.addItem = function(id, textureName) {
-    var item = new OverlayItem(id, app.resources.getTexture(textureName));
+  self.addItem = function(id, texture) {
+    var item = null; 
+    if(typeof(texture) === 'string')      
+      item = new OverlayItem(id, app.resources.getTexture(texture));
+    else 
+      item = new OverlayItem(id, { get: function() { return texture; } });
+
     items[id] = item;
     return item;
   };
 
   self.removeItem = function(item) {
+    if(item.cleanup) item.cleanup();
     delete items[item.id()];
+  };
+
+  self.addTextItem = function(id, text, width, height, colour, font) {
+    var textCanvas  = document.getElementById('scratch');
+    var textContext = textCanvas.getContext("2d");
+
+    textCanvas.width = width || 128;
+    textCanvas.height = height || 128;
+    textContext.fillStyle = colour || 'white';
+    textContext.font = font || "bold 12px sans-serif";
+    textContext.fillText(text, 0, height / 2.0);
+
+    var gl = app.context.gl;
+    var texture = gl.createTexture();              
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCanvas);           
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);                 
+
+    var item = this.addItem(id, texture);
+    item.cleanup = function() {
+      gl.deleteTexture(texture);
+    };
+    return item;
   };
 
   self.activate = function(context) {
@@ -4820,8 +4903,6 @@ exports.RenderPipeline = function(app) {
   var renderToScreen = function(context) {
     var gl = context.gl;
     context.resetDimensions();   
- //   renderTextureToQuad(context, 'hud',  fullSizeScreenRenderTarget.getTexture());
-
 
     clearCurrentRenderTarget(context);
 
@@ -5230,8 +5311,7 @@ Texture.prototype.activate = function(context) {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
       gl.generateMipmap(gl.TEXTURE_2D);
     }
-
-    
+   
 
     gl.bindTexture(gl.TEXTURE_2D, null);
 };

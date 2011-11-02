@@ -60,14 +60,45 @@ exports.Overlay = function(app) {
          1.0,  1.0,
     ];
 
-  self.addItem = function(id, textureName) {
-    var item = new OverlayItem(id, app.resources.getTexture(textureName));
+  self.addItem = function(id, texture) {
+    var item = null; 
+    if(typeof(texture) === 'string')      
+      item = new OverlayItem(id, app.resources.getTexture(texture));
+    else 
+      item = new OverlayItem(id, { get: function() { return texture; } });
+
     items[id] = item;
     return item;
   };
 
   self.removeItem = function(item) {
+    if(item.cleanup) item.cleanup();
     delete items[item.id()];
+  };
+
+  self.addTextItem = function(id, text, width, height, colour, font) {
+    var textCanvas  = document.getElementById('scratch');
+    var textContext = textCanvas.getContext("2d");
+
+    textCanvas.width = width || 128;
+    textCanvas.height = height || 128;
+    textContext.fillStyle = colour || 'white';
+    textContext.font = font || "bold 12px sans-serif";
+    textContext.fillText(text, 0, height / 2.0);
+
+    var gl = app.context.gl;
+    var texture = gl.createTexture();              
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCanvas);           
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);                 
+
+    var item = this.addItem(id, texture);
+    item.cleanup = function() {
+      gl.deleteTexture(texture);
+    };
+    return item;
   };
 
   self.activate = function(context) {

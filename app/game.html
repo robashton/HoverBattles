@@ -9,8 +9,11 @@
       <script src="../client/lazyload.js"></script>
         
 		  <script type="text/javascript">
+
 			
-			$app(function(){                
+			$app(function(){       
+
+        
         var app = new blah.Application('game');             
         app.init(function() {
         
@@ -30,7 +33,7 @@
                   backdropspinner.rotation( backdropspinner.rotation() + 0.1 ); 
                               
                 }, 
-          1000 / 30);               
+            1000 / 30);               
 
             setInterval(function() {  app.render(); }, 1000 / 30);            
             setInterval(function() {  app.tick(); }, 1000 / 30); 
@@ -43,7 +46,7 @@
             app.resources.onAllAssetsLoaded(function() {
               app.overlay.removeItem(backdrop);
               app.overlay.removeItem(backdropspinner);
-              cancelInterval(spinnerInterval);
+              clearInterval(spinnerInterval);    
             });
         });
 			});
@@ -62,6 +65,9 @@
 		  <canvas id="game"  width="800"  height="600" >
         <blink>Loading...</blink>
 		  </canvas>
+      <canvas id="scratch" style="display: none;" width="512" height="512">
+
+      </canvas>
     </div>
     
         <div id="status" style="float: left;">

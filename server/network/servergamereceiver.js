@@ -71,6 +71,7 @@ ServerGameReceiver.prototype._ready = function( data) {
 
   // Then we can create the craft we desire
   this.spawnCraft(craft);
+  craft.displayName(data.username);
 	this.communication.syncPlayerFull(craft.getId());
   this.communication.sendMessage('updateplayer', {
     id: craft.getId(),

@@ -69,8 +69,6 @@ exports.RenderPipeline = function(app) {
   var renderToScreen = function(context) {
     var gl = context.gl;
     context.resetDimensions();   
- //   renderTextureToQuad(context, 'hud',  fullSizeScreenRenderTarget.getTexture());
-
 
     clearCurrentRenderTarget(context);
 

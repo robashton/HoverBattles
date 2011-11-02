@@ -32,8 +32,7 @@ Texture.prototype.activate = function(context) {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR);
       gl.generateMipmap(gl.TEXTURE_2D);
     }
-
-    
+   
 
     gl.bindTexture(gl.TEXTURE_2D, null);
 };

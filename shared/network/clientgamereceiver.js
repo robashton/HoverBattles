@@ -7,6 +7,7 @@ exports.ClientGameReceiver = function(app, server) {
   var server = server;
   var started = false;
   var craft = null;
+  var allCraft = {};
   var playerId = null;
   var chaseCamera = null;
   var controller = null;
@@ -93,12 +94,12 @@ exports.ClientGameReceiver = function(app, server) {
 		  controller.enable();
 	  }
 	  else {
-
-		  // Re-add entity to scene
-		  addHovercraftToScene(data.id, data.sync);
+      var craft = allCraft[data.id];
+      app.scene.addEntity(craft);
+      app.scene.addEntity(craft.emitter);
+      craft.setSync(sync);
 	  }
-  };  
-  
+  };    
 
   self._syncscene = function(data) {
 
@@ -165,6 +166,7 @@ exports.ClientGameReceiver = function(app, server) {
   };
 
   self._removeplayer = function(data) {
+      delete allCraft[data.id];
       removeHovercraftFromScene(data.id);
   };
 
@@ -181,6 +183,7 @@ exports.ClientGameReceiver = function(app, server) {
       craftToAdd.setSync(sync);
       app.scene.addEntity(craftToAdd);
       attachEmitterToCraft(craftToAdd);
+      allCraft[id] = craftToAdd;
 	    return craftToAdd;
   };
 };

@@ -8,6 +8,7 @@ var TrackedEntity = function(app, sourceid, targetid) {
   var firedMissileId = null;
   var isLocked = false;
   var hudItem = null;
+  var textItem = null;
   var rotation = 0;
   
   self.notifyHasFired = function(missileid) {
@@ -35,6 +36,13 @@ var TrackedEntity = function(app, sourceid, targetid) {
     return hudItem = item || hudItem;
   };
 
+  self.clearHud = function() {
+    if(hudItem)
+       app.overlay.removeItem(hudItem);
+    if(textItem)
+       app.overlay.removeItem(textItem);
+  };
+
   self.updateHudItem = function() {
     app.scene.withEntity(targetid, function(entity) {    
 
@@ -54,11 +62,24 @@ var TrackedEntity = function(app, sourceid, targetid) {
       hudItem.width(max[0] - min[0]);
       hudItem.height(max[1] - min[1]);   
       hudItem.rotation(rotation += 0.03);
+
+      var textLeft = min[0] + (max[0] - min[0]) + 5.0;
+      var textTop = min[1] - 48;
+
+      textItem.left(textLeft);
+      textItem.top(textTop);
+      textItem.width(128);
+      textItem.height(128);   
     });
   }
 
-  hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
+  app.scene.withEntity(targetid, function(entity) {    
+    hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
+    textItem = app.overlay.addTextItem('text-' + sourceid, entity.displayName(), 128, 128, 'red');
+  });
+
   self.updateHudItem();
+  
 };
 
 // TODO: Turn off when locked
@@ -124,8 +145,7 @@ exports.Hud = function(app) {
     var entity = trackedEntities[sourceid];
     if(entity) {
       delete trackedEntities[sourceid];
-      if(entity.hudItem())
-        app.overlay.removeItem(entity.hudItem());
+      entity.clearHud();
     }
 
     if(trackedEntities[playerId] && trackedEntities[playerId].targetid() === sourceid)
