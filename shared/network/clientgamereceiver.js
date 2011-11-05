@@ -76,7 +76,7 @@ exports.ClientGameReceiver = function(app, server) {
 	  }	
   };
 
-    self._reviveTarget = function(data) {
+  self._reviveTarget = function(data) {
 	  if(data.id === craft.getId()) {
 
 		  // Re-add entity to scene
@@ -94,10 +94,10 @@ exports.ClientGameReceiver = function(app, server) {
 		  controller.enable();
 	  }
 	  else {
-      var craft = allCraft[data.id];
-      app.scene.addEntity(craft);
-      app.scene.addEntity(craft.emitter);
-      craft.setSync(sync);
+      var revivedCraft = allCraft[data.id];
+      app.scene.addEntity(revivedCraft);
+      app.scene.addEntity(revivedCraft.emitter);
+      revivedCraft.setSync(data.sync);
 	  }
   };    
 
