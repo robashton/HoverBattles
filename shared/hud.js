@@ -1,6 +1,32 @@
 var Hovercraft = require('./hovercraft').Hovercraft;
 
-var TrackedEntity = function(app, sourceid, targetid) {
+var WarningEntity = function(app, sourceid, targetid) {
+  var self = this;
+  var firedMissileId = null;
+  var isLocked = false;
+  
+  self.notifyHasFired = function(missileid) {
+    firedMissileId = missileid;
+  };
+  
+  self.notifyIsLocked = function() {
+    isLocked = true;
+  };
+
+  self.updateHudItem = function() {
+
+  };
+  
+  self.hudItem = function(item) {
+    
+  };
+
+  self.clearHud = function() {
+
+  };
+};
+
+var TargettingEntity = function(app, sourceid, targetid) {
   var self = this;
   var scene = scene;
   var sourceid = sourceid;
@@ -10,6 +36,7 @@ var TrackedEntity = function(app, sourceid, targetid) {
   var hudItem = null;
   var textItem = null;
   var rotation = 0;
+  var isPlayer = isPlayer;
   
   self.notifyHasFired = function(missileid) {
     firedMissileId = missileid;
@@ -20,12 +47,6 @@ var TrackedEntity = function(app, sourceid, targetid) {
     app.overlay.removeItem(hudItem);
     hudItem = app.overlay.addItem('lock-' + sourceid, '/data/textures/locked.png');
     self.updateHudItem();
-  };
-
-  self.getScore = function() {
-    if(firedMissileId) return 10;
-    if(isLocked) return 5;
-    return 2;    
   };
 
   self.targetid = function() {
@@ -44,42 +65,41 @@ var TrackedEntity = function(app, sourceid, targetid) {
   };
 
   self.updateHudItem = function() {
-    app.scene.withEntity(targetid, function(entity) {    
+   app.scene.withEntity(targetid, function(entity) {    
 
-      var camera = app.scene.camera;
+        var camera = app.scene.camera;
 
-      var worldSphere = entity.getSphere();
-      var transformedSphere = camera.transformSphereToScreen(worldSphere);
+        var worldSphere = entity.getSphere();
+        var transformedSphere = camera.transformSphereToScreen(worldSphere);
 
-      var radius = transformedSphere.radius;
-      var centre = transformedSphere.centre;
-    
-      var min = [centre[0] - radius, centre[1] - radius];
-      var max = [centre[0] + radius, centre[1] + radius];
+        var radius = transformedSphere.radius;
+        var centre = transformedSphere.centre;
+      
+        var min = [centre[0] - radius, centre[1] - radius];
+        var max = [centre[0] + radius, centre[1] + radius];
 
-      hudItem.left(min[0]);
-      hudItem.top(min[1]);
-      hudItem.width(max[0] - min[0]);
-      hudItem.height(max[1] - min[1]);   
-      hudItem.rotation(rotation += 0.03);
+        hudItem.left(min[0]);
+        hudItem.top(min[1]);
+        hudItem.width(max[0] - min[0]);
+        hudItem.height(max[1] - min[1]);   
+        hudItem.rotation(rotation += 0.03);
 
-      var textLeft = min[0] + (max[0] - min[0]) + 5.0;
-      var textTop = min[1] - 48;
+        var textLeft = min[0] + (max[0] - min[0]) + 5.0;
+        var textTop = min[1] - 48;
 
-      textItem.left(textLeft);
-      textItem.top(textTop);
-      textItem.width(128);
-      textItem.height(128);   
-    });
-  }
+        textItem.left(textLeft);
+        textItem.top(textTop);
+        textItem.width(128);
+        textItem.height(128);   
+      });
+  };
 
   app.scene.withEntity(targetid, function(entity) {    
     hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
     textItem = app.overlay.addTextItem('text-' + sourceid, entity.displayName(), 128, 128, 'red');
   });
-
-  self.updateHudItem();
   
+  self.updateHudItem();  
 };
 
 // TODO: Turn off when locked
@@ -127,7 +147,7 @@ exports.Hud = function(app) {
     entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
 
     if(entity.getId() !== playerId)
-      var tracket = new OtherPlayer(app, entity);
+      var tracker = new OtherPlayer(app, entity);
   };
 
   var unHookHovercraftEvents = function(entity) {
@@ -136,8 +156,10 @@ exports.Hud = function(app) {
   };
 
  var createTrackedEntity = function(sourceid, targetid) {
-   if(sourceid === playerId || targetid === playerId) {
-      trackedEntities[sourceid] = new TrackedEntity(app, sourceid, targetid);
+   if(sourceid === playerId) {
+      trackedEntities[sourceid] = new TargettingEntity(app, sourceid, targetid);
+    } else if(targetid === playerId){ 
+      trackedEntities[sourceid] = new WarningEntity(app, sourceid, targetid);
     }
   };    
 
@@ -153,7 +175,7 @@ exports.Hud = function(app) {
   };
 
   var onEntityTrackingTarget = function(data) {
-    createTrackedEntity(this.getId(), data.target.getId());
+      createTrackedEntity(this.getId(), data.target.getId());
   };
 
   var onEntityCancelledTrackingTarget = function(data) {
