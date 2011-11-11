@@ -633,6 +633,18 @@ Entity.prototype.addEventHandler = function(eventName, callback) {
 	this.eventHandlers[eventName].push(callback);
 };
 
+Entity.prototype.removeEventHandler = function(eventName, callback) {
+	if(!this.eventHandlers[eventName])
+		this.eventHandlers[eventName] = [];
+
+  var newItems = [];
+  for(var i = 0; i < this.eventHandlers[eventName].length; i++)
+      if(this.eventHandlers[eventName][i] !== callback) 
+        newItems.push(this.eventHandlers[eventName][i]);
+  
+  this.eventHandlers[eventName] = newItems;
+};
+
 Entity.prototype.raiseEvent = function(eventName, data) {
 	if(!this.eventHandlers[eventName]) return;
 	for(var x = 0 ; x < this.eventHandlers[eventName].length; x++){
@@ -3038,12 +3050,16 @@ var WarningEntity = function(app, controller, sourceid, targetid) {
     updateHudItem();
   };
 
+  self.targetid = function() {
+    return targetid;
+  };
+
   self.target = function(sphere) {
     target = sphere;
   };
 
   self.index = function(value) {
-    return index = value || index;
+    return index = value !== undefined ? value : index;
   };
 
   var updateHudItem = function() {
@@ -3084,6 +3100,7 @@ var WarningsContainer = function(app, playerId) {
      items.push(item);
      updateIndexes(); 
      item.target(lastSphere);
+    console.log('Added ' + items.length);
   };
 
   self.notifyRemovalOfItem = function(item) {
@@ -3091,6 +3108,7 @@ var WarningsContainer = function(app, playerId) {
     for(var i = 0; i < items.length; i++)
       if(items[i] !== item) newItems.push(items[i]);
     items = newItems;
+    console.log('Removed ' + items.length);
     updateIndexes();
   };
 
@@ -3103,13 +3121,13 @@ var WarningsContainer = function(app, playerId) {
     var scene = app.scene;
     var camera = scene.camera;
 
-    scene.withEntity(playerId, function(entity) {
+    var entity = scene.getEntity(playerId);
+    if(entity) {
       var worldSphere = entity.getSphere();
       lastSphere = camera.transformSphereToScreen(worldSphere);
-    
       for(var i = 0; i < items.length; i++)
         items[i].target(lastSphere);
-    });
+    }
   };
 };
 
@@ -3250,6 +3268,9 @@ exports.Hud = function(app) {
 
   var unHookHovercraftEvents = function(entity) {
     if(!entity.is(Hovercraft)) return;
+    entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
+    entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+
     clearAllKnowledgeOfEntity(entity.getId());
   };
 
@@ -3259,7 +3280,7 @@ exports.Hud = function(app) {
     } else if(targetid === playerId){ 
       trackedEntities[sourceid] = new WarningEntity(app, warnings, sourceid, targetid);
     }
-  };    
+  };
 
   var clearTrackedEntity = function(sourceid) {
     var entity = trackedEntities[sourceid];
@@ -3279,13 +3300,17 @@ exports.Hud = function(app) {
 
   var clearPlayerTargetIfNecessary = function(sourceid) {
     if(trackedEntities[playerId] && trackedEntities[playerId].targetid() === sourceid)
-      clearTrackedEntity(playerId);   
+      clearTrackedEntity(playerId);
   };
 
   var clearAllKnowledgeOfEntity = function(sourceid) {
     clearTrackedEntity(sourceid);
     clearIndicators(sourceid);
-    clearPlayerTargetIfNecessary(sourceid);  
+    clearPlayerTargetIfNecessary(sourceid);
+
+    for(i in trackedEntities)
+      if(trackedEntities[i].targetid() === sourceid) clearTrackedEntity(i);
+    
   };
 
   var onEntityTrackingTarget = function(data) {
@@ -3329,7 +3354,7 @@ exports.Hud = function(app) {
   };
 
   self.doLogic = function() {
-    warnings.tick();
+    if(warnings) warnings.tick();
     for(var i in trackedEntities) {
       var entity = trackedEntities[i];
       entity.tick();

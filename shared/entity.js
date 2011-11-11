@@ -31,6 +31,18 @@ Entity.prototype.addEventHandler = function(eventName, callback) {
 	this.eventHandlers[eventName].push(callback);
 };
 
+Entity.prototype.removeEventHandler = function(eventName, callback) {
+	if(!this.eventHandlers[eventName])
+		this.eventHandlers[eventName] = [];
+
+  var newItems = [];
+  for(var i = 0; i < this.eventHandlers[eventName].length; i++)
+      if(this.eventHandlers[eventName][i] !== callback) 
+        newItems.push(this.eventHandlers[eventName][i]);
+  
+  this.eventHandlers[eventName] = newItems;
+};
+
 Entity.prototype.raiseEvent = function(eventName, data) {
 	if(!this.eventHandlers[eventName]) return;
 	for(var x = 0 ; x < this.eventHandlers[eventName].length; x++){
