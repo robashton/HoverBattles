@@ -285,11 +285,9 @@ exports.Hud = function(app) {
   };
 
   var withTrackedEntity = function(sourceid, callback) {
-    if(trackedEntities[sourceid])
-      callback(trackedEntities[sourceid]);
-    else {
-      console.trace('Something went a tad wrong as we\'re not able to find a previously tracked entity');
-    }
+    if(!trackedEntities[sourceid])
+      console.log('Discarding message as it is seemingly irrelevant :S')
+    callback(trackedEntities[sourceid]);
   };
 
   self.notifyOfMissileFiring = function(data) {

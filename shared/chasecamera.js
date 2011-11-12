@@ -21,8 +21,9 @@ var ChaseCamera = function() {
   var includedTargetId = null;
   var desiredCameraLocationIncludingTarget = vec3.create([0,0,0]);
   var desiredCameraLocationBehindPlayer = vec3.create([0,0,0]);
+  var offsetBetweenCamerasWhenStoppedTargetting = vec3.create([0,0,0]);
   var percentageTowardsTarget = 0.0;
-  
+
   self.resetDeltas = function() {
     self.movementDelta = 0.2;
     self.lookAtDelta = 0.7;
@@ -60,14 +61,17 @@ var ChaseCamera = function() {
   };
 
   var updateDesiredCameraPositionIncludingTarget = function() {
-    if(!includedTargetId) return;
-    var vectorFromTarget = vec3.create([0,0,0]);   
-    self._scene.withEntity(includedTargetId, function(target) {
-      vec3.subtract(self.entity.position, target.position, vectorFromTarget);
-      vec3.normalize(vectorFromTarget);
-      vec3.scale(vectorFromTarget, distanceBack);        
-    });
-    vec3.add(self.entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);
+    if(!includedTargetId) {
+       vec3.add(desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting, desiredCameraLocationIncludingTarget);
+    } else {
+      var vectorFromTarget = vec3.create([0,0,0]);   
+      self._scene.withEntity(includedTargetId, function(target) {
+        vec3.subtract(self.entity.position, target.position, vectorFromTarget);
+        vec3.normalize(vectorFromTarget);
+        vec3.scale(vectorFromTarget, distanceBack);        
+      });
+      vec3.add(self.entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);
+    }
   };
 
   var updateDesiredCameraPositionBehindPlayer = function() {
@@ -80,9 +84,9 @@ var ChaseCamera = function() {
 
   var tweenBetweenCompetingLocations = function() {
     if(includedTargetId && percentageTowardsTarget < 1.0)
-      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.01);
+      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.02);
     else if(percentageTowardsTarget > 0.0)
-      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.01);
+      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.02);
 
     var targetComponent = vec3.create([0,0,0]);
     var chaseComponent = vec3.create([0,0,0]);
@@ -98,8 +102,10 @@ var ChaseCamera = function() {
   var clampLocationToTerrain = function(location) {
      var terrain = self._scene.getEntity("terrain");   
      var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(location[0], location[2]);
-     var cameraHeight = Math.max(Math.max(terrainHeightAtCameraLocation + 5, self.entity.position[1] + 2), location[1]);
-     location[1] = cameraHeight;
+     location[1] = Math.max(
+                      Math.max(terrainHeightAtCameraLocation + 5, self.entity.position[1] + 5), 
+                      location[1]
+                  );
   };
 
   var workOutWhereTargetIs = function() {   
@@ -146,6 +152,7 @@ var ChaseCamera = function() {
 
   var onEntityCancelledTrackingTarget = function(data) {
     includedTargetId = null;
+    vec3.subtract(desiredCameraLocationIncludingTarget, desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting);
   };
 };
 
