@@ -165,15 +165,11 @@ var TargettingEntity = function(app, sourceid, targetid) {
 
   app.scene.withEntity(targetid, function(entity) {    
     hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
-    textItem = app.overlay.addTextItem('text-' + sourceid, entity.displayName(), 128, 128, 'red');
+    textItem = app.overlay.addTextItem('text-' + sourceid, entity.displayName(), 128, 128, 'red', 'bold 14px verdana');
   });
   
   self.tick();  
 };
-
-// TODO: Turn off when locked
-// TODO: Turn into a green triangle
-// TODO: Stop it rendering when behind the camera!
 
 var OtherPlayer = function(app, entity) {
    var self = this;
@@ -183,9 +179,7 @@ var OtherPlayer = function(app, entity) {
     if(hudItem)
       app.overlay.removeItem(hudItem);
    };   
-
-/*
-  
+ 
   var hudItem = app.overlay.addItem('indicator-' + entity.getId(), '/data/textures/indicator.png');
   
   entity.addEventHandler('tick', function() {
@@ -194,21 +188,22 @@ var OtherPlayer = function(app, entity) {
       var worldSphere = entity.getSphere();
       var transformedSphere = camera.transformSphereToScreen(worldSphere);
 
-      if(transformedSphere[2] < 0) 
-        transformedSphere.radius *= 0.1;
-      var radius = 16.0;
       var centre = transformedSphere.centre;
-    
-      var min = [centre[0] - radius, centre[1] - radius];
-      var max = [centre[0] + radius, centre[1] + radius];
+      var radius = transformedSphere.radius;
 
-      hudItem.left(min[0]);
-      hudItem.top(min[1]);
-      hudItem.width(max[0] - min[0]);
-      hudItem.height(max[1] - min[1]);   
+      if(centre[2] < 100.0)
+        hudItem.hide();
+      else
+        hudItem.show();
+   
+      var position = [centre[0] - 4.0, centre[1] - (radius * 2.0)];
+
+      hudItem.left(position[0]);
+      hudItem.top(position[1]);
+      hudItem.width(8.0);
+      hudItem.height(8.0);   
   }); 
 
-*/
 };
 
 
@@ -239,7 +234,6 @@ exports.Hud = function(app) {
     if(!entity.is(Hovercraft)) return;
     entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-
     clearAllKnowledgeOfEntity(entity.getId());
   };
 

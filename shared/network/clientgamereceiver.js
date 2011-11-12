@@ -85,8 +85,7 @@ exports.ClientGameReceiver = function(app, server) {
 		  craft.setSync(data.sync);
 
       // Reset camera
-      chaseCamera.setMovementDelta(0.2);
-      chaseCamera.setLookAtDelta(0.7);
+      chaseCamera.resetDeltas();
 		  chaseCamera.setTrackedEntity(craft);
       chaseCamera.unfixLocation();
 

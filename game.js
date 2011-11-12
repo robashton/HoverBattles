@@ -98,6 +98,7 @@ exports.Tracking = function() {
     for(var i in self.targetsInSight) {
       var entity = self._scene.getEntity(i);
       if(!entity) {
+        self.notifyNotAimingAt(self.targetsInSight[i].entity);
         delete self.targetsInSight[i];
         if(this._currentTarget && this._currentTarget.getId() === i)
           this._currentTarget = null;
@@ -349,16 +350,30 @@ var ChaseCamera = function() {
   self.cameraLookAt = vec3.create([0,0,0]);
   self.destinationCameraLocation = vec3.create([0,0,0]);
   self.destinationCameraLookAt = vec3.create([0,0,0]);
-
-  self.movementDelta = 0.2;
-  self.lookAtDelta = 0.7;
+  
+  var distanceBack = 20;
   self.fixLocation = false;
-
   self.cameraVelocity = vec3.create([0,0,0]);
   self.lookAtVelocity = vec3.create([0,0,0]); 
 
+  var lastTargetId = null;
+  var includedTargetId = null;
+  var desiredCameraLocationIncludingTarget = vec3.create([0,0,0]);
+  var desiredCameraLocationBehindPlayer = vec3.create([0,0,0]);
+  var percentageTowardsTarget = 0.0;
+  
+  self.resetDeltas = function() {
+    self.movementDelta = 0.2;
+    self.lookAtDelta = 0.7;
+  };
+  self.resetDeltas();
+
   self.setTrackedEntity= function(entity) {
+    if(self.entity)
+      unhookEntityEvents(self.entity);
     self.entity = entity;
+    if(self.entity)
+      hookEntityEvents(self.entity);    
   };
 
   self.fixLocationAt= function(position) {
@@ -378,35 +393,69 @@ var ChaseCamera = function() {
     self.lookAtDelta = delta;
   };
 
-  self.doLogic= function(){      
-    self.workOutWhereTargetIs();
-    self.doLogicAfterAscertainingTarget();
+  self.doLogic = function(){
+    workOutWhereTargetIs();
+    doLogicAfterAscertainingTarget();
   };
 
-  self.workOutWhereTargetIs= function() {
-     var terrain = self._scene.getEntity("terrain");      
-     
-     var craftRotation = self.entity.rotationY;
-     var distanceBack = 20;
-     var directionBackZ = distanceBack * Math.cos(craftRotation);
-     var directionBackX = distanceBack * Math.sin(craftRotation);
+  var updateDesiredCameraPositionIncludingTarget = function() {
+    if(!includedTargetId) return;
+    var vectorFromTarget = vec3.create([0,0,0]);   
+    self._scene.withEntity(includedTargetId, function(target) {
+      vec3.subtract(self.entity.position, target.position, vectorFromTarget);
+      vec3.normalize(vectorFromTarget);
+      vec3.scale(vectorFromTarget, distanceBack);        
+    });
+    vec3.add(self.entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);
+  };
 
-     var vectorToDesiredLocation = vec3.create([directionBackX, 0, directionBackZ]);
-     var desiredLocation = vec3.create([0,0,0]);
-     vec3.add(self.entity.position, vectorToDesiredLocation, desiredLocation);
+  var updateDesiredCameraPositionBehindPlayer = function() {
+    var craftRotation = self.entity.rotationY;
+    directionBackZ = distanceBack * Math.cos(craftRotation);
+    directionBackX = distanceBack * Math.sin(craftRotation);
+    var vectorToDesiredLocation = vec3.create([directionBackX, 0, directionBackZ]);
+    vec3.add(self.entity.position, vectorToDesiredLocation, desiredCameraLocationBehindPlayer);
+  };
 
-     var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(self.cameraLocation[0], self.cameraLocation[2]);
-     var cameraHeight = Math.max(terrainHeightAtCameraLocation + 5, self.entity.position[1] + 5);
+  var tweenBetweenCompetingLocations = function() {
+    if(includedTargetId && percentageTowardsTarget < 1.0)
+      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.01);
+    else if(percentageTowardsTarget > 0.0)
+      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.01);
+
+    var targetComponent = vec3.create([0,0,0]);
+    var chaseComponent = vec3.create([0,0,0]);
+    var totalComponent = vec3.create([0,0,0]);
+
+    vec3.scale(desiredCameraLocationBehindPlayer, 1.0 - percentageTowardsTarget, chaseComponent);
+    vec3.scale(desiredCameraLocationIncludingTarget, percentageTowardsTarget, targetComponent);
+
+    vec3.add(chaseComponent, targetComponent, totalComponent);
+    return totalComponent;    
+  };
+
+  var clampLocationToTerrain = function(location) {
+     var terrain = self._scene.getEntity("terrain");   
+     var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(location[0], location[2]);
+     var cameraHeight = Math.max(Math.max(terrainHeightAtCameraLocation + 5, self.entity.position[1] + 2), location[1]);
+     location[1] = cameraHeight;
+  };
+
+  var workOutWhereTargetIs = function() {   
+     var desiredLocation = null;
+
+     updateDesiredCameraPositionIncludingTarget();
+     updateDesiredCameraPositionBehindPlayer();
      
-     desiredLocation[1] =  cameraHeight;  
-    
+     desiredLocation = tweenBetweenCompetingLocations();
+     clampLocationToTerrain(desiredLocation);    
      self.destinationCameraLookAt = vec3.create(self.entity.position);
 
      if(!self.fixLocation)
       self.destinationCameraLocation = desiredLocation;
   };
 
-  self.doLogicAfterAscertainingTarget= function() {
+  var doLogicAfterAscertainingTarget = function() {
     var directionToWhereWeWantToBe = vec3.create([0,0,0]);
     vec3.subtract(self.destinationCameraLocation, self.cameraLocation, directionToWhereWeWantToBe);
     vec3.scale(directionToWhereWeWantToBe, self.movementDelta , self.cameraVelocity);
@@ -416,11 +465,27 @@ var ChaseCamera = function() {
     vec3.subtract(self.destinationCameraLookAt, self.cameraLookAt, directionToWhereWeWantToLookAt);
     vec3.scale(directionToWhereWeWantToLookAt, self.lookAtDelta , self.lookAtVelocity);
     vec3.add(self.cameraLookAt, self.lookAtVelocity); 
-
     self._scene.camera.lookAt = vec3.create(self.cameraLookAt);
     self._scene.camera.location = vec3.create(self.cameraLocation);
   };
 
+  var hookEntityEvents = function(entity) {
+    entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
+    entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+  };
+
+  var unhookEntityEvents = function(entity) {
+    entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
+    entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+  };
+
+  var onEntityTrackingTarget = function(data) {
+    includedTargetId = data.target.getId();
+  };
+
+  var onEntityCancelledTrackingTarget = function(data) {
+    includedTargetId = null;
+  };
 };
 
 exports.ChaseCamera = ChaseCamera;
@@ -3196,15 +3261,11 @@ var TargettingEntity = function(app, sourceid, targetid) {
 
   app.scene.withEntity(targetid, function(entity) {    
     hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
-    textItem = app.overlay.addTextItem('text-' + sourceid, entity.displayName(), 128, 128, 'red');
+    textItem = app.overlay.addTextItem('text-' + sourceid, entity.displayName(), 128, 128, 'red', 'bold 14px verdana');
   });
   
   self.tick();  
 };
-
-// TODO: Turn off when locked
-// TODO: Turn into a green triangle
-// TODO: Stop it rendering when behind the camera!
 
 var OtherPlayer = function(app, entity) {
    var self = this;
@@ -3214,9 +3275,7 @@ var OtherPlayer = function(app, entity) {
     if(hudItem)
       app.overlay.removeItem(hudItem);
    };   
-
-/*
-  
+ 
   var hudItem = app.overlay.addItem('indicator-' + entity.getId(), '/data/textures/indicator.png');
   
   entity.addEventHandler('tick', function() {
@@ -3225,21 +3284,22 @@ var OtherPlayer = function(app, entity) {
       var worldSphere = entity.getSphere();
       var transformedSphere = camera.transformSphereToScreen(worldSphere);
 
-      if(transformedSphere[2] < 0) 
-        transformedSphere.radius *= 0.1;
-      var radius = 16.0;
       var centre = transformedSphere.centre;
-    
-      var min = [centre[0] - radius, centre[1] - radius];
-      var max = [centre[0] + radius, centre[1] + radius];
+      var radius = transformedSphere.radius;
 
-      hudItem.left(min[0]);
-      hudItem.top(min[1]);
-      hudItem.width(max[0] - min[0]);
-      hudItem.height(max[1] - min[1]);   
+      if(centre[2] < 100.0)
+        hudItem.hide();
+      else
+        hudItem.show();
+   
+      var position = [centre[0] - 4.0, centre[1] - (radius * 2.0)];
+
+      hudItem.left(position[0]);
+      hudItem.top(position[1]);
+      hudItem.width(8.0);
+      hudItem.height(8.0);   
   }); 
 
-*/
 };
 
 
@@ -3270,7 +3330,6 @@ exports.Hud = function(app) {
     if(!entity.is(Hovercraft)) return;
     entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-
     clearAllKnowledgeOfEntity(entity.getId());
   };
 
@@ -4136,8 +4195,7 @@ exports.ClientGameReceiver = function(app, server) {
 		  craft.setSync(data.sync);
 
       // Reset camera
-      chaseCamera.setMovementDelta(0.2);
-      chaseCamera.setLookAtDelta(0.7);
+      chaseCamera.resetDeltas();
 		  chaseCamera.setTrackedEntity(craft);
       chaseCamera.unfixLocation();
 
@@ -4465,9 +4523,18 @@ var OverlayItem = function(id, texture) {
   var top = 0;
   var left = 0;
   var rotation = 0;
+  var visible = true;
 
   self.id = function() {
     return id;
+  };
+
+  self.show = function() {
+    visible = true;
+  };
+
+  self.hide = function() {
+    visible = false;
   };
 
   self.top = function(value) {
@@ -4485,6 +4552,10 @@ var OverlayItem = function(id, texture) {
   self.height = function(value) {
     return height = value || height;
   };  
+
+  self.isVisible = function() {
+    return visible;
+  };
 
   self.texture = function() {
     return texture.get();
@@ -4604,6 +4675,8 @@ exports.Overlay = function(app) {
 
     for(var i in items) {
       var item = items[i];
+      if(!item.isVisible()) continue;
+
       var worldMatrix = mat4.create();
       mat4.identity(worldMatrix);
 

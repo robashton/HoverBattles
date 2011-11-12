@@ -48,6 +48,7 @@ exports.Tracking = function() {
     for(var i in self.targetsInSight) {
       var entity = self._scene.getEntity(i);
       if(!entity) {
+        self.notifyNotAimingAt(self.targetsInSight[i].entity);
         delete self.targetsInSight[i];
         if(this._currentTarget && this._currentTarget.getId() === i)
           this._currentTarget = null;

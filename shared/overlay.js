@@ -9,9 +9,18 @@ var OverlayItem = function(id, texture) {
   var top = 0;
   var left = 0;
   var rotation = 0;
+  var visible = true;
 
   self.id = function() {
     return id;
+  };
+
+  self.show = function() {
+    visible = true;
+  };
+
+  self.hide = function() {
+    visible = false;
   };
 
   self.top = function(value) {
@@ -29,6 +38,10 @@ var OverlayItem = function(id, texture) {
   self.height = function(value) {
     return height = value || height;
   };  
+
+  self.isVisible = function() {
+    return visible;
+  };
 
   self.texture = function() {
     return texture.get();
@@ -148,6 +161,8 @@ exports.Overlay = function(app) {
 
     for(var i in items) {
       var item = items[i];
+      if(!item.isVisible()) continue;
+
       var worldMatrix = mat4.create();
       mat4.identity(worldMatrix);
 
