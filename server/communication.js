@@ -1,5 +1,6 @@
 io = require('socket.io');
 
+EventReceiver = require('./network/eventreceiver').EventReceiver;
 MessageDispatcher = require('../shared/messagedispatcher').MessageDispatcher;
 EntityReceiver = require('../shared/network/entityreceiver').EntityReceiver;
 ProxyReceiver = require('./network/proxyreceiver').ProxyReceiver;
@@ -28,6 +29,7 @@ ServerCommunication = function(app, server){
   this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
   this.dispatcher.addReceiver(new ScoreKeepingReceiver(this.app, this));
   this.dispatcher.addReceiver(new PersistenceReceiver(this.app, this));
+  this.dispatcher.addReceiver(new EventReceiver(this.app, this));
   this.socket.on('connection', function(socket) { self.onConnection(socket); });
 };
 

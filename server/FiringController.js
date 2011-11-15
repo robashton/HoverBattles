@@ -1,63 +1,58 @@
-var FiringController = function(entity, communication) {
-	this.entity = entity;
-	var parent = this;
-	this.communication = communication;
-	entity.addEventHandler('trackingTarget', function(data) { parent.onTrackingTarget(data); });
-	entity.addEventHandler('cancelledTrackingTarget', function(data) { parent.onCancelledTrackingTarget(data); });
-	entity.addEventHandler('tick', function(data) { parent.onTick(data); });
-  this.missileidCounter = 0;
-  this.reset();
-};
-	
-FiringController.prototype.onTrackingTarget = function(ev) {
-	this._trackingStartTime = new Date();
-	this._trackedTarget = ev.target;
-  this._status = "tracking";
-};
+exports.FiringController = function(communication) {
+	var self = this;
 
-FiringController.prototype.reset = function() {
-  this._trackingStartTime = null;
-  this._trackedTarget = null;
-  this._status = "null";
-  this._trackedMissileId = null;
-};
-	
-FiringController.prototype.onCancelledTrackingTarget = function(ev) {
-  if(this._status === "fired") {
-  /*  this.communication.sendMessage('missileLockLost', {
-      sourceid: this.entity.getId(),
-      targetid: this._trackedTarget.getId(),
-      missileid: this._trackedMissileId
-    }); */
-  }
-  else
-    this.reset();
-};
-	
-FiringController.prototype.onTick = function() {
-	if(!this._trackedTarget || this.fired) return;
-	var currentTime = new Date();
-	var timeElapsedSinceStartedTracking = currentTime - this._trackingStartTime;
-	if(timeElapsedSinceStartedTracking > 1500 && this._status === "tracking") {
-		this._status = "locked";
-    this.communication.sendMessage('missileLock', {
-      sourceid: this.entity.getId(),
-      targetid: this._trackedTarget.getId()
-    });
-  }
-};
+  var missileidCounter = 0;
+  var trackingStartTime = null;
+  var trackedTarget = null;
+  var status = "null";
+	var trackedMissileId  = null;
+  var fired = false;
 
-FiringController.prototype.tryFireMissile = function() {
-  if(this._status === "locked") {
-    this._status = "fired";
-    var missileid = 'missile-' + this.entity.getId() + this.missileidCounter++;
-    this._trackedMissileId = missileid;
-		this.communication.sendMessage('fireMissile', { 
+  var onTrackingTarget = function(ev) {
+	  trackingStartTime = new Date();
+	  trackedTarget = ev.target;
+    status = "tracking";
+  };
+	
+  var onCancelledTrackingTarget = function(ev) {
+    if(status !== "fired") 
+      self.resetFiringState();
+  };
+	
+  var onTick = function() {
+	  if(!trackedTarget || fired) return;
+	  var currentTime = new Date();
+	  var timeElapsedSinceStartedTracking = currentTime - trackingStartTime;
+	  if(timeElapsedSinceStartedTracking > 1500 && status === "tracking") {
+		  status = "locked";
+      communication.sendMessage('missileLock', {
+        sourceid: self.getId(),
+        targetid: trackedTarget.getId()
+      });
+    }
+  };
+
+  self.resetFiringState = function() {
+    trackingStartTime = null;
+    trackedTarget = null;
+    status = "null";
+    trackedMissileId = null;
+  };
+
+  self.tryFireMissile = function() {
+    if(status !== "locked") return;
+    status = "fired";
+    var missileid = 'missile-' + self.getId() + missileidCounter++;
+    trackedMissileId = missileid;
+	  communication.sendMessage('fireMissile', { 
         missileid: missileid, 
-        sourceid: this.entity.getId(), 
-        targetid: this._trackedTarget.getId()
+        sourceid: self.getId(), 
+        targetid: trackedTarget.getId()
     });    
-  }
-};
+  };
 
-exports.FiringController = FiringController;
+  self.addEventHandler('trackingTarget', onTrackingTarget);
+  self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
+  self.addEventHandler('tick', onTick);
+  
+};

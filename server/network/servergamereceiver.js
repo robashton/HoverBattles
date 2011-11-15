@@ -14,7 +14,7 @@ ServerGameReceiver = function(app, communication) {
 
 ServerGameReceiver.prototype.addPlayer = function(id) {
 	var newCraft = this.hovercraftFactory.create(id);
-	newCraft._firingController = new FiringController(newCraft, this.communication);
+	newCraft.attach(FiringController, [this.communication]);
 	this.craft[id] = newCraft;
 };
 
@@ -53,7 +53,7 @@ ServerGameReceiver.prototype._fireRequest = function(data) {
     console.warn('Fire request received for craft that does not exist');
     return;
   }
-  craft._firingController.tryFireMissile();
+  craft.tryFireMissile();
 };
 
 ServerGameReceiver.prototype._ready = function( data) {
@@ -99,7 +99,7 @@ ServerGameReceiver.prototype._destroyTarget = function(data) {
   
   // Clear up the appropriate fire controler
   self.app.scene.withEntity(data.sourceid, function(source) {
-    source._firingController.reset();
+    source.resetFiringState();
   });
 
 	// Remove the entity from our scene
