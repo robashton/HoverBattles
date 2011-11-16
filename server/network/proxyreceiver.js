@@ -14,7 +14,7 @@ var proxiedMessages = [
 	"_startLeft",
 	"_cancelLeft",
 	"_startRight",
-	"_cancelRight"	
+	"_cancelRight"
 ];
 
 ProxyReceiver.setupProxyMessageHandler = function(msgName) {

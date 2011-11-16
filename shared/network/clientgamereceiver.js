@@ -1,4 +1,6 @@
 var Explosion = require('../explosion').Explosion;
+var MissileFirer = require('../missilefirer').MissileFirer;
+var MissileFactory = require('../missilefactory').MissileFactory;
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;
@@ -12,6 +14,8 @@ exports.ClientGameReceiver = function(app, server) {
   var chaseCamera = null;
   var controller = null;
   var hovercraftFactory = new HovercraftFactory(app);
+
+  var missileFirer = new MissileFirer(app, new MissileFactory());
  
   self._init = function(data) {
 	  playerId = data.id;

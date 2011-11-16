@@ -1,5 +1,6 @@
 HovercraftFactory = require('../../shared/hovercraftfactory').HovercraftFactory;
 MissileFactory = require('../../shared/missilefactory').MissileFactory;
+MissileFirer = require('../../shared/missilefirer').MissileFirer;
 Hovercraft = require('../../shared/hovercraft').Hovercraft;
 Identity = require('../identity').Identity;
 
@@ -9,6 +10,7 @@ ServerGameReceiver = function(app, communication) {
 	this.hovercraftFactory = new HovercraftFactory(this.app);
 	this.craft = {};
   this.guestCount = 0;
+  var missileFirer = new MissileFirer(app, new MissileFactory());
 };
 
 ServerGameReceiver.prototype.addPlayer = function(id) {
@@ -43,15 +45,6 @@ ServerGameReceiver.prototype.getSceneState = function() {
 		state.craft.push(craftState);   
   });
 	return state;	
-};
-
-ServerGameReceiver.prototype._fireRequest = function(data) {
-  var craft = this.craft[data.source];
-  if(!craft) {
-    console.warn('Fire request received for craft that does not exist');
-    return;
-  }
-  craft.tryFireMissile();
 };
 
 ServerGameReceiver.prototype._ready = function( data) {
@@ -89,6 +82,12 @@ ServerGameReceiver.prototype.spawnCraft = function(craft) {
   craft.position[2] = Math.random() * 400 - 200;
   craft.reset();
   this.app.scene.addEntity(craft);
+};
+
+ServerGameReceiver.prototype._fireRequest = function(data) {
+  this.app.scene.withEntity(data.id, function(entity) {
+    entity.tryFireMissile();
+  });
 };
 
 ServerGameReceiver.prototype._reviveTarget = function() {}; 

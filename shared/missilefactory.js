@@ -1,9 +1,7 @@
 Entity = require('./entity').Entity;
 Missile = require('./missile').Missile;
 
-var MissileFactory = function(app) {
-    this.app = app;
-};
+var MissileFactory = function() {};
 
 MissileFactory.prototype.create = function(missileid, sourceid, targetid, position) {
   var entity = new Entity(missileid); 

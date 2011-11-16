@@ -64,17 +64,18 @@ blah.Application.prototype.go = function(context) {
   app.resources.addModelLoader(new LandChunkModelLoader(this.resources));
   app.controller = new Controller(this.scene);
 
-  var Overlay = require('overlay').Overlay;
+  var Overlay = require('./overlay').Overlay;
   app.overlay = new Overlay(this);
   app.overlay.activate(context);
 
-  var Hud = require('hud').Hud;
+  var Hud = require('./hud').Hud;
   app.hud = Hud.create(this);
 
   var RenderPipeline = require('renderpipeline').RenderPipeline;
 
   this.rendering = new RenderPipeline(this);
   this.rendering.init(app.context);
+
 };
 
 blah.Application.prototype.tick = function(){

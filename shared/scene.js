@@ -21,6 +21,7 @@ Scene.prototype.onEntityRemoved = function(callback) {
 };
 
 Scene.prototype.raiseEntityAdded = function(entity) {
+  if(!(entity instanceof Entity)) return;
   for(var i = 0; i < this.entityAddedListeners.length ; i++){ 
     var listener = this.entityAddedListeners[i];
     listener(entity);
@@ -28,6 +29,7 @@ Scene.prototype.raiseEntityAdded = function(entity) {
 };
 
 Scene.prototype.raiseEntityRemoved = function(entity) {
+  if(!(entity instanceof Entity)) return;
   for(var i = 0; i < this.entityRemovedListeners.length ; i++){ 
     var listener = this.entityRemovedListeners[i];
     listener(entity);

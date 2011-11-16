@@ -32,6 +32,11 @@ exports.FiringController = function() {
     }
   };
 
+  var onFireRequest = function() {
+    console.log('Try to fire');
+    self.tryFireMissile();
+  };
+
   self.resetFiringState = function() {
     trackingStartTime = null;
     trackedTarget = null;
@@ -49,9 +54,10 @@ exports.FiringController = function() {
         sourceid: self.getId(), 
         targetid: trackedTarget.getId()
     });    
-  };
+  };  
 
   self.addEventHandler('trackingTarget', onTrackingTarget);
   self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
+  self.addEventHandler('fireRequest', onFireRequest);
   self.addEventHandler('tick', onTick);  
 };

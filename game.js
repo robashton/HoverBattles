@@ -937,6 +937,11 @@ exports.Explosion = function(app, details) {
     }
   };
 
+  var onFireRequest = function() {
+    console.log('Try to fire');
+    self.tryFireMissile();
+  };
+
   self.resetFiringState = function() {
     trackingStartTime = null;
     trackedTarget = null;
@@ -954,10 +959,11 @@ exports.Explosion = function(app, details) {
         sourceid: self.getId(), 
         targetid: trackedTarget.getId()
     });    
-  };
+  };  
 
   self.addEventHandler('trackingTarget', onTrackingTarget);
   self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
+  self.addEventHandler('fireRequest', onFireRequest);
   self.addEventHandler('tick', onTick);  
 };
 }, "frustum": function(exports, require, module) {mat4 = require('./glmatrix').mat4;
@@ -3783,6 +3789,8 @@ LandscapeController.prototype.setScene = function(scene){};
 LandscapeController.prototype.render = function(context){};
 LandscapeController.prototype.is = function(){return false;};
 exports.LandscapeController = LandscapeController;
+LandscapeController.prototype.addEventHandler = function() { };
+LandscapeController.prototype.removeEventHandler = function() {};
 }, "lazyload": function(exports, require, module) {if(typeof LazyLoad == undefined){
     LazyLoad = {};
     LazyLoad.js = function(path, callback) {
@@ -3977,9 +3985,7 @@ exports.Missile = Missile;
 }, "missilefactory": function(exports, require, module) {Entity = require('./entity').Entity;
 Missile = require('./missile').Missile;
 
-var MissileFactory = function(app) {
-    this.app = app;
-};
+var MissileFactory = function() {};
 
 MissileFactory.prototype.create = function(missileid, sourceid, targetid, position) {
   var entity = new Entity(missileid); 
@@ -3993,28 +3999,26 @@ MissileFactory.prototype.create = function(missileid, sourceid, targetid, positi
 exports.MissileFactory = MissileFactory;
 }, "missilefirer": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 
-exports.MissileFirer = function(missileFactory) {
+exports.MissileFirer = function(app, missileFactory) {
   var self = this;
 
-  self._scene.onEntityAdded(function(entity) {
+  app.scene.onEntityAdded(function(entity) {
     entity.addEventHandler('fireMissile', onEntityFiredMissile);
   });
 
-  self._scene.onEntityRemoved(function(entity) {
+  app.scene.onEntityRemoved(function(entity) {
     entity.removeEventHandler('fireMissile', onEntityFiredMissile);
   });
 
   var onEntityFiredMissile = function(data) {
-    var source = self.scene.getEntity(data.sourceid);
-    var target = self.scene.getEntity(data.targetid);
+    var source = app.scene.getEntity(data.sourceid);
+    var target = app.scene.getEntity(data.targetid);
    
     if(!source) { console.warn('Erk, could not find source of missile firing'); return; };
     if(!target) { console.warn('Erk, could not find target of missile firing'); return; };
 
     var missile = missileFactory.create(data.missileid, data.sourceid, data.targetid, source.position);
-    self.scene.addEntity(missile);
-
-    self.raiseEvent('missileCreated', data);
+    app.scene.addEntity(missile);
 	  self.attachHandlersToCoordinateMissile(missile);
   };
 
@@ -4038,14 +4042,14 @@ exports.MissileFirer = function(missileFactory) {
   };
 
   self.makeMissileAwol = function(missileid) {
-    self.app.scene.withEntity(missileid, function(missile) {
+    app.scene.withEntity(missileid, function(missile) {
        missile.clearTarget();
     });
   };
 
   self.removeMissileFromScene = function(id) {
-    self.app.scene.withEntity(id, function(missile) {
-	    self.app.scene.removeEntity(missile);
+    app.scene.withEntity(id, function(missile) {
+	    app.scene.removeEntity(missile);
 	    missile.removeEventHandler('targetHit', self.onTargetHit );
       missile.removeEventHandler('missileLost', self.onMissileLost );
       missile.removeEventHandler('missileExpired', self.onMissileExpired );
@@ -4060,23 +4064,22 @@ exports.MissileFirer = function(missileFactory) {
     self.removeMissileFromScene(data.missileid);
   }; 
 
-  MissileReceiver.prototype.removeMissileFromScene = function(id) {
+  self.removeMissileFromScene = function(id) {
     var self = this;
-    self.app.scene.withEntity(id, function(missile) {
-	    self.app.scene.removeEntity(missile);
-		  self.app.scene.removeEntity(missile.emitter);
+    app.scene.withEntity(id, function(missile) {
+	    app.scene.removeEntity(missile);
+		  app.scene.removeEntity(missile.emitter);
       self.createExplosionForMissile(missile);
     });	
   };
 
-  MissileReceiver.prototype.createExplosionForMissile = function(missile) {
+  self.createExplosionForMissile = function(missile) {
     var self = this;
     var explosion = new Explosion(self.app, {
       position: missile.position,    
       initialVelocity: vec3.create([0,0,0])
     });
   };
-
       
 };
 }, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
@@ -4268,6 +4271,8 @@ exports.Model = Model;
 
 
 }, "network/clientgamereceiver": function(exports, require, module) {var Explosion = require('../explosion').Explosion;
+var MissileFirer = require('../missilefirer').MissileFirer;
+var MissileFactory = require('../missilefactory').MissileFactory;
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;
@@ -4281,6 +4286,8 @@ exports.ClientGameReceiver = function(app, server) {
   var chaseCamera = null;
   var controller = null;
   var hovercraftFactory = new HovercraftFactory(app);
+
+  var missileFirer = new MissileFirer(app, new MissileFactory());
  
   self._init = function(data) {
 	  playerId = data.id;
@@ -5452,6 +5459,7 @@ Scene.prototype.onEntityRemoved = function(callback) {
 };
 
 Scene.prototype.raiseEntityAdded = function(entity) {
+  if(!(entity instanceof Entity)) return;
   for(var i = 0; i < this.entityAddedListeners.length ; i++){ 
     var listener = this.entityAddedListeners[i];
     listener(entity);
@@ -5459,6 +5467,7 @@ Scene.prototype.raiseEntityAdded = function(entity) {
 };
 
 Scene.prototype.raiseEntityRemoved = function(entity) {
+  if(!(entity instanceof Entity)) return;
   for(var i = 0; i < this.entityRemovedListeners.length ; i++){ 
     var listener = this.entityRemovedListeners[i];
     listener(entity);
