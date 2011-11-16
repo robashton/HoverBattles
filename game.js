@@ -558,9 +558,9 @@ var MessageDispatcher = require('./messagedispatcher').MessageDispatcher;
 var ClientGameReceiver = require('./network/clientgamereceiver').ClientGameReceiver;
 var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 var MissileFactory = require('./missilefactory').MissileFactory;
-var MissileReceiver = require('./network/missilereceiver').MissileReceiver;
 var ScoreReceiver = require('./network/scorereceiver').ScoreReceiver;
 var HudReceiver = require('./network/hudreceiver').HudReceiver;
+var EventReceiver = require('./network/eventreceiver').EventReceiver;
 
 ClientCommunication = function(app){
     this.app = app;
@@ -572,9 +572,9 @@ ClientCommunication = function(app){
     this.dispatcher = new MessageDispatcher();
     this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
-	  this.dispatcher.addReceiver(new MissileReceiver(this.app, this, new MissileFactory()));
     this.dispatcher.addReceiver(new ScoreReceiver(this.app, this));
     this.dispatcher.addReceiver(new HudReceiver(this.app, this));
+    this.dispatcher.addReceiver(new EventReceiver(this.app.scene));
 };
 
 ClientCommunication.prototype.hookSocketEvents = function() {
@@ -717,8 +717,14 @@ Entity.prototype.removeEventHandler = function(eventName, callback) {
   this.eventHandlers[eventName] = newItems;
 };
 
+Entity.prototype.raiseServerEvent = function(eventName, data) {
+	if(this._scene.app.isClient) return;
+  this.raiseEvent(eventName, data);
+};
+
 Entity.prototype.raiseEvent = function(eventName, data) {
 	if(!this.eventHandlers[eventName]) return;
+
 	for(var x = 0 ; x < this.eventHandlers[eventName].length; x++){
 		var handler = 	this.eventHandlers[eventName][x];
 		handler.call(this, data);
@@ -897,6 +903,63 @@ exports.Explosion = function(app, details) {
 };
 
 
+}, "firingcontroller": function(exports, require, module) {exports.FiringController = function() {
+	var self = this;
+
+  var missileidCounter = 0;
+  var trackingStartTime = null;
+  var trackedTarget = null;
+  var status = "null";
+	var trackedMissileId  = null;
+  var fired = false;
+
+  var onTrackingTarget = function(ev) {
+	  trackingStartTime = new Date();
+	  trackedTarget = ev.target;
+    status = "tracking";
+  };
+	
+  var onCancelledTrackingTarget = function(ev) {
+    if(status !== "fired") 
+      self.resetFiringState();
+  };
+	
+  var onTick = function() {
+	  if(!trackedTarget || fired) return;
+	  var currentTime = new Date();
+	  var timeElapsedSinceStartedTracking = currentTime - trackingStartTime;
+	  if(timeElapsedSinceStartedTracking > 1500 && status === "tracking") {
+		  status = "locked";
+      self.raiseServerEvent('missileLock', {
+        sourceid: self.getId(),
+        targetid: trackedTarget.getId()
+      });
+    }
+  };
+
+  self.resetFiringState = function() {
+    trackingStartTime = null;
+    trackedTarget = null;
+    status = "null";
+    trackedMissileId = null;
+  };
+
+  self.tryFireMissile = function() {
+    if(status !== "locked") return;
+    status = "fired";
+    var missileid = 'missile-' + self.getId() + missileidCounter++;
+    trackedMissileId = missileid;
+	  self.raiseServerEvent('fireMissile', { 
+        missileid: missileid, 
+        sourceid: self.getId(), 
+        targetid: trackedTarget.getId()
+    });    
+  };
+
+  self.addEventHandler('trackingTarget', onTrackingTarget);
+  self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
+  self.addEventHandler('tick', onTick);  
+};
 }, "frustum": function(exports, require, module) {mat4 = require('./glmatrix').mat4;
 debug = require('./debug');
 
@@ -3080,6 +3143,7 @@ var Clipping = require('./clipping').Clipping;
 var Tracking = require('./aiming').Tracking;
 var Targeting = require('./aiming').Targeting;
 var NamedItem = require('./nameditem').NamedItem;
+var FiringController = require('./firingcontroller').FiringController;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -3094,6 +3158,7 @@ HovercraftFactory.prototype.create = function(id) {
   entity.attach(Tracking);
   entity.attach(Targeting);
   entity.attach(NamedItem);
+  entity.attach(FiringController);
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
@@ -3328,6 +3393,8 @@ exports.Hud = function(app) {
     if(!entity.is(Hovercraft)) return;
     entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+    entity.addEventHandler('missileLock', onEntityMissileLock);
+    entity.addEventHandler('fireMissile', onEntityFireMissile);
 
     if(entity.getId() !== playerId)
       playerIndicators[entity.getId()] = new OtherPlayer(app, entity);
@@ -3387,23 +3454,23 @@ exports.Hud = function(app) {
     clearTrackedEntity(this.getId());
   };
 
+  var onEntityMissileLock = function(data) {
+    withTrackedEntity(this.getId(), function(trackedEntity) {
+      trackedEntity.notifyIsLocked();
+    });
+  };
+
+  var onEntityFireMissile = function(data) {
+    withTrackedEntity(this.getId(), function(trackedEntity) {
+      trackedEntity.notifyHasFired(data.missileid);
+    });
+  };
+
   var withTrackedEntity = function(sourceid, callback) {
     if(!trackedEntities[sourceid])
       console.log('Discarding message as it is seemingly irrelevant :S')
     callback(trackedEntities[sourceid]);
   };
-
-  self.notifyOfMissileFiring = function(data) {
-    withTrackedEntity(data.sourceid, function(trackedEntity) {
-      trackedEntity.notifyHasFired(data.missidleid);
-    });
-  };
-
-  self.notifyOfMissileLock = function(data) {
-    withTrackedEntity(data.sourceid, function(trackedEntity) {
-      trackedEntity.notifyIsLocked();
-    });
-  };   
 
   self.notifyOfMissileDestruction = function(data) {
      clearTrackedEntity(data.sourceid);
@@ -3820,7 +3887,7 @@ var Missile = function() {
 
     if(!self.source || !self.target) {
       self.isTrackingTarget = false;
-			self.raiseEvent('missileLost', { 
+			self.raiseServerEvent('missileLost', { 
 				targetid: self.targetid,
 				sourceid: self.sourceid,
         missileid: self.getId()
@@ -3841,7 +3908,7 @@ var Missile = function() {
     
 		var targetSphere = self.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
-			self.raiseEvent('targetHit', { 
+			self.raiseServerEvent('targetHit', { 
 				targetid: self.targetid,
 				sourceid: self.sourceid,
         missileid: self.getId() 
@@ -3860,14 +3927,13 @@ var Missile = function() {
     else {
 		    self.checkIfMissileHasHitTerrain();
     }
-
 	};
 
   self.checkIfMissileHasHitTerrain = function() {
     var terrain = self._scene.getEntity("terrain");
     var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
     if(terrainHeight > self.position[1]) {
-		  self.raiseEvent('missileExpired', { 
+		  self.raiseServerEvent('missileExpired', { 
         missileid: self.getId() 
       });
 	  }
@@ -3925,6 +3991,94 @@ MissileFactory.prototype.create = function(missileid, sourceid, targetid, positi
 };
 
 exports.MissileFactory = MissileFactory;
+}, "missilefirer": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+
+exports.MissileFirer = function(missileFactory) {
+  var self = this;
+
+  self._scene.onEntityAdded(function(entity) {
+    entity.addEventHandler('fireMissile', onEntityFiredMissile);
+  });
+
+  self._scene.onEntityRemoved(function(entity) {
+    entity.removeEventHandler('fireMissile', onEntityFiredMissile);
+  });
+
+  var onEntityFiredMissile = function(data) {
+    var source = self.scene.getEntity(data.sourceid);
+    var target = self.scene.getEntity(data.targetid);
+   
+    if(!source) { console.warn('Erk, could not find source of missile firing'); return; };
+    if(!target) { console.warn('Erk, could not find target of missile firing'); return; };
+
+    var missile = missileFactory.create(data.missileid, data.sourceid, data.targetid, source.position);
+    self.scene.addEntity(missile);
+
+    self.raiseEvent('missileCreated', data);
+	  self.attachHandlersToCoordinateMissile(missile);
+  };
+
+  self.attachHandlersToCoordinateMissile = function(missile) {
+	  missile.addEventHandler('targetHit', onTargetHit );
+    missile.addEventHandler('missileLost', onMissileLost );
+    missile.addEventHandler('missileExpired', onMissileExpired );
+  };
+
+  var onTargetHit = function(data) {
+	  self.communication.sendMessage('destroyTarget', data);
+    self.communication.sendMessage('destroyMissile', data);
+  };
+
+  var onMissileLost = function(data) {
+	  self.communication.sendMessage('missileLockLost', data);
+  };
+
+  var onMissileExpired = function(data) {
+    self.communication.sendMessage('destroyMissile', data);
+  };
+
+  self.makeMissileAwol = function(missileid) {
+    self.app.scene.withEntity(missileid, function(missile) {
+       missile.clearTarget();
+    });
+  };
+
+  self.removeMissileFromScene = function(id) {
+    self.app.scene.withEntity(id, function(missile) {
+	    self.app.scene.removeEntity(missile);
+	    missile.removeEventHandler('targetHit', self.onTargetHit );
+      missile.removeEventHandler('missileLost', self.onMissileLost );
+      missile.removeEventHandler('missileExpired', self.onMissileExpired );
+    });	
+  };
+
+  self._missileLockLost = function(data) {
+    self.makeMissileAwol(data.missileid);
+  };
+
+  self._destroyMissile = function(data) {
+    self.removeMissileFromScene(data.missileid);
+  }; 
+
+  MissileReceiver.prototype.removeMissileFromScene = function(id) {
+    var self = this;
+    self.app.scene.withEntity(id, function(missile) {
+	    self.app.scene.removeEntity(missile);
+		  self.app.scene.removeEntity(missile.emitter);
+      self.createExplosionForMissile(missile);
+    });	
+  };
+
+  MissileReceiver.prototype.createExplosionForMissile = function(missile) {
+    var self = this;
+    var explosion = new Explosion(self.app, {
+      position: missile.position,    
+      initialVelocity: vec3.create([0,0,0])
+    });
+  };
+
+      
+};
 }, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var bounding = require('./bounding');
@@ -4378,6 +4532,15 @@ EntityReceiver.prototype.getEntity = function(id) {
 };
 
 exports.EntityReceiver = EntityReceiver;
+}, "network/eventreceiver": function(exports, require, module) {exports.EventReceiver = function(scene) {
+  var self = this;
+
+  self._entityEvent = function(msg) {
+    scene.withEntity(msg.id, function(entity) {
+      entity.raiseEvent(msg.event, msg.data);
+    });
+  };
+};
 }, "network/hudreceiver": function(exports, require, module) {var Hud = require('../hud').Hud;
 
 exports.HudReceiver = function(app, communication) {
@@ -4391,20 +4554,9 @@ exports.HudReceiver = function(app, communication) {
     });
   };  
 
-  self._fireMissile = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-      hud.notifyOfMissileFiring(data);
-    });
-  };
   self._destroyMissile = function(data) {
     app.scene.withEntity(Hud.ID, function(hud) {
       hud.notifyOfMissileDestruction(data);
-    });
-  };
-  
-  self._missileLock = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-      hud.notifyOfMissileLock(data);
     });
   };
 
@@ -4422,75 +4574,6 @@ exports.HudReceiver = function(app, communication) {
 
    
 };
-}, "network/missilereceiver": function(exports, require, module) {var Explosion = require('../explosion').Explosion;
-
-var MissileReceiver = function(app, communication, missileFactory) {
-  this.app = app;    
-	this.missileFactory = missileFactory;
-	this.communication = communication;
-	this.missiles = {};
-};
-
-MissileReceiver.prototype._fireMissile = function(data) {
-  var source = this.app.scene.getEntity(data.sourceid);
-  var target = this.app.scene.getEntity(data.targetid);
- 
-  if(!source) { console.warn('Erk, could not find source of missile firing'); return; };
-  if(!target) { console.warn('Erk, could not find target of missile firing'); return; };
-
-  var missile = this.missileFactory.create(data.missileid, data.sourceid, data.targetid, source.position);
-  this.app.scene.addEntity(missile);
-  this.attachEmitterToMissile(missile);
-};
-
-MissileReceiver.prototype._missileLockLost = function(data) {
-  this.makeMissileAwol(data.missileid);
-};
-
-MissileReceiver.prototype._destroyMissile = function(data) {
-  this.removeMissileFromScene(data.missileid);
-}; 
-
-MissileReceiver.prototype.makeMissileAwol = function(missileid) {
-   this.app.scene.withEntity(missileid, function(missile) {
-      missile.clearTarget();
-   });  
-};
-
-MissileReceiver.prototype.removeMissileFromScene = function(id) {
-  var self = this;
-  self.app.scene.withEntity(id, function(missile) {
-	  self.app.scene.removeEntity(missile);
-		self.app.scene.removeEntity(missile.emitter);
-    self.createExplosionForMissile(missile);
-  });	
-};
-
-MissileReceiver.prototype.createExplosionForMissile = function(missile) {
-  var self = this;
-  var explosion = new Explosion(self.app, {
-    position: missile.position,    
-    initialVelocity: vec3.create([0,0,0])
-  });
-};
-
-MissileReceiver.prototype.attachEmitterToMissile = function(missile) {
-	var emitter = new ParticleEmitter(missile.getId() + 'trail', 4000, this.app,
-    {
-        maxsize: 100,
-        maxlifetime: 0.2,
-        rate: 500,
-        scatter: vec3.create([1.0, 0.001, 1.0]),
-        textureName: '/data/textures/missile.png',
-        track: function(){
-            this.position = vec3.create(missile.position);
-        }
-    });
-    missile.emitter = emitter;
-    this.app.scene.addEntity(emitter);
-};
-
-exports.MissileReceiver = MissileReceiver;
 }, "network/scorereceiver": function(exports, require, module) {exports.ScoreReceiver = function(app, communication) {
   var self = this;
   var scores = { };

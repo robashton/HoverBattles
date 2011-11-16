@@ -1,6 +1,5 @@
 HovercraftFactory = require('../../shared/hovercraftfactory').HovercraftFactory;
 MissileFactory = require('../../shared/missilefactory').MissileFactory;
-FiringController = require('../FiringController').FiringController;
 Hovercraft = require('../../shared/hovercraft').Hovercraft;
 Identity = require('../identity').Identity;
 
@@ -14,7 +13,6 @@ ServerGameReceiver = function(app, communication) {
 
 ServerGameReceiver.prototype.addPlayer = function(id) {
 	var newCraft = this.hovercraftFactory.create(id);
-	newCraft.attach(FiringController, [this.communication]);
 	this.craft[id] = newCraft;
 };
 

@@ -1,44 +1,61 @@
-var FiringController = require('../FiringController').FiringController;
+var FiringController = require('../../shared/firingcontroller').FiringController;
+var Missile = require('../../shared/missile').Missile;
 
 var ForwardedEvents = {};
-ForwardedEvents[FiringController] = [
-  'targetHit',
-  'missileLost',
-  'missileExpired'
+ForwardedEvents = [
+   {
+    type: FiringController,
+    events: [
+      'missileLock',
+      'fireMissile'
+    ]
+   },
+   {
+    type: Missile,
+    events: [
+      'missileLost',
+      'targetHit',
+      'missileExpired'
+    ]
+   }
 ];
 
 exports.EventReceiver = function(app, communication) {
   var self = this;
 
   var hookEvents = function(entity) {
-    for(var type in ForwardedEvents)
-      if(entity.is(type))
-        hookEventsForType(type, entity);
+    for(var i in ForwardedEvents) {
+      var ev = ForwardedEvents[i];
+      if(entity.is(ev.type))
+        hookEventsForType(ev.events, entity);
+    }
   };
 
   var unhookEvents = function(entity) {
-    for(var type in ForwardedEvents)
-      if(entity.is(type))
-        unhookEventsForType(type, entity);
+    for(var i in ForwardedEvents) {
+      var ev = ForwardedEvents[i];
+      if(entity.is(ev.type))
+        unhookEventsForType(ev.events, entity);
+    }
   };  
 
-  var hookEventsForType = function(type, entity) {
-    for(event in ForwardedEvents[type])
-      hookEventHandlerFor(type, event, entity);
+  var hookEventsForType = function(events, entity) {
+    for(i in events)
+      hookEventHandlerFor(events[i], entity);
   };
 
-  var unhookEventsForType = function(type, entity) {
-    for(event in ForwardedEvents[type])
-      unhookEventHandlerFor(type, event, entity);
+  var unhookEventsForType = function(events, entity) {
+    for(i in events)
+      unhookEventHandlerFor(events[i], entity);
   };
 
-  var hookEventHandlerFor = function(type, event, entity) {
+  var hookEventHandlerFor = function(event, entity) {
     entity.addEventHandler(event, function(data) {
       forwardEventForEntity(event, entity.getId(), data);
     });
   };
 
-  var unhookEventHandlerFor = function(type, event, entity) {
+  var unhookEventHandlerFor = function(event, entity) {
     entity.removeEventHandler(event, function(data) {
       forwardEventForEntity(event, entity.getId());
     });
@@ -47,6 +64,7 @@ exports.EventReceiver = function(app, communication) {
   var forwardEventForEntity = function(event, id, data) {
     communication.sendMessage('entityEvent', {
       id: id,
+      event: event,
       data: data
     });
   }; 

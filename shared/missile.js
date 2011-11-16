@@ -40,7 +40,7 @@ var Missile = function() {
 
     if(!self.source || !self.target) {
       self.isTrackingTarget = false;
-			self.raiseEvent('missileLost', { 
+			self.raiseServerEvent('missileLost', { 
 				targetid: self.targetid,
 				sourceid: self.sourceid,
         missileid: self.getId()
@@ -61,7 +61,7 @@ var Missile = function() {
     
 		var targetSphere = self.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
-			self.raiseEvent('targetHit', { 
+			self.raiseServerEvent('targetHit', { 
 				targetid: self.targetid,
 				sourceid: self.sourceid,
         missileid: self.getId() 
@@ -80,14 +80,13 @@ var Missile = function() {
     else {
 		    self.checkIfMissileHasHitTerrain();
     }
-
 	};
 
   self.checkIfMissileHasHitTerrain = function() {
     var terrain = self._scene.getEntity("terrain");
     var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
     if(terrainHeight > self.position[1]) {
-		  self.raiseEvent('missileExpired', { 
+		  self.raiseServerEvent('missileExpired', { 
         missileid: self.getId() 
       });
 	  }

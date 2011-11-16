@@ -1,4 +1,4 @@
-exports.FiringController = function(communication) {
+exports.FiringController = function() {
 	var self = this;
 
   var missileidCounter = 0;
@@ -25,7 +25,7 @@ exports.FiringController = function(communication) {
 	  var timeElapsedSinceStartedTracking = currentTime - trackingStartTime;
 	  if(timeElapsedSinceStartedTracking > 1500 && status === "tracking") {
 		  status = "locked";
-      communication.sendMessage('missileLock', {
+      self.raiseServerEvent('missileLock', {
         sourceid: self.getId(),
         targetid: trackedTarget.getId()
       });
@@ -44,7 +44,7 @@ exports.FiringController = function(communication) {
     status = "fired";
     var missileid = 'missile-' + self.getId() + missileidCounter++;
     trackedMissileId = missileid;
-	  communication.sendMessage('fireMissile', { 
+	  self.raiseServerEvent('fireMissile', { 
         missileid: missileid, 
         sourceid: self.getId(), 
         targetid: trackedTarget.getId()
@@ -53,6 +53,5 @@ exports.FiringController = function(communication) {
 
   self.addEventHandler('trackingTarget', onTrackingTarget);
   self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
-  self.addEventHandler('tick', onTick);
-  
+  self.addEventHandler('tick', onTick);  
 };

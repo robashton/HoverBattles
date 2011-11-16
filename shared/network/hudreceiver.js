@@ -11,20 +11,9 @@ exports.HudReceiver = function(app, communication) {
     });
   };  
 
-  self._fireMissile = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-      hud.notifyOfMissileFiring(data);
-    });
-  };
   self._destroyMissile = function(data) {
     app.scene.withEntity(Hud.ID, function(hud) {
       hud.notifyOfMissileDestruction(data);
-    });
-  };
-  
-  self._missileLock = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-      hud.notifyOfMissileLock(data);
     });
   };
 

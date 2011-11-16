@@ -225,6 +225,8 @@ exports.Hud = function(app) {
     if(!entity.is(Hovercraft)) return;
     entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+    entity.addEventHandler('missileLock', onEntityMissileLock);
+    entity.addEventHandler('fireMissile', onEntityFireMissile);
 
     if(entity.getId() !== playerId)
       playerIndicators[entity.getId()] = new OtherPlayer(app, entity);
@@ -284,23 +286,23 @@ exports.Hud = function(app) {
     clearTrackedEntity(this.getId());
   };
 
+  var onEntityMissileLock = function(data) {
+    withTrackedEntity(this.getId(), function(trackedEntity) {
+      trackedEntity.notifyIsLocked();
+    });
+  };
+
+  var onEntityFireMissile = function(data) {
+    withTrackedEntity(this.getId(), function(trackedEntity) {
+      trackedEntity.notifyHasFired(data.missileid);
+    });
+  };
+
   var withTrackedEntity = function(sourceid, callback) {
     if(!trackedEntities[sourceid])
       console.log('Discarding message as it is seemingly irrelevant :S')
     callback(trackedEntities[sourceid]);
   };
-
-  self.notifyOfMissileFiring = function(data) {
-    withTrackedEntity(data.sourceid, function(trackedEntity) {
-      trackedEntity.notifyHasFired(data.missidleid);
-    });
-  };
-
-  self.notifyOfMissileLock = function(data) {
-    withTrackedEntity(data.sourceid, function(trackedEntity) {
-      trackedEntity.notifyIsLocked();
-    });
-  };   
 
   self.notifyOfMissileDestruction = function(data) {
      clearTrackedEntity(data.sourceid);

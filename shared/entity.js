@@ -43,8 +43,14 @@ Entity.prototype.removeEventHandler = function(eventName, callback) {
   this.eventHandlers[eventName] = newItems;
 };
 
+Entity.prototype.raiseServerEvent = function(eventName, data) {
+	if(this._scene.app.isClient) return;
+  this.raiseEvent(eventName, data);
+};
+
 Entity.prototype.raiseEvent = function(eventName, data) {
 	if(!this.eventHandlers[eventName]) return;
+
 	for(var x = 0 ; x < this.eventHandlers[eventName].length; x++){
 		var handler = 	this.eventHandlers[eventName][x];
 		handler.call(this, data);

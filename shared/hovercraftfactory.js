@@ -4,6 +4,7 @@ var Clipping = require('./clipping').Clipping;
 var Tracking = require('./aiming').Tracking;
 var Targeting = require('./aiming').Targeting;
 var NamedItem = require('./nameditem').NamedItem;
+var FiringController = require('./firingcontroller').FiringController;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -18,6 +19,7 @@ HovercraftFactory.prototype.create = function(id) {
   entity.attach(Tracking);
   entity.attach(Targeting);
   entity.attach(NamedItem);
+  entity.attach(FiringController);
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
