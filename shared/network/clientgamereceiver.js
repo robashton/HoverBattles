@@ -64,24 +64,6 @@ exports.ClientGameReceiver = function(app, server) {
 
 	  if(craft.getId() === data.targetid) {    
 
-      // Remove entity from scene
-		  app.scene.removeEntity(craft);
-      app.scene.withEntity(data.sourceid, function(source) {
-
-        // Set up the camera to do the zooming out thing
-        chaseCamera.setMovementDelta(0.03);
-        chaseCamera.setLookAtDelta(0.03);
-        chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 100, craft.position[1]]);
-
-        setTimeout(function() {
-          chaseCamera.setTrackedEntity(source);
-        }, 1500);        
-
-        setTimeout(function() {
-            chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 300, craft.position[1]]);
-        }, 5000);
-      });
-
       // Disable input
 		  controller.disable();   
 		

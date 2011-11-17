@@ -366,7 +366,6 @@ var ChaseCamera = function(scene, playerId) {
     movementDelta = 0.2;
     lookAtDelta = 0.7;
   };
-  resetDeltas();
 
   var onEntityAdded = function(entity) {
     if(entity.getId() === playerId)
@@ -388,15 +387,17 @@ var ChaseCamera = function(scene, playerId) {
 
   var hookEntityEvents = function(entity) {
     entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
-    entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-    
+    entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);    
     entity.addEventHandler('tick', doLogic);
+    entity.addEventHandler('healthZeroed', onPlayerHealthZeroed);
+    resetDeltas();
   };
 
   var unhookEntityEvents = function(entity) {
     entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
     entity.removeEventHandler('tick', doLogic);
+    entity.removeEventHandler('healthZeroed', onPlayerHealthZeroed);
   };
 
   var onEntityTrackingTarget = function(data) {
@@ -406,6 +407,25 @@ var ChaseCamera = function(scene, playerId) {
   var onEntityCancelledTrackingTarget = function(data) {
     includedTargetId = null;
     vec3.subtract(desiredCameraLocationIncludingTarget, desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting);
+  };
+
+  var onPlayerHealthZeroed = function(data) {
+    setMovementDelta(0.03);
+    setLookAtDelta(0.03);
+
+    var deathPosition = entity.position;
+
+    fixLocationAt([deathPosition[0], deathPosition[1] + 100, deathPosition[1]]);
+
+    scene.withEntity(data.sourceid, function(source) {
+      setTimeout(function() {
+        setTrackedEntity(source);
+      }, 1500);        
+
+      setTimeout(function() {
+          fixLocationAt([deathPosition[0], deathPosition[1] + 300, deathPosition[1]]);
+      }, 5000);
+    });    
   };
 
   var fixLocationAt = function(position) {
@@ -4376,24 +4396,6 @@ exports.ClientGameReceiver = function(app, server) {
   self._destroyTarget = function(data) {
 
 	  if(craft.getId() === data.targetid) {    
-
-      // Remove entity from scene
-		  app.scene.removeEntity(craft);
-      app.scene.withEntity(data.sourceid, function(source) {
-
-        // Set up the camera to do the zooming out thing
-        chaseCamera.setMovementDelta(0.03);
-        chaseCamera.setLookAtDelta(0.03);
-        chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 100, craft.position[1]]);
-
-        setTimeout(function() {
-          chaseCamera.setTrackedEntity(source);
-        }, 1500);        
-
-        setTimeout(function() {
-            chaseCamera.fixLocationAt([craft.position[0], craft.position[1] + 300, craft.position[1]]);
-        }, 5000);
-      });
 
       // Disable input
 		  controller.disable();   
