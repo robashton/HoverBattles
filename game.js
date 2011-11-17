@@ -938,7 +938,6 @@ exports.Explosion = function(app, details) {
   };
 
   var onFireRequest = function() {
-    console.log('Try to fire');
     self.tryFireMissile();
   };
 
@@ -3243,7 +3242,6 @@ var WarningsContainer = function(app, playerId) {
      items.push(item);
      updateIndexes(); 
      item.target(lastSphere);
-    console.log('Added ' + items.length);
   };
 
   self.notifyRemovalOfItem = function(item) {
@@ -3251,7 +3249,6 @@ var WarningsContainer = function(app, playerId) {
     for(var i = 0; i < items.length; i++)
       if(items[i] !== item) newItems.push(items[i]);
     items = newItems;
-    console.log('Removed ' + items.length);
     updateIndexes();
   };
 
@@ -3334,7 +3331,7 @@ var TargettingEntity = function(app, sourceid, targetid) {
       textItem.top(textTop);
       textItem.width(128);
       textItem.height(128);   
-      });
+    });
   };
 
   app.scene.withEntity(targetid, function(entity) {    
@@ -3357,27 +3354,26 @@ var OtherPlayer = function(app, entity) {
   var hudItem = app.overlay.addItem('indicator-' + entity.getId(), '/data/textures/indicator.png');
   
   entity.addEventHandler('tick', function() {
-      var camera = app.scene.camera;
+    var camera = app.scene.camera;
 
-      var worldSphere = entity.getSphere();
-      var transformedSphere = camera.transformSphereToScreen(worldSphere);
+    var worldSphere = entity.getSphere();
+    var transformedSphere = camera.transformSphereToScreen(worldSphere);
 
-      var centre = transformedSphere.centre;
-      var radius = transformedSphere.radius;
+    var centre = transformedSphere.centre;
+    var radius = transformedSphere.radius;
 
-      if(centre[2] < 100.0)
-        hudItem.hide();
-      else
-        hudItem.show();
-   
-      var position = [centre[0] - 4.0, centre[1] - (radius * 2.0)];
+    if(centre[2] < 100.0)
+      hudItem.hide();
+    else
+      hudItem.show();
+ 
+    var position = [centre[0] - 4.0, centre[1] - (radius * 2.0)];
 
-      hudItem.left(position[0]);
-      hudItem.top(position[1]);
-      hudItem.width(8.0);
-      hudItem.height(8.0);   
+    hudItem.left(position[0]);
+    hudItem.top(position[1]);
+    hudItem.width(8.0);
+    hudItem.height(8.0);   
   }); 
-
 };
 
 
@@ -3387,7 +3383,7 @@ exports.Hud = function(app) {
   var playerId = null;
   var warnings = null;
 
-  var trackedEntities = {};
+  var trackedCraft = {};
   var playerIndicators = {};
 
   self.setPlayerId = function(id) {
@@ -3395,69 +3391,40 @@ exports.Hud = function(app) {
     warnings = new WarningsContainer(app, playerId);
   };
 
-  var hookHovercraftEvents = function(entity) {
-    if(!entity.is(Hovercraft)) return;
-    entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
-    entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-    entity.addEventHandler('missileLock', onEntityMissileLock);
-    entity.addEventHandler('fireMissile', onEntityFireMissile);
-
-    if(entity.getId() !== playerId)
-      playerIndicators[entity.getId()] = new OtherPlayer(app, entity);
+  var onEntityAdded = function(entity) {
+    if(entity.is(Hovercraft))
+      hookHovercraftEvents(entity);
   };
 
-  var unHookHovercraftEvents = function(entity) {
-    if(!entity.is(Hovercraft)) return;
-    entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
-    entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-    clearAllKnowledgeOfEntity(entity.getId());
+  var onEntityRemoved = function(entity) {
+    if(entity.is(Hovercraft))
+      unHookHovercraftEvents(entity);
   };
 
- var createTrackedEntity = function(sourceid, targetid) {
-   if(sourceid === playerId) {
-      trackedEntities[sourceid] = new TargettingEntity(app, sourceid, targetid);
-    } else if(targetid === playerId){ 
-      trackedEntities[sourceid] = new WarningEntity(app, warnings, sourceid, targetid);
-    }
+  var hookHovercraftEvents = function(craft) {
+    craft.addEventHandler('trackingTarget', onEntityTrackingTarget);
+    craft.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+    craft.addEventHandler('missileLock', onEntityMissileLock);
+    craft.addEventHandler('fireMissile', onEntityFireMissile);
+
+    if(craft.getId() !== playerId)
+      playerIndicators[craft.getId()] = new OtherPlayer(app, craft);
   };
 
-  var clearTrackedEntity = function(sourceid) {
-    var entity = trackedEntities[sourceid];
-
-    if(entity) {
-      delete trackedEntities[sourceid];
-      entity.dispose();
-    }
-  };
-
-  var clearIndicators = function(sourceid) {
-    if(sourceid == playerId) return;
-    var indicator = playerIndicators[sourceid];
-    delete playerIndicators[sourceid];
-    indicator.dispose();
-  };
-
-  var clearPlayerTargetIfNecessary = function(sourceid) {
-    if(trackedEntities[playerId] && trackedEntities[playerId].targetid() === sourceid)
-      clearTrackedEntity(playerId);
-  };
-
-  var clearAllKnowledgeOfEntity = function(sourceid) {
-    clearTrackedEntity(sourceid);
-    clearIndicators(sourceid);
-    clearPlayerTargetIfNecessary(sourceid);
-
-    for(i in trackedEntities)
-      if(trackedEntities[i].targetid() === sourceid) clearTrackedEntity(i);
-    
+  var unHookHovercraftEvents = function(craft) {
+    craft.removeEventHandler('trackingTarget', onEntityTrackingTarget);
+    craft.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+    craft.removeEventHandler('missileLock', onEntityMissileLock);
+    craft.removeEventHandler('fireMissile', onEntityFireMissile);
+    clearAllKnowledgeOfHovercraft(craft.getId());
   };
 
   var onEntityTrackingTarget = function(data) {
-    createTrackedEntity(this.getId(), data.target.getId());
+    createTrackedHovercraft(this.getId(), data.target.getId());
   };
 
   var onEntityCancelledTrackingTarget = function(data) {
-    clearTrackedEntity(this.getId());
+    clearTrackedHovercraft(this.getId());
   };
 
   var onEntityMissileLock = function(data) {
@@ -3472,10 +3439,48 @@ exports.Hud = function(app) {
     });
   };
 
+ var createTrackedHovercraft = function(sourceid, targetid) {
+   if(sourceid === playerId) {
+      trackedCraft[sourceid] = new TargettingEntity(app, sourceid, targetid);
+    } else if(targetid === playerId){ 
+      trackedCraft[sourceid] = new WarningEntity(app, warnings, sourceid, targetid);
+    }
+  };
+
+  var clearTrackedHovercraft = function(sourceid) {
+    var entity = trackedCraft[sourceid];
+
+    if(entity) {
+      delete trackedCraft[sourceid];
+      entity.dispose();
+    }
+  };
+
+  var clearIndicators = function(sourceid) {
+    if(sourceid == playerId) return;
+    var indicator = playerIndicators[sourceid];
+    delete playerIndicators[sourceid];
+    indicator.dispose();
+  };
+
+  var clearPlayerTargetIfNecessary = function(sourceid) {
+    if(trackedCraft[playerId] && trackedCraft[playerId].targetid() === sourceid)
+      clearTrackedEntity(playerId);
+  };
+
+  var clearAllKnowledgeOfHovercraft = function(sourceid) {
+    clearTrackedHovercraft(sourceid);
+    clearIndicators(sourceid);
+    clearPlayerTargetIfNecessary(sourceid);
+
+    for(i in trackedCraft)
+      if(trackedCraft[i].targetid() === sourceid) 
+        clearTrackedHovercraft(i);    
+  };
+
   var withTrackedEntity = function(sourceid, callback) {
-    if(!trackedEntities[sourceid])
-      console.log('Discarding message as it is seemingly irrelevant :S')
-    callback(trackedEntities[sourceid]);
+    if(trackedCraft[sourceid])
+      callback(trackedCraft[sourceid]);
   };
 
   self.notifyOfMissileDestruction = function(data) {
@@ -3492,14 +3497,14 @@ exports.Hud = function(app) {
 
   self.doLogic = function() {
     if(warnings) warnings.tick();
-    for(var i in trackedEntities) {
-      var entity = trackedEntities[i];
+    for(var i in trackedCraft) {
+      var entity = trackedCraft[i];
       entity.tick();
     }   
   };
 
-  app.scene.onEntityAdded(hookHovercraftEvents);
-  app.scene.onEntityRemoved(unHookHovercraftEvents);
+  app.scene.onEntityAdded(onEntityAdded);
+  app.scene.onEntityRemoved(onEntityRemoved);
 };
 
 exports.Hud.ID = "HUDEntity";
@@ -3857,44 +3862,46 @@ exports.MessageDispatcher = MessageDispatcher;}, "missile": function(exports, re
 
 var Missile = function() {
   var self = this;
+
  	self.target = null;
 	self.source = null;
 	self._velocity = vec3.create([0,0,0]);	
-	self.bounds = new Sphere(1.0, [0,0,0]);
-  self.isTrackingTarget = false;
-	
+
+	var bounds = new Sphere(1.0, [0,0,0]);
+  var isTrackingTarget = false;
+	var distanceFromTarget = vec3.create([99,99,99]);
+
 	self.setSource = function(sourceid, position) {
 		self.sourceid = sourceid;
 		self.position = vec3.create(position);	
 	};
   self.setTarget = function(targetid) {
     self.targetid = targetid;
-    self.isTrackingTarget = true;
+    isTrackingTarget = true;
   };
-
   self.clearTarget = function() {
     self.targetid = null;
-    self.isTrackingTarget = false;
+    isTrackingTarget = false;
   };
 
   self.doLogic = function() {
-   if(self.isTrackingTarget) self.updateTargetReferences();
+   if(isTrackingTarget) updateTargetReferences();
 
-    if(self.isTrackingTarget) {   
-		  self.updateVelocityTowardsTarget();
-		  self.performPhysics();
-		  self.determineIfTargetIsReached();
+    if(isTrackingTarget) {   
+		  updateVelocityTowardsTarget();
+		  performPhysics();
+		  determineIfTargetIsReached();
     } else {
-      self.performPhysics();
+      performPhysics();
     }		
 	};
 
-  self.updateTargetReferences = function() {
-    self.source = self.getSource();
-    self.target = self.getTarget();
+  var updateTargetReferences = function() {
+    self.source = getSource();
+    self.target = getTarget();
 
     if(!self.source || !self.target) {
-      self.isTrackingTarget = false;
+      isTrackingTarget = false;
 			self.raiseServerEvent('missileLost', { 
 				targetid: self.targetid,
 				sourceid: self.sourceid,
@@ -3903,16 +3910,16 @@ var Missile = function() {
     }
   };
 
-  self.getSource = function() {
+  var getSource = function() {
     return self._scene.getEntity(self.sourceid);
   };
 
-  self.getTarget = function() {
+  var getTarget = function() {
     return self._scene.getEntity(self.targetid);
   };
 	
-	self.determineIfTargetIsReached = function() {
-		var myBounds = self.bounds.translate(self.position);
+	var determineIfTargetIsReached = function() {
+		var myBounds = bounds.translate(self.position);
     
 		var targetSphere = self.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
@@ -3933,25 +3940,20 @@ var Missile = function() {
 	/*  self._scene.withEntity(self.targetid, function(target) {
       if(target.
     });   */
-  };
-  
-
-  
+  }; 
 	
-	self.performPhysics = function() {
+	var performPhysics = function() {
 		vec3.add(self.position, self._velocity);
 
-    if(self.isTrackingTarget) {
-		  if(!self.isWithinReachOfTarget()) {
-			  self.clipMissileToTerrain();
-      }
+    if(isTrackingTarget) {
+		  if(!isWithinReachOfTarget())
+			  clipMissileToTerrain();      
     }
-    else {
-		    self.checkIfMissileHasHitTerrain();
-    }
+    else
+		    checkIfMissileHasHitTerrain();
 	};
 
-  self.checkIfMissileHasHitTerrain = function() {
+  var checkIfMissileHasHitTerrain = function() {
     var terrain = self._scene.getEntity("terrain");
     var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
     if(terrainHeight > self.position[1]) {
@@ -3961,31 +3963,31 @@ var Missile = function() {
 	  }
   };
 	
-	self.isWithinReachOfTarget = function() {
-		var difference = self.calculateVectorToTarget();
+	var isWithinReachOfTarget = function() {
+		var difference = calculateVectorToTarget();
 		difference[1] = 0;
 		var distanceToTargetIgnoringHeight = vec3.length(difference);
 		return distanceToTargetIgnoringHeight < 2;		
 	};
 	
-	self.updateVelocityTowardsTarget = function() {
-		var difference = self.calculateVectorToTarget();
-		self.distanceFromTarget = vec3.length(difference);
+	var updateVelocityTowardsTarget = function() {
+		var difference = calculateVectorToTarget();
+		distanceFromTarget = vec3.length(difference);
 
     vec3.normalize(difference);
     var speed = 0.8;  
 		vec3.scale(difference, speed);	
-    vec3.add(this._velocity, difference);
-    vec3.scale(this._velocity, 0.8);
+    vec3.add(self._velocity, difference);
+    vec3.scale(self._velocity, 0.8);
 	};
 	
-	self.clipMissileToTerrain = function(vectorToTarget) {
+	var clipMissileToTerrain = function(vectorToTarget) {
 		var terrain = self._scene.getEntity("terrain");
     var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
 		self.position[1] =  Math.max(terrainHeight, self.position[1]);	
 	};
 	
-	self.calculateVectorToTarget = function() {	
+	var calculateVectorToTarget = function() {	
     var targetDestination = self.target.position;
     var currentPosition = self.position;
 	  var difference = vec3.create([0,0,0]);
@@ -3998,7 +4000,6 @@ var Missile = function() {
   };
 
   self.addEventHandler('targetLost', onTargetLost);
-
 };
 
 exports.Missile = Missile;
@@ -4060,8 +4061,6 @@ exports.MissileFirer = function(app, missileFactory) {
 	    app.scene.removeEntity(missile);
 	    missile.removeEventHandler('targetHit', onTargetHit );
       missile.removeEventHandler('missileExpired', onMissileExpired );
-
-      //  self.createExplosionForMissile(missile);
     });	
   };
 
@@ -4527,25 +4526,11 @@ exports.HudReceiver = function(app, communication) {
     });
   };  
 
-  self._destroyMissile = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-      hud.notifyOfMissileDestruction(data);
-    });
-  };
-
-  self._missileLockLost = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-        hud.notifyOfLockLost(data);
-    });
-  };
-
   self._destroyTarget = function(data) {
     app.scene.withEntity(Hud.ID, function(hud) {
         hud.notifyOfHovercraftDestruction(data);
     });
-  };
-
-   
+  };   
 };
 }, "network/scorereceiver": function(exports, require, module) {exports.ScoreReceiver = function(app, communication) {
   var self = this;

@@ -41,8 +41,6 @@ exports.MissileFirer = function(app, missileFactory) {
 	    app.scene.removeEntity(missile);
 	    missile.removeEventHandler('targetHit', onTargetHit );
       missile.removeEventHandler('missileExpired', onMissileExpired );
-
-      //  self.createExplosionForMissile(missile);
     });	
   };
 

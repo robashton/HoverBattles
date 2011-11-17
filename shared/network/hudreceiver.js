@@ -11,23 +11,9 @@ exports.HudReceiver = function(app, communication) {
     });
   };  
 
-  self._destroyMissile = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-      hud.notifyOfMissileDestruction(data);
-    });
-  };
-
-  self._missileLockLost = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-        hud.notifyOfLockLost(data);
-    });
-  };
-
   self._destroyTarget = function(data) {
     app.scene.withEntity(Hud.ID, function(hud) {
         hud.notifyOfHovercraftDestruction(data);
     });
-  };
-
-   
+  };   
 };

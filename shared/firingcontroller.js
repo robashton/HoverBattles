@@ -33,7 +33,6 @@ exports.FiringController = function() {
   };
 
   var onFireRequest = function() {
-    console.log('Try to fire');
     self.tryFireMissile();
   };
 

@@ -2,44 +2,46 @@ Sphere = require('./bounding').Sphere;
 
 var Missile = function() {
   var self = this;
+
  	self.target = null;
 	self.source = null;
 	self._velocity = vec3.create([0,0,0]);	
-	self.bounds = new Sphere(1.0, [0,0,0]);
-  self.isTrackingTarget = false;
-	
+
+	var bounds = new Sphere(1.0, [0,0,0]);
+  var isTrackingTarget = false;
+	var distanceFromTarget = vec3.create([99,99,99]);
+
 	self.setSource = function(sourceid, position) {
 		self.sourceid = sourceid;
 		self.position = vec3.create(position);	
 	};
   self.setTarget = function(targetid) {
     self.targetid = targetid;
-    self.isTrackingTarget = true;
+    isTrackingTarget = true;
   };
-
   self.clearTarget = function() {
     self.targetid = null;
-    self.isTrackingTarget = false;
+    isTrackingTarget = false;
   };
 
   self.doLogic = function() {
-   if(self.isTrackingTarget) self.updateTargetReferences();
+   if(isTrackingTarget) updateTargetReferences();
 
-    if(self.isTrackingTarget) {   
-		  self.updateVelocityTowardsTarget();
-		  self.performPhysics();
-		  self.determineIfTargetIsReached();
+    if(isTrackingTarget) {   
+		  updateVelocityTowardsTarget();
+		  performPhysics();
+		  determineIfTargetIsReached();
     } else {
-      self.performPhysics();
+      performPhysics();
     }		
 	};
 
-  self.updateTargetReferences = function() {
-    self.source = self.getSource();
-    self.target = self.getTarget();
+  var updateTargetReferences = function() {
+    self.source = getSource();
+    self.target = getTarget();
 
     if(!self.source || !self.target) {
-      self.isTrackingTarget = false;
+      isTrackingTarget = false;
 			self.raiseServerEvent('missileLost', { 
 				targetid: self.targetid,
 				sourceid: self.sourceid,
@@ -48,16 +50,16 @@ var Missile = function() {
     }
   };
 
-  self.getSource = function() {
+  var getSource = function() {
     return self._scene.getEntity(self.sourceid);
   };
 
-  self.getTarget = function() {
+  var getTarget = function() {
     return self._scene.getEntity(self.targetid);
   };
 	
-	self.determineIfTargetIsReached = function() {
-		var myBounds = self.bounds.translate(self.position);
+	var determineIfTargetIsReached = function() {
+		var myBounds = bounds.translate(self.position);
     
 		var targetSphere = self.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
@@ -78,25 +80,20 @@ var Missile = function() {
 	/*  self._scene.withEntity(self.targetid, function(target) {
       if(target.
     });   */
-  };
-  
-
-  
+  }; 
 	
-	self.performPhysics = function() {
+	var performPhysics = function() {
 		vec3.add(self.position, self._velocity);
 
-    if(self.isTrackingTarget) {
-		  if(!self.isWithinReachOfTarget()) {
-			  self.clipMissileToTerrain();
-      }
+    if(isTrackingTarget) {
+		  if(!isWithinReachOfTarget())
+			  clipMissileToTerrain();      
     }
-    else {
-		    self.checkIfMissileHasHitTerrain();
-    }
+    else
+		    checkIfMissileHasHitTerrain();
 	};
 
-  self.checkIfMissileHasHitTerrain = function() {
+  var checkIfMissileHasHitTerrain = function() {
     var terrain = self._scene.getEntity("terrain");
     var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
     if(terrainHeight > self.position[1]) {
@@ -106,31 +103,31 @@ var Missile = function() {
 	  }
   };
 	
-	self.isWithinReachOfTarget = function() {
-		var difference = self.calculateVectorToTarget();
+	var isWithinReachOfTarget = function() {
+		var difference = calculateVectorToTarget();
 		difference[1] = 0;
 		var distanceToTargetIgnoringHeight = vec3.length(difference);
 		return distanceToTargetIgnoringHeight < 2;		
 	};
 	
-	self.updateVelocityTowardsTarget = function() {
-		var difference = self.calculateVectorToTarget();
-		self.distanceFromTarget = vec3.length(difference);
+	var updateVelocityTowardsTarget = function() {
+		var difference = calculateVectorToTarget();
+		distanceFromTarget = vec3.length(difference);
 
     vec3.normalize(difference);
     var speed = 0.8;  
 		vec3.scale(difference, speed);	
-    vec3.add(this._velocity, difference);
-    vec3.scale(this._velocity, 0.8);
+    vec3.add(self._velocity, difference);
+    vec3.scale(self._velocity, 0.8);
 	};
 	
-	self.clipMissileToTerrain = function(vectorToTarget) {
+	var clipMissileToTerrain = function(vectorToTarget) {
 		var terrain = self._scene.getEntity("terrain");
     var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
 		self.position[1] =  Math.max(terrainHeight, self.position[1]);	
 	};
 	
-	self.calculateVectorToTarget = function() {	
+	var calculateVectorToTarget = function() {	
     var targetDestination = self.target.position;
     var currentPosition = self.position;
 	  var difference = vec3.create([0,0,0]);
@@ -143,7 +140,6 @@ var Missile = function() {
   };
 
   self.addEventHandler('targetLost', onTargetLost);
-
 };
 
 exports.Missile = Missile;
