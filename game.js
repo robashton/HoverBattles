@@ -341,7 +341,7 @@ exports.Camera = Camera;
 var mat4 = require('./glmatrix').mat4;
 
 
-var ChaseCamera = function() {
+var ChaseCamera = function(scene, playerId) {
   var self = this;
   self.cameraMode = "chase";
   self.entity = null;
@@ -356,7 +356,6 @@ var ChaseCamera = function() {
   self.cameraVelocity = vec3.create([0,0,0]);
   self.lookAtVelocity = vec3.create([0,0,0]); 
 
-  var lastTargetId = null;
   var includedTargetId = null;
   var desiredCameraLocationIncludingTarget = vec3.create([0,0,0]);
   var desiredCameraLocationBehindPlayer = vec3.create([0,0,0]);
@@ -369,7 +368,17 @@ var ChaseCamera = function() {
   };
   self.resetDeltas();
 
-  self.setTrackedEntity= function(entity) {
+  var onEntityAdded = function(entity) {
+    if(entity.getId() === playerId)
+      setTrackedEntity(entity);
+  };
+
+  var onEntityRemoved = function(entity) {
+    if(entity.getId() === playerId)
+      setTrackedEntity(null);
+  };
+
+  var setTrackedEntity = function(entity) {
     if(self.entity)
       unhookEntityEvents(self.entity);
     self.entity = entity;
@@ -377,24 +386,45 @@ var ChaseCamera = function() {
       hookEntityEvents(self.entity);    
   };
 
-  self.fixLocationAt= function(position) {
+  var hookEntityEvents = function(entity) {
+    entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
+    entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+    entity.addEventHandler('tick', doLogic);
+  };
+
+  var unhookEntityEvents = function(entity) {
+    entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
+    entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+    entity.removeEventHandler('tick', doLogic);
+  };
+
+  var onEntityTrackingTarget = function(data) {
+    includedTargetId = data.target.getId();
+  };
+
+  var onEntityCancelledTrackingTarget = function(data) {
+    includedTargetId = null;
+    vec3.subtract(desiredCameraLocationIncludingTarget, desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting);
+  };
+
+  self.fixLocationAt = function(position) {
       self.fixLocation = true;
       self.destinationCameraLocation = vec3.create(position);
   };
 
-  self.unfixLocation= function() {
+  self.unfixLocation = function() {
       self.fixLocation = false;
   };
 
-  self.setMovementDelta= function(delta) {
+  self.setMovementDelta = function(delta) {
     self.movementDelta = delta;
   };
   
-  self.setLookAtDelta= function(delta) {
+  self.setLookAtDelta = function(delta) {
     self.lookAtDelta = delta;
   };
 
-  self.doLogic = function(){
+  var doLogic = function() {
     workOutWhereTargetIs();
     doLogicAfterAscertainingTarget();
   };
@@ -404,7 +434,7 @@ var ChaseCamera = function() {
        vec3.add(desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting, desiredCameraLocationIncludingTarget);
     } else {
       var vectorFromTarget = vec3.create([0,0,0]);   
-      self._scene.withEntity(includedTargetId, function(target) {
+      scene.withEntity(includedTargetId, function(target) {
         vec3.subtract(self.entity.position, target.position, vectorFromTarget);
         vec3.normalize(vectorFromTarget);
         vec3.scale(vectorFromTarget, distanceBack);        
@@ -439,7 +469,7 @@ var ChaseCamera = function() {
   };
 
   var clampLocationToTerrain = function(location) {
-     var terrain = self._scene.getEntity("terrain");   
+     var terrain = scene.getEntity("terrain");   
      var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(location[0], location[2]);
      location[1] = Math.max(
                       Math.max(terrainHeightAtCameraLocation + 5, self.entity.position[1] + 5), 
@@ -471,28 +501,12 @@ var ChaseCamera = function() {
     vec3.subtract(self.destinationCameraLookAt, self.cameraLookAt, directionToWhereWeWantToLookAt);
     vec3.scale(directionToWhereWeWantToLookAt, self.lookAtDelta , self.lookAtVelocity);
     vec3.add(self.cameraLookAt, self.lookAtVelocity); 
-    self._scene.camera.lookAt = vec3.create(self.cameraLookAt);
-    self._scene.camera.location = vec3.create(self.cameraLocation);
+    scene.camera.lookAt = vec3.create(self.cameraLookAt);
+    scene.camera.location = vec3.create(self.cameraLocation);
   };
 
-  var hookEntityEvents = function(entity) {
-    entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
-    entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-  };
 
-  var unhookEntityEvents = function(entity) {
-    entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
-    entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-  };
-
-  var onEntityTrackingTarget = function(data) {
-    includedTargetId = data.target.getId();
-  };
-
-  var onEntityCancelledTrackingTarget = function(data) {
-    includedTargetId = null;
-    vec3.subtract(desiredCameraLocationIncludingTarget, desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting);
-  };
+  scene.onEntityAdded(onEntityAdded);
 };
 
 exports.ChaseCamera = ChaseCamera;
@@ -4315,32 +4329,43 @@ exports.ClientGameReceiver = function(app, server) {
   var controller = null;
   var hovercraftFactory = new HovercraftFactory(app);
 
-  var missileFirer = new MissileFirer(app, new MissileFactory());
-  var trailsAndExplosions = new TrailsAndExplosions(app);
+  var missileFirer = null;
+  var trailsAndExplosions = null;
  
   self._init = function(data) {
 	  playerId = data.id;
-    craft = hovercraftFactory.create(data.id);   
-    controller = new HovercraftController(data.id, server);
+
+    createGameComponents();
+    createPlayerCraft();
+    waitForAssetsToLoad();   
+  };
+  
+  var createGameComponents = function() {
+    missileFirer = new MissileFirer(app, new MissileFactory());
+    trailsAndExplosions = new TrailsAndExplosions(app);
+    chaseCamera = new ChaseCamera(app.scene, playerId);
+  };
+
+  var createPlayerCraft = function() {
+    craft = hovercraftFactory.create(playerId);   
+    controller = new HovercraftController(playerId, server);
 	  craft.attach(Smoother);
     craft.player = true;
+  };
 
-    chaseCamera = new Entity("chaseCameraController");
-    chaseCamera.attach(ChaseCamera);
-    chaseCamera.setTrackedEntity(craft);
-    app.scene.addEntity(chaseCamera);
-
-    // Wait till we're actually ready before telling the server we are
+  var waitForAssetsToLoad = function() {
 	  app.resources.onAllAssetsLoaded(function() {
-      
-      var username = $.cookie('username');
-      var sign = $.cookie('sign');
+      sendReadyWithCredentialsToServer();
+    });
+  };
 
-      server.sendMessage('ready', {
-        username: username,
-        sign: sign
-      });    
+  var sendReadyWithCredentialsToServer = function() {
+    var username = $.cookie('username');
+    var sign = $.cookie('sign');
 
+    server.sendMessage('ready', {
+      username: username,
+      sign: sign
     });
   };
 

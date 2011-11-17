@@ -16,32 +16,43 @@ exports.ClientGameReceiver = function(app, server) {
   var controller = null;
   var hovercraftFactory = new HovercraftFactory(app);
 
-  var missileFirer = new MissileFirer(app, new MissileFactory());
-  var trailsAndExplosions = new TrailsAndExplosions(app);
+  var missileFirer = null;
+  var trailsAndExplosions = null;
  
   self._init = function(data) {
 	  playerId = data.id;
-    craft = hovercraftFactory.create(data.id);   
-    controller = new HovercraftController(data.id, server);
+
+    createGameComponents();
+    createPlayerCraft();
+    waitForAssetsToLoad();   
+  };
+  
+  var createGameComponents = function() {
+    missileFirer = new MissileFirer(app, new MissileFactory());
+    trailsAndExplosions = new TrailsAndExplosions(app);
+    chaseCamera = new ChaseCamera(app.scene, playerId);
+  };
+
+  var createPlayerCraft = function() {
+    craft = hovercraftFactory.create(playerId);   
+    controller = new HovercraftController(playerId, server);
 	  craft.attach(Smoother);
     craft.player = true;
+  };
 
-    chaseCamera = new Entity("chaseCameraController");
-    chaseCamera.attach(ChaseCamera);
-    chaseCamera.setTrackedEntity(craft);
-    app.scene.addEntity(chaseCamera);
-
-    // Wait till we're actually ready before telling the server we are
+  var waitForAssetsToLoad = function() {
 	  app.resources.onAllAssetsLoaded(function() {
-      
-      var username = $.cookie('username');
-      var sign = $.cookie('sign');
+      sendReadyWithCredentialsToServer();
+    });
+  };
 
-      server.sendMessage('ready', {
-        username: username,
-        sign: sign
-      });    
+  var sendReadyWithCredentialsToServer = function() {
+    var username = $.cookie('username');
+    var sign = $.cookie('sign');
 
+    server.sendMessage('ready', {
+      username: username,
+      sign: sign
     });
   };
 
