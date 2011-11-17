@@ -145,6 +145,10 @@ var Hovercraft = function() {
     sync.position = self.position;
     sync.rotationY = self.rotationY;
   };
+
+  self.projectileHit = function(data) {
+    self.raiseServerEvent('healthZeroed', data);
+  };
 }
          
 exports.Hovercraft = Hovercraft;

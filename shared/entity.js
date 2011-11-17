@@ -109,6 +109,12 @@ Entity.prototype.attach = function(component, args) {
   }
 };
 
+Entity.prototype.sendMessage = function(msg, data) {
+  var functionName = msg;
+  if(this[functionName])
+    this[functionName](data);
+};
+
 Entity.prototype.doLogic = function() {
 	this.raiseEvent('tick', {});
 };

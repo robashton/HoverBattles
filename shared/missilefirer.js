@@ -42,15 +42,5 @@ exports.MissileFirer = function(app, missileFactory) {
 	    missile.removeEventHandler('targetHit', onTargetHit );
       missile.removeEventHandler('missileExpired', onMissileExpired );
     });	
-  };
-
-/*
-  self.createExplosionForMissile = function(missile) {
-    var self = this;
-    var explosion = new Explosion(self.app, {
-      position: missile.position,    
-      initialVelocity: vec3.create([0,0,0])
-    });
-  }; */
-      
+  };      
 };

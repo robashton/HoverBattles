@@ -1,22 +1,36 @@
 var FiringController = require('../../shared/firingcontroller').FiringController;
 var Missile = require('../../shared/missile').Missile;
+var Destructable = require('../../shared/destructable').Destructable;
+var Hovercraft = require('../../shared/hovercraft').Hovercraft;
 
 var ForwardedEvents = {};
 ForwardedEvents = [
    {
-    type: FiringController,
-    events: [
-      'missileLock',
-      'fireMissile'
-    ]
+      type: FiringController,
+      events: [
+        'missileLock',
+        'fireMissile'
+      ]
    },
    {
-    type: Missile,
-    events: [
-      'missileLost',
-      'targetHit',
-      'missileExpired'
-    ]
+      type: Missile,
+      events: [
+        'missileLost',
+        'targetHit',
+        'missileExpired'
+      ]
+   },
+   {
+     type: Destructable,
+     events: [
+      'entityDestroyed'
+     ]
+   },
+   {
+      type: Hovercraft,
+      events: [
+       'healthZeroed'
+      ]
    }
 ];
 

@@ -63,8 +63,8 @@ var Missile = function() {
     
 		var targetSphere = self.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
-      notifyOutsideWorldOfCollision();
       notifyTargetOfCollision();  
+      notifyOutsideWorldOfCollision();
     }
 	};
 
@@ -77,9 +77,12 @@ var Missile = function() {
   };
 
   var notifyTargetOfCollision = function(){ 
-	/*  self._scene.withEntity(self.targetid, function(target) {
-      if(target.
-    });   */
+	  self._scene.withEntity(self.targetid, function(target) {
+      target.sendMessage('projectileHit', {
+			  targetid: self.targetid,
+			  sourceid: self.sourceid // TODO: Damage amount goes here :-)
+      });
+    });
   }; 
 	
 	var performPhysics = function() {

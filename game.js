@@ -672,7 +672,17 @@ DefaultTextureLoader.prototype.load = function(path, callback) {
   return texture; 
 };
 
-exports.DefaultTextureLoader = DefaultTextureLoader;}, "entity": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+exports.DefaultTextureLoader = DefaultTextureLoader;}, "destructable": function(exports, require, module) {exports.Destructable = function() {
+  var self = this;
+
+  var onNoHealthLeft = function() {
+    self.raiseServerEvent('entityDestroyed');
+    self._scene.removeEntity(self);
+  };
+
+  self.addEventHandler('healthZeroed', onNoHealthLeft);
+};
+}, "entity": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var mat3 = require('./glmatrix').mat3;
 
@@ -783,6 +793,12 @@ Entity.prototype.attach = function(component, args) {
   }
 };
 
+Entity.prototype.sendMessage = function(msg, data) {
+  var functionName = msg;
+  if(this[functionName])
+    this[functionName](data);
+};
+
 Entity.prototype.doLogic = function() {
 	this.raiseEvent('tick', {});
 };
@@ -845,6 +861,22 @@ Entity.prototype.render = function(context){
 };
 
 exports.Entity = Entity;
+}, "explodable": function(exports, require, module) {var Explosion = require('./Explosion').Explosion;
+
+exports.Explodable = function() {
+  var self = this;
+
+  var onEntityDestroyed = function() {
+    var explosion = new Explosion(self._scene.app, {
+      position: self.position,    
+      initialVelocity: vec3.create([0,0,0])
+      }
+    );    
+  };  
+
+  self.addEventHandler('entityDestroyed', onEntityDestroyed);
+
+};
 }, "explosion": function(exports, require, module) {var ParticleEmitter = require('./particleemitter').ParticleEmitter;
 
 exports.Explosion = function(app, details) {
@@ -3045,6 +3077,10 @@ var Hovercraft = function() {
     sync.position = self.position;
     sync.rotationY = self.rotationY;
   };
+
+  self.projectileHit = function(data) {
+    self.raiseServerEvent('healthZeroed', data);
+  };
 }
          
 exports.Hovercraft = Hovercraft;
@@ -3149,6 +3185,7 @@ var Tracking = require('./aiming').Tracking;
 var Targeting = require('./aiming').Targeting;
 var NamedItem = require('./nameditem').NamedItem;
 var FiringController = require('./firingcontroller').FiringController;
+var Destructable = require('./destructable').Destructable;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -3164,6 +3201,7 @@ HovercraftFactory.prototype.create = function(id) {
   entity.attach(Targeting);
   entity.attach(NamedItem);
   entity.attach(FiringController);
+  entity.attach(Destructable);
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
@@ -3923,8 +3961,8 @@ var Missile = function() {
     
 		var targetSphere = self.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
-      notifyOutsideWorldOfCollision();
       notifyTargetOfCollision();  
+      notifyOutsideWorldOfCollision();
     }
 	};
 
@@ -3937,9 +3975,12 @@ var Missile = function() {
   };
 
   var notifyTargetOfCollision = function(){ 
-	/*  self._scene.withEntity(self.targetid, function(target) {
-      if(target.
-    });   */
+	  self._scene.withEntity(self.targetid, function(target) {
+      target.sendMessage('projectileHit', {
+			  targetid: self.targetid,
+			  sourceid: self.sourceid // TODO: Damage amount goes here :-)
+      });
+    });
   }; 
 	
 	var performPhysics = function() {
@@ -4062,17 +4103,7 @@ exports.MissileFirer = function(app, missileFactory) {
 	    missile.removeEventHandler('targetHit', onTargetHit );
       missile.removeEventHandler('missileExpired', onMissileExpired );
     });	
-  };
-
-/*
-  self.createExplosionForMissile = function(missile) {
-    var self = this;
-    var explosion = new Explosion(self.app, {
-      position: missile.position,    
-      initialVelocity: vec3.create([0,0,0])
-    });
-  }; */
-      
+  };      
 };
 }, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
