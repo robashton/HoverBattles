@@ -292,7 +292,7 @@ exports.Hud = function(app) {
 
   var clearPlayerTargetIfNecessary = function(sourceid) {
     if(trackedCraft[playerId] && trackedCraft[playerId].targetid() === sourceid)
-      clearTrackedEntity(playerId);
+      clearTrackedHovercraft(playerId);
   };
 
   var clearAllKnowledgeOfHovercraft = function(sourceid) {

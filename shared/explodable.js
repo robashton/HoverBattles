@@ -1,4 +1,4 @@
-var Explosion = require('./Explosion').Explosion;
+var Explosion = require('./explosion').Explosion;
 
 exports.Explodable = function() {
   var self = this;

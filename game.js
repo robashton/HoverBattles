@@ -861,7 +861,7 @@ Entity.prototype.render = function(context){
 };
 
 exports.Entity = Entity;
-}, "explodable": function(exports, require, module) {var Explosion = require('./Explosion').Explosion;
+}, "explodable": function(exports, require, module) {var Explosion = require('./explosion').Explosion;
 
 exports.Explodable = function() {
   var self = this;
@@ -3186,6 +3186,7 @@ var Targeting = require('./aiming').Targeting;
 var NamedItem = require('./nameditem').NamedItem;
 var FiringController = require('./firingcontroller').FiringController;
 var Destructable = require('./destructable').Destructable;
+var Explodable = require('./explodable').Explodable;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -3202,6 +3203,9 @@ HovercraftFactory.prototype.create = function(id) {
   entity.attach(NamedItem);
   entity.attach(FiringController);
   entity.attach(Destructable);
+
+  if(this._app.isClient)
+    entity.attach(Explodable);
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
@@ -3503,7 +3507,7 @@ exports.Hud = function(app) {
 
   var clearPlayerTargetIfNecessary = function(sourceid) {
     if(trackedCraft[playerId] && trackedCraft[playerId].targetid() === sourceid)
-      clearTrackedEntity(playerId);
+      clearTrackedHovercraft(playerId);
   };
 
   var clearAllKnowledgeOfHovercraft = function(sourceid) {
