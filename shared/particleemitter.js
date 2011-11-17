@@ -81,6 +81,7 @@ ParticleEmitter = function(id, capacity, app, config) {
     }
     
     this.createBuffers();
+    this.track();
 };
 
 ParticleEmitter.prototype.start = function() {

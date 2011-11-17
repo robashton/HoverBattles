@@ -3916,13 +3916,27 @@ var Missile = function() {
     
 		var targetSphere = self.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
-			self.raiseServerEvent('targetHit', { 
-				targetid: self.targetid,
-				sourceid: self.sourceid,
-        missileid: self.getId() 
-      });		  
+      notifyOutsideWorldOfCollision();
+      notifyTargetOfCollision();  
     }
 	};
+
+  var notifyOutsideWorldOfCollision = function(){ 
+	  self.raiseServerEvent('targetHit', { 
+			targetid: self.targetid,
+			sourceid: self.sourceid,
+      missileid: self.getId() 
+    });		  
+  };
+
+  var notifyTargetOfCollision = function(){ 
+	/*  self._scene.withEntity(self.targetid, function(target) {
+      if(target.
+    });   */
+  };
+  
+
+  
 	
 	self.performPhysics = function() {
 		vec3.add(self.position, self._velocity);
@@ -3979,6 +3993,12 @@ var Missile = function() {
 	  return difference;
 	};
 
+  var onTargetLost = function() {
+    self.clearTarget();
+  };
+
+  self.addEventHandler('targetLost', onTargetLost);
+
 };
 
 exports.Missile = Missile;
@@ -4024,62 +4044,35 @@ exports.MissileFirer = function(app, missileFactory) {
 
   self.attachHandlersToCoordinateMissile = function(missile) {
 	  missile.addEventHandler('targetHit', onTargetHit );
-    missile.addEventHandler('missileLost', onMissileLost );
     missile.addEventHandler('missileExpired', onMissileExpired );
   };
 
   var onTargetHit = function(data) {
-	  self.communication.sendMessage('destroyTarget', data);
-    self.communication.sendMessage('destroyMissile', data);
-  };
-
-  var onMissileLost = function(data) {
-	  self.communication.sendMessage('missileLockLost', data);
+    removeMissileFromScene(data.missileid);
   };
 
   var onMissileExpired = function(data) {
-    self.communication.sendMessage('destroyMissile', data);
+    removeMissileFromScene(data.missileid);
   };
 
-  self.makeMissileAwol = function(missileid) {
-    app.scene.withEntity(missileid, function(missile) {
-       missile.clearTarget();
-    });
-  };
-
-  self.removeMissileFromScene = function(id) {
+  var removeMissileFromScene = function(id) {
     app.scene.withEntity(id, function(missile) {
 	    app.scene.removeEntity(missile);
-	    missile.removeEventHandler('targetHit', self.onTargetHit );
-      missile.removeEventHandler('missileLost', self.onMissileLost );
-      missile.removeEventHandler('missileExpired', self.onMissileExpired );
+	    missile.removeEventHandler('targetHit', onTargetHit );
+      missile.removeEventHandler('missileExpired', onMissileExpired );
+
+      //  self.createExplosionForMissile(missile);
     });	
   };
 
-  self._missileLockLost = function(data) {
-    self.makeMissileAwol(data.missileid);
-  };
-
-  self._destroyMissile = function(data) {
-    self.removeMissileFromScene(data.missileid);
-  }; 
-
-  self.removeMissileFromScene = function(id) {
-    var self = this;
-    app.scene.withEntity(id, function(missile) {
-	    app.scene.removeEntity(missile);
-		  app.scene.removeEntity(missile.emitter);
-      self.createExplosionForMissile(missile);
-    });	
-  };
-
+/*
   self.createExplosionForMissile = function(missile) {
     var self = this;
     var explosion = new Explosion(self.app, {
       position: missile.position,    
       initialVelocity: vec3.create([0,0,0])
     });
-  };
+  }; */
       
 };
 }, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
@@ -4273,6 +4266,7 @@ exports.Model = Model;
 }, "network/clientgamereceiver": function(exports, require, module) {var Explosion = require('../explosion').Explosion;
 var MissileFirer = require('../missilefirer').MissileFirer;
 var MissileFactory = require('../missilefactory').MissileFactory;
+var TrailsAndExplosions = require('../trailsandexplosions').TrailsAndExplosions;
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;
@@ -4288,6 +4282,7 @@ exports.ClientGameReceiver = function(app, server) {
   var hovercraftFactory = new HovercraftFactory(app);
 
   var missileFirer = new MissileFirer(app, new MissileFactory());
+  var trailsAndExplosions = new TrailsAndExplosions(app);
  
   self._init = function(data) {
 	  playerId = data.id;
@@ -4325,8 +4320,6 @@ exports.ClientGameReceiver = function(app, server) {
 
       // Remove entity from scene
 		  app.scene.removeEntity(craft);
-		  app.scene.removeEntity(craft.emitter);
-
       app.scene.withEntity(data.sourceid, function(source) {
 
         // Set up the camera to do the zooming out thing
@@ -4357,7 +4350,6 @@ exports.ClientGameReceiver = function(app, server) {
 
 		  // Re-add entity to scene
 		  app.scene.addEntity(craft);
-		  app.scene.addEntity(craft.emitter);
 		  craft.setSync(data.sync);
 
       // Reset camera
@@ -4371,8 +4363,7 @@ exports.ClientGameReceiver = function(app, server) {
 	  else {
       var revivedCraft = allCraft[data.id];
       app.scene.addEntity(revivedCraft);
-      app.scene.addEntity(revivedCraft.emitter);
-      revivedCraft.setSync(data.sync);
+       revivedCraft.setSync(data.sync);
 	  }
   };    
 
@@ -4395,7 +4386,6 @@ exports.ClientGameReceiver = function(app, server) {
 	  if(!started) {
 		  started = true;
 		  app.scene.addEntity(craft);
-		  attachEmitterToCraft(craft);
 	  }
   };
 
@@ -4409,29 +4399,7 @@ exports.ClientGameReceiver = function(app, server) {
       entity.setSync(data.sync);
   };
 
-  var removeCraftEmitter = function(craft) {
-    app.scene.removeEntity(craft.emitter);
-  };  
-
   var terrain = app.scene.getEntity('terrain');
-  var attachEmitterToCraft = function(craft) {
-    var emitter = new ParticleEmitter(craft.getId() + 'trail', 100, app,
-    {
-        maxsize: 50,
-        maxlifetime: 0.3,
-        rate: 20,
-        scatter: vec3.create([1.2, 0.001, 1.2]),
-        particleOutwardVelocityMin: vec3.create([-0.9,-50.0,-0.9]),
-        particleOutwardVelocityMax: vec3.create([0.9, -4.0,0.9]),
-        track: function(){
-            this.position = vec3.create([craft.position[0], craft.position[1] - 0.3 , craft.position[2]]);
-        },
-        textureName: '/data/textures/trail.png'
-    });
-    craft.emitter = emitter;
-    app.scene.addEntity(emitter);
-   };
-
   self._updateplayer = function(data) {
     var entity = app.scene.getEntity(data.id);
     if(!entity)
@@ -4447,7 +4415,6 @@ exports.ClientGameReceiver = function(app, server) {
 
   var removeHovercraftFromScene = function(id) {
       app.scene.withEntity(id, function(craftToRemove) {
-        removeCraftEmitter(craftToRemove);
         app.scene.removeEntity(craftToRemove);
       });
   };
@@ -4457,7 +4424,6 @@ exports.ClientGameReceiver = function(app, server) {
 	    craftToAdd.attach(Smoother);
       craftToAdd.setSync(sync);
       app.scene.addEntity(craftToAdd);
-      attachEmitterToCraft(craftToAdd);
       allCraft[id] = craftToAdd;
 	    return craftToAdd;
   };
@@ -4879,6 +4845,7 @@ ParticleEmitter = function(id, capacity, app, config) {
     }
     
     this.createBuffers();
+    this.track();
 };
 
 ParticleEmitter.prototype.start = function() {
@@ -5630,4 +5597,73 @@ Texture.prototype.activate = function(context) {
 };
 
 exports.Texture = Texture;
+}, "trailsandexplosions": function(exports, require, module) {var Missile = require('./missile').Missile;
+var Hovercraft  = require('./hovercraft').Hovercraft;
+var ParticleEmitter = require('./particleemitter').ParticleEmitter;
+
+exports.TrailsAndExplosions = function(app) {
+  var self = this;
+  var trails = {};
+
+  var onEntityAdded = function(entity) {
+    if(entity.is(Hovercraft))
+      setupEntityTrail(entity, createHovercraftTrail);
+    else if(entity.is(Missile))
+      setupEntityTrail(entity, createMissileTrail);
+  };
+
+  var onEntityRemoved = function(entity) {
+    if(entity.is(Hovercraft) || entity.is(Missile))
+      removeEntityTrail(entity);
+  };
+
+  var setupEntityTrail = function(entity, trailFactory) {
+    var id = entity.getId();
+    var trail = trailFactory(id + 'trail', entity);
+    trails[id] = trail;
+    app.scene.addEntity(trail);
+  };
+
+  var removeEntityTrail = function(entity) {
+    var id = entity.getId();
+    var trail = trails[id];
+    app.scene.removeEntity(trail);
+    delete trails[id];
+  };
+
+  var createMissileTrail = function(id, missile) {
+    return new ParticleEmitter(id, 4000, app,
+    {
+        maxsize: 100,
+        maxlifetime: 0.2,
+        rate: 500,
+        scatter: vec3.create([1.0, 0.001, 1.0]),
+        textureName: '/data/textures/missile.png',
+        track: function(){
+            this.position = vec3.create(missile.position);
+        }
+    });
+  };
+
+  var createHovercraftTrail = function(id, hovercraft) {
+    return new ParticleEmitter(id, 100, app,
+    {
+        maxsize: 50,
+        maxlifetime: 0.3,
+        rate: 20,
+        scatter: vec3.create([1.2, 0.001, 1.2]),
+        particleOutwardVelocityMin: vec3.create([-0.9,-50.0,-0.9]),
+        particleOutwardVelocityMax: vec3.create([0.9, -4.0,0.9]),
+        track: function(){
+            this.position = vec3.create([hovercraft.position[0], hovercraft.position[1] - 0.3 , hovercraft.position[2]]);
+        },
+        textureName: '/data/textures/trail.png'
+    });
+  };
+
+
+  app.scene.onEntityAdded(onEntityAdded);
+  app.scene.onEntityRemoved(onEntityRemoved); 
+    
+};
 }});

@@ -25,61 +25,34 @@ exports.MissileFirer = function(app, missileFactory) {
 
   self.attachHandlersToCoordinateMissile = function(missile) {
 	  missile.addEventHandler('targetHit', onTargetHit );
-    missile.addEventHandler('missileLost', onMissileLost );
     missile.addEventHandler('missileExpired', onMissileExpired );
   };
 
   var onTargetHit = function(data) {
-	  self.communication.sendMessage('destroyTarget', data);
-    self.communication.sendMessage('destroyMissile', data);
-  };
-
-  var onMissileLost = function(data) {
-	  self.communication.sendMessage('missileLockLost', data);
+    removeMissileFromScene(data.missileid);
   };
 
   var onMissileExpired = function(data) {
-    self.communication.sendMessage('destroyMissile', data);
+    removeMissileFromScene(data.missileid);
   };
 
-  self.makeMissileAwol = function(missileid) {
-    app.scene.withEntity(missileid, function(missile) {
-       missile.clearTarget();
-    });
-  };
-
-  self.removeMissileFromScene = function(id) {
+  var removeMissileFromScene = function(id) {
     app.scene.withEntity(id, function(missile) {
 	    app.scene.removeEntity(missile);
-	    missile.removeEventHandler('targetHit', self.onTargetHit );
-      missile.removeEventHandler('missileLost', self.onMissileLost );
-      missile.removeEventHandler('missileExpired', self.onMissileExpired );
+	    missile.removeEventHandler('targetHit', onTargetHit );
+      missile.removeEventHandler('missileExpired', onMissileExpired );
+
+      //  self.createExplosionForMissile(missile);
     });	
   };
 
-  self._missileLockLost = function(data) {
-    self.makeMissileAwol(data.missileid);
-  };
-
-  self._destroyMissile = function(data) {
-    self.removeMissileFromScene(data.missileid);
-  }; 
-
-  self.removeMissileFromScene = function(id) {
-    var self = this;
-    app.scene.withEntity(id, function(missile) {
-	    app.scene.removeEntity(missile);
-		  app.scene.removeEntity(missile.emitter);
-      self.createExplosionForMissile(missile);
-    });	
-  };
-
+/*
   self.createExplosionForMissile = function(missile) {
     var self = this;
     var explosion = new Explosion(self.app, {
       position: missile.position,    
       initialVelocity: vec3.create([0,0,0])
     });
-  };
+  }; */
       
 };

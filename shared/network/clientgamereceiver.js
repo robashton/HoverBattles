@@ -1,6 +1,7 @@
 var Explosion = require('../explosion').Explosion;
 var MissileFirer = require('../missilefirer').MissileFirer;
 var MissileFactory = require('../missilefactory').MissileFactory;
+var TrailsAndExplosions = require('../trailsandexplosions').TrailsAndExplosions;
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;
@@ -16,6 +17,7 @@ exports.ClientGameReceiver = function(app, server) {
   var hovercraftFactory = new HovercraftFactory(app);
 
   var missileFirer = new MissileFirer(app, new MissileFactory());
+  var trailsAndExplosions = new TrailsAndExplosions(app);
  
   self._init = function(data) {
 	  playerId = data.id;
@@ -53,8 +55,6 @@ exports.ClientGameReceiver = function(app, server) {
 
       // Remove entity from scene
 		  app.scene.removeEntity(craft);
-		  app.scene.removeEntity(craft.emitter);
-
       app.scene.withEntity(data.sourceid, function(source) {
 
         // Set up the camera to do the zooming out thing
@@ -85,7 +85,6 @@ exports.ClientGameReceiver = function(app, server) {
 
 		  // Re-add entity to scene
 		  app.scene.addEntity(craft);
-		  app.scene.addEntity(craft.emitter);
 		  craft.setSync(data.sync);
 
       // Reset camera
@@ -99,8 +98,7 @@ exports.ClientGameReceiver = function(app, server) {
 	  else {
       var revivedCraft = allCraft[data.id];
       app.scene.addEntity(revivedCraft);
-      app.scene.addEntity(revivedCraft.emitter);
-      revivedCraft.setSync(data.sync);
+       revivedCraft.setSync(data.sync);
 	  }
   };    
 
@@ -123,7 +121,6 @@ exports.ClientGameReceiver = function(app, server) {
 	  if(!started) {
 		  started = true;
 		  app.scene.addEntity(craft);
-		  attachEmitterToCraft(craft);
 	  }
   };
 
@@ -137,29 +134,7 @@ exports.ClientGameReceiver = function(app, server) {
       entity.setSync(data.sync);
   };
 
-  var removeCraftEmitter = function(craft) {
-    app.scene.removeEntity(craft.emitter);
-  };  
-
   var terrain = app.scene.getEntity('terrain');
-  var attachEmitterToCraft = function(craft) {
-    var emitter = new ParticleEmitter(craft.getId() + 'trail', 100, app,
-    {
-        maxsize: 50,
-        maxlifetime: 0.3,
-        rate: 20,
-        scatter: vec3.create([1.2, 0.001, 1.2]),
-        particleOutwardVelocityMin: vec3.create([-0.9,-50.0,-0.9]),
-        particleOutwardVelocityMax: vec3.create([0.9, -4.0,0.9]),
-        track: function(){
-            this.position = vec3.create([craft.position[0], craft.position[1] - 0.3 , craft.position[2]]);
-        },
-        textureName: '/data/textures/trail.png'
-    });
-    craft.emitter = emitter;
-    app.scene.addEntity(emitter);
-   };
-
   self._updateplayer = function(data) {
     var entity = app.scene.getEntity(data.id);
     if(!entity)
@@ -175,7 +150,6 @@ exports.ClientGameReceiver = function(app, server) {
 
   var removeHovercraftFromScene = function(id) {
       app.scene.withEntity(id, function(craftToRemove) {
-        removeCraftEmitter(craftToRemove);
         app.scene.removeEntity(craftToRemove);
       });
   };
@@ -185,7 +159,6 @@ exports.ClientGameReceiver = function(app, server) {
 	    craftToAdd.attach(Smoother);
       craftToAdd.setSync(sync);
       app.scene.addEntity(craftToAdd);
-      attachEmitterToCraft(craftToAdd);
       allCraft[id] = craftToAdd;
 	    return craftToAdd;
   };

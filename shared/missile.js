@@ -61,13 +61,27 @@ var Missile = function() {
     
 		var targetSphere = self.target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
-			self.raiseServerEvent('targetHit', { 
-				targetid: self.targetid,
-				sourceid: self.sourceid,
-        missileid: self.getId() 
-      });		  
+      notifyOutsideWorldOfCollision();
+      notifyTargetOfCollision();  
     }
 	};
+
+  var notifyOutsideWorldOfCollision = function(){ 
+	  self.raiseServerEvent('targetHit', { 
+			targetid: self.targetid,
+			sourceid: self.sourceid,
+      missileid: self.getId() 
+    });		  
+  };
+
+  var notifyTargetOfCollision = function(){ 
+	/*  self._scene.withEntity(self.targetid, function(target) {
+      if(target.
+    });   */
+  };
+  
+
+  
 	
 	self.performPhysics = function() {
 		vec3.add(self.position, self._velocity);
@@ -123,6 +137,12 @@ var Missile = function() {
 	  vec3.subtract(targetDestination, currentPosition, difference);
 	  return difference;
 	};
+
+  var onTargetLost = function() {
+    self.clearTarget();
+  };
+
+  self.addEventHandler('targetLost', onTargetLost);
 
 };
 
