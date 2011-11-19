@@ -26,7 +26,6 @@ EntityReceiver.prototype._startForward = function(data) {
     });
 };
 
-
 EntityReceiver.prototype._cancelForward = function(data) {
     this.withEntity(data.id, function(entity) {
       entity.cancelForward();

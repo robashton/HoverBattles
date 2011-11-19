@@ -27,10 +27,13 @@ var ChaseCamera = function(scene, playerId) {
     movementDelta = 0.2;
     lookAtDelta = 0.7;
   };
-
+ 
   var onEntityAdded = function(entity) {
-    if(entity.getId() === playerId)
+    if(entity.getId() === playerId) {
+      resetDeltas();
+      fixLocation = false;
       setTrackedEntity(entity);
+    }
   };
 
   var onEntityRemoved = function(entity) {
@@ -51,7 +54,6 @@ var ChaseCamera = function(scene, playerId) {
     entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);    
     entity.addEventHandler('tick', doLogic);
     entity.addEventHandler('healthZeroed', onPlayerHealthZeroed);
-    resetDeltas();
   };
 
   var unhookEntityEvents = function(entity) {
@@ -71,8 +73,8 @@ var ChaseCamera = function(scene, playerId) {
   };
 
   var onPlayerHealthZeroed = function(data) {
-    setMovementDelta(0.03);
-    setLookAtDelta(0.03);
+    movementDelta = 0.03;
+    lookAtDelta = 0.03;
 
     var deathPosition = entity.position;
 
@@ -92,18 +94,6 @@ var ChaseCamera = function(scene, playerId) {
   var fixLocationAt = function(position) {
       fixLocation = true;
       destinationCameraLocation = vec3.create(position);
-  };
-
-  var unfixLocation = function() {
-      fixLocation = false;
-  };
-
-  var setMovementDelta = function(delta) {
-    movementDelta = delta;
-  };
-  
-  var setLookAtDelta = function(delta) {
-    lookAtDelta = delta;
   };
 
   var doLogic = function() {

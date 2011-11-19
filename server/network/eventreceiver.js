@@ -2,6 +2,7 @@ var FiringController = require('../../shared/firingcontroller').FiringController
 var Missile = require('../../shared/missile').Missile;
 var Destructable = require('../../shared/destructable').Destructable;
 var Hovercraft = require('../../shared/hovercraft').Hovercraft;
+var HovercraftSpawner = require('../../shared/hovercraftspawner').HovercraftSpawner;
 
 var ForwardedEvents = {};
 ForwardedEvents = [
@@ -30,6 +31,14 @@ ForwardedEvents = [
       type: Hovercraft,
       events: [
        'healthZeroed'
+      ]
+   },
+   {
+      type: HovercraftSpawner,
+      events: [
+        'entityRevived',
+        'entitySpawned',
+        'playerRemoved'
       ]
    }
 ];

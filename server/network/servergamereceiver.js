@@ -3,124 +3,68 @@ MissileFactory = require('../../shared/missilefactory').MissileFactory;
 MissileFirer = require('../../shared/missilefirer').MissileFirer;
 Hovercraft = require('../../shared/hovercraft').Hovercraft;
 Identity = require('../identity').Identity;
+HovercraftSpawner = require('../../shared/hovercraftspawner').HovercraftSpawner;
 
-ServerGameReceiver = function(app, communication) {
-	this.app = app;
-	this.communication = communication;
-	this.hovercraftFactory = new HovercraftFactory(this.app);
-	this.craft = {};
-  this.guestCount = 0;
+exports.ServerGameReceiver = function(app, communication) {
+  var self = this;
+  var guestCount = 0;
   var missileFirer = new MissileFirer(app, new MissileFactory());
-};
+  var spawner = new HovercraftSpawner(app.scene);
 
-ServerGameReceiver.prototype.addPlayer = function(id) {
-	var newCraft = this.hovercraftFactory.create(id);
-	this.craft[id] = newCraft;
-};
-
-ServerGameReceiver.prototype.removePlayer = function(id) {
-	if(this.craft[id]) {
-		this.app.scene.removeEntity(this.craft[id])
-     delete this.craft[id];
-  } else {
-    console.log('Attempted to remove non-existent player from craft collection: ' + id);  
-  }
-};
-
-ServerGameReceiver.prototype.getSyncForPlayer = function(id) {
-  var craft = this.app.scene.getEntity(id);
-	if(craft)
-	  return craft.getSync();
-  return null;
-};
-
-ServerGameReceiver.prototype.getSceneState = function() {
-	var state = {};
-	state.craft = [];
-  this.app.scene.forEachEntity(function(entity) {
-    if(!entity.is(Hovercraft)) return;
-		var craftState = {};
-		craftState.id = entity.getId();
-		craftState.sync = entity.getSync();
-		state.craft.push(craftState);   
-  });
-	return state;	
-};
-
-ServerGameReceiver.prototype._ready = function( data) {
-  var craft = this.craft[data.source];
-
-  if(data.username) {
-    // This is effectively a verification of authentication for this socket
-    if(!Identity.verifyUsername(data.username, data.sign)) {
-      this.communication.rejectClient(data.source);
-      return;
-    }
-  } else {
-    data.username = 'guest-' + this.guestCount++;
+  self.removePlayer = function(id) {
+    spawner.removeHovercraft(id);
   };
 
-  // Then we can create the craft we desire
-  this.spawnCraft(craft);
-  craft.displayName(data.username);
-	this.communication.syncPlayerFull(craft.getId());
-  this.communication.sendMessage('updateplayer', {
-    id: craft.getId(),
-    sync: craft.getSync()
-  });
+  self.getSyncForPlayer = function(id) {
+    var craft = app.scene.getEntity(id);
+	  if(craft)
+	    return craft.getSync();
+    return null;
+  };
 
-  // Let everybody know about this id/username pair
-  this.communication.sendMessage('playerNamed', {
-    id: craft.getId(),
-    username: data.username
-  });
-};
-
-ServerGameReceiver.prototype.spawnCraft = function(craft) {
-  craft.position[0] = Math.random() * 400 - 200;
-  craft.position[1] = 100;
-  craft.position[2] = Math.random() * 400 - 200;
-  craft.reset();
-  this.app.scene.addEntity(craft);
-};
-
-ServerGameReceiver.prototype._fireRequest = function(data) {
-  this.app.scene.withEntity(data.id, function(entity) {
-    entity.tryFireMissile();
-  });
-};
-
-ServerGameReceiver.prototype._reviveTarget = function() {}; 
-ServerGameReceiver.prototype._destroyTarget = function(data) {
-  var self = this;
+  self.getSceneState = function() {
+	  var state = {};
+	  state.craft = [];
+    app.scene.forEachEntity(function(entity) {
+      if(!entity.is(Hovercraft)) return;
+		  var craftState = {};
+		  craftState.id = entity.getId();
+		  craftState.sync = entity.getSync();
+		  state.craft.push(craftState);   
+    });
+	  return state;	
+  };  
   
-  // Clear up the appropriate fire controler
-  self.app.scene.withEntity(data.sourceid, function(source) {
-    source.resetFiringState();
-  });
+  self._ready = function(data) {
+    if(data.username) {
+      if(!Identity.verifyUsername(data.username, data.sign)) {
+        communication.rejectClient(data.source);
+        return;
+      }
+    } else {
+      data.username = 'guest-' + this.guestCount++;
+    }; 
 
-	// Remove the entity from our scene
-	var craft = this.app.scene.getEntity(data.targetid);
-	this.app.scene.removeEntity(craft);
+    spawner.spawnHovercraft(data.source);
+    var craft = app.scene.getEntity(data.source);
+    craft.displayName(data.username);
 
-	// And wait until an appropriate moment to revive it
-	setTimeout(function() {
-    if(!self.craft[craft.getId()]) return;
+	  communication.syncPlayerFull(data.source);
+    communication.sendMessage('updateplayer', {
+      id:  data.source,
+      sync: craft.getSync()
+    });
 
-		// Re-add the craft on our side
-    self.spawnCraft(craft);
+    // Let everybody know about this id/username pair
+    communication.sendMessage('playerNamed', {
+      id: data.source,
+      username: data.username
+    });
+  };
 
-    var sync = craft.getSync()
-    sync.force = true;
-
-		// And tell everyone else to do likewise
-		self.communication.sendMessage('reviveTarget', { 
-			id: craft.getId(),
-      sync: sync
-		});		
-		
-	}, 10000);	
+  self._fireRequest = function(data) {
+    app.scene.withEntity(data.id, function(entity) {
+      entity.tryFireMissile();
+    });
+  };
 };
-
-
-exports.ServerGameReceiver = ServerGameReceiver;

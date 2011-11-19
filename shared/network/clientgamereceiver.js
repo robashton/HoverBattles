@@ -2,6 +2,10 @@ var Explosion = require('../explosion').Explosion;
 var MissileFirer = require('../missilefirer').MissileFirer;
 var MissileFactory = require('../missilefactory').MissileFactory;
 var TrailsAndExplosions = require('../trailsandexplosions').TrailsAndExplosions;
+var HovercraftSpawner = require('../hovercraftspawner').HovercraftSpawner;
+var HovercraftFactory = require('../hovercraftfactory').HovercraftFactory;
+
+var Hud = require('../hud').Hud;
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;
@@ -14,6 +18,7 @@ exports.ClientGameReceiver = function(app, server) {
   var playerId = null;
   var chaseCamera = null;
   var controller = null;
+  var spawner = new HovercraftSpawner(app.scene);
   var hovercraftFactory = new HovercraftFactory(app);
 
   var missileFirer = null;
@@ -23,7 +28,7 @@ exports.ClientGameReceiver = function(app, server) {
 	  playerId = data.id;
 
     createGameComponents();
-    createPlayerCraft();
+    initializeHud();
     waitForAssetsToLoad();   
   };
   
@@ -31,13 +36,13 @@ exports.ClientGameReceiver = function(app, server) {
     missileFirer = new MissileFirer(app, new MissileFactory());
     trailsAndExplosions = new TrailsAndExplosions(app);
     chaseCamera = new ChaseCamera(app.scene, playerId);
-  };
-
-  var createPlayerCraft = function() {
-    craft = hovercraftFactory.create(playerId);   
     controller = new HovercraftController(playerId, server);
-	  craft.attach(Smoother);
-    craft.player = true;
+  };
+ 
+  var initializeHud = function() {
+    app.scene.withEntity(Hud.ID, function(hud) {
+        hud.setPlayerId(playerId);
+      });
   };
 
   var waitForAssetsToLoad = function() {
@@ -60,70 +65,24 @@ exports.ClientGameReceiver = function(app, server) {
      document.location = 'login.html'; 
   };
 
-  self._destroyTarget = function(data) {
-
-	  if(craft.getId() === data.targetid) {    
-
-      // Disable input
-		  controller.disable();   
-		
-	  }
-	  else {
-		  removeHovercraftFromScene(data.targetid);
-	  }	
-  };
-
-  self._reviveTarget = function(data) {
-	  if(data.id === craft.getId()) {
-
-		  // Re-add entity to scene
-		  app.scene.addEntity(craft);
-		  craft.setSync(data.sync);
-
-      // Reset camera
-      chaseCamera.resetDeltas();
-		  chaseCamera.setTrackedEntity(craft);
-      chaseCamera.unfixLocation();
-
-      // Re-add input control
-		  controller.enable();
-	  }
-	  else {
-      var revivedCraft = allCraft[data.id];
-      app.scene.addEntity(revivedCraft);
-       revivedCraft.setSync(data.sync);
-	  }
-  };    
-
   self._syncscene = function(data) {
 
 	  for(i in data.craft) {
-		  var serverCraft = data.craft[i];
-		
-		  var clientCraft = 
-		  serverCraft.id === playerId 
-					  ? craft
-					  : app.scene.getEntity(serverCraft.id);
+		  var serverCraft = data.craft[i];		
+		  var clientCraft = app.scene.getEntity(serverCraft.id);
 
-		  if(!clientCraft) {
-      		clientCraft = addHovercraftToScene(serverCraft.id, serverCraft.sync);
-		  }
-		  clientCraft.setSync(serverCraft.sync);		
-	  }
-
-	  if(!started) {
-		  started = true;
-		  app.scene.addEntity(craft);
+		  if(!clientCraft)
+      	 addHovercraftToScene(serverCraft.id, serverCraft.sync);
+		  else 
+        clientCraft.setSync(serverCraft.sync);      
 	  }
   };
 
   self._sync = function(data) {
-      var entity = app.scene.getEntity(data.id);
-
-	  if(!entity) {
-		  console.log('Message received to sync entity that does not exist: ' + data.id);
-		  return;
-	  }
+    var entity = app.scene.getEntity(data.id);
+    if(!entity)
+	    addHovercraftToScene(data.id, data.sync);
+    else
       entity.setSync(data.sync);
   };
 
@@ -136,23 +95,10 @@ exports.ClientGameReceiver = function(app, server) {
       entity.setSync(data.sync);
   };
 
-  self._removeplayer = function(data) {
-      delete allCraft[data.id];
-      removeHovercraftFromScene(data.id);
-  };
-
-  var removeHovercraftFromScene = function(id) {
-      app.scene.withEntity(id, function(craftToRemove) {
-        app.scene.removeEntity(craftToRemove);
-      });
-  };
-
   var addHovercraftToScene = function(id, sync) {
       var craftToAdd = hovercraftFactory.create(id);
-	    craftToAdd.attach(Smoother);
       craftToAdd.setSync(sync);
       app.scene.addEntity(craftToAdd);
-      allCraft[id] = craftToAdd;
 	    return craftToAdd;
   };
 };

@@ -366,10 +366,13 @@ var ChaseCamera = function(scene, playerId) {
     movementDelta = 0.2;
     lookAtDelta = 0.7;
   };
-
+ 
   var onEntityAdded = function(entity) {
-    if(entity.getId() === playerId)
+    if(entity.getId() === playerId) {
+      resetDeltas();
+      fixLocation = false;
       setTrackedEntity(entity);
+    }
   };
 
   var onEntityRemoved = function(entity) {
@@ -390,7 +393,6 @@ var ChaseCamera = function(scene, playerId) {
     entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);    
     entity.addEventHandler('tick', doLogic);
     entity.addEventHandler('healthZeroed', onPlayerHealthZeroed);
-    resetDeltas();
   };
 
   var unhookEntityEvents = function(entity) {
@@ -410,8 +412,8 @@ var ChaseCamera = function(scene, playerId) {
   };
 
   var onPlayerHealthZeroed = function(data) {
-    setMovementDelta(0.03);
-    setLookAtDelta(0.03);
+    movementDelta = 0.03;
+    lookAtDelta = 0.03;
 
     var deathPosition = entity.position;
 
@@ -431,18 +433,6 @@ var ChaseCamera = function(scene, playerId) {
   var fixLocationAt = function(position) {
       fixLocation = true;
       destinationCameraLocation = vec3.create(position);
-  };
-
-  var unfixLocation = function() {
-      fixLocation = false;
-  };
-
-  var setMovementDelta = function(delta) {
-    movementDelta = delta;
-  };
-  
-  var setLookAtDelta = function(delta) {
-    lookAtDelta = delta;
   };
 
   var doLogic = function() {
@@ -593,7 +583,6 @@ var ClientGameReceiver = require('./network/clientgamereceiver').ClientGameRecei
 var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 var MissileFactory = require('./missilefactory').MissileFactory;
 var ScoreReceiver = require('./network/scorereceiver').ScoreReceiver;
-var HudReceiver = require('./network/hudreceiver').HudReceiver;
 var EventReceiver = require('./network/eventreceiver').EventReceiver;
 
 ClientCommunication = function(app){
@@ -607,7 +596,6 @@ ClientCommunication = function(app){
     this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
     this.dispatcher.addReceiver(new ScoreReceiver(this.app, this));
-    this.dispatcher.addReceiver(new HudReceiver(this.app, this));
     this.dispatcher.addReceiver(new EventReceiver(this.app.scene));
 };
 
@@ -721,177 +709,177 @@ var mat4 = require('./glmatrix').mat4;
 var mat3 = require('./glmatrix').mat3;
 
 var Entity = function(id){
-  this._model = null;
-	this._id = id;
-	this.position = vec3.create([0,0,0]);
-  this.rotationY = 0;
-	this._scene = null;
-	this.eventHandlers = {};
-  this.components = [];
-};
+  var self = this;
+  self._model = null;
+	self._id = id;
+	self.position = vec3.create([0,0,0]);
+  self.rotationY = 0;
+	self._scene = null;
+	self.eventHandlers = {};
+  self.components = [];
 
+  self.getId = function(){
+	  return self._id;
+  };
 
-Entity.prototype.getId = function(){
-	return this._id;
-};
+  self.setModel = function(model) {
+     self._model = model;  
+  };
 
-Entity.prototype.setModel = function(model) {
-   this._model = model;  
-};
+  self.getModel = function(){
+	  return self._model;
+  };
 
-Entity.prototype.getModel = function(){
-	return this._model;
-};
+  self.addEventHandler = function(eventName, callback) {
+	  if(!self.eventHandlers[eventName])
+		  self.eventHandlers[eventName] = [];
+	  self.eventHandlers[eventName].push(callback);
+  };
 
-Entity.prototype.addEventHandler = function(eventName, callback) {
-	if(!this.eventHandlers[eventName])
-		this.eventHandlers[eventName] = [];
-	this.eventHandlers[eventName].push(callback);
-};
+  self.removeEventHandler = function(eventName, callback) {
+	  if(!self.eventHandlers[eventName])
+		  self.eventHandlers[eventName] = [];
 
-Entity.prototype.removeEventHandler = function(eventName, callback) {
-	if(!this.eventHandlers[eventName])
-		this.eventHandlers[eventName] = [];
+    var newItems = [];
+    for(var i = 0; i < self.eventHandlers[eventName].length; i++)
+        if(self.eventHandlers[eventName][i] !== callback) 
+          newItems.push(self.eventHandlers[eventName][i]);
+    
+    self.eventHandlers[eventName] = newItems;
+  };
 
-  var newItems = [];
-  for(var i = 0; i < this.eventHandlers[eventName].length; i++)
-      if(this.eventHandlers[eventName][i] !== callback) 
-        newItems.push(this.eventHandlers[eventName][i]);
-  
-  this.eventHandlers[eventName] = newItems;
-};
+  self.raiseServerEvent = function(eventName, data) {
+	  if(self._scene.app.isClient) return;
+    self.raiseEvent(eventName, data);
+  };
 
-Entity.prototype.raiseServerEvent = function(eventName, data) {
-	if(this._scene.app.isClient) return;
-  this.raiseEvent(eventName, data);
-};
+  self.raiseEvent = function(eventName, data) {
+	  if(!self.eventHandlers[eventName]) return;
 
-Entity.prototype.raiseEvent = function(eventName, data) {
-	if(!this.eventHandlers[eventName]) return;
+	  for(var x = 0 ; x < self.eventHandlers[eventName].length; x++){
+		  var handler = 	self.eventHandlers[eventName][x];
+		  handler.call(this, data);
+	  }
+  };
 
-	for(var x = 0 ; x < this.eventHandlers[eventName].length; x++){
-		var handler = 	this.eventHandlers[eventName][x];
-		handler.call(this, data);
-	}
-};
+  self.attach = function(component, args) {
+    self.components.push(component);
 
-Entity.prototype.attach = function(component, args) {
-  this.components.push(component);
+    var oldProperties = {};
+    for(var i in this) {
+      oldProperties[i] = this[i];
+    }
 
-  var oldProperties = {};
-  for(var i in this) {
-    oldProperties[i] = this[i];
-  }
+    if(!component.apply){
+      console.warn("Cannot apply component, it's written in the old style");
+      return;
+    }
 
-  if(!component.apply){
-    console.warn("Cannot apply component, it's written in the old style");
-    return;
-  }
+    component.apply(this, args);
 
-  component.apply(this, args);
-
-  // Note: We've ended up here because of the natural evolution of 
-  // how these components have traditionally worked
-  // clearly this code is sub-optimal, and it'll get fixed next time
-  // these entities become painful to deal with (just like how this happened
-  // last time these entities became painful to deal with)
-  for(var i in this) {
-    if(oldProperties[i] && oldProperties[i] !== this[i]) {
-       if(i === 'doLogic') {
-          var newLogic = this[i];
-          var oldLogic = oldProperties[i];
-          this.doLogic = function() {
-            oldLogic.call(this);
-            newLogic.call(this);
-          }
-       }
-       else if(i === 'updateSync') {
-          var newSendSync = this[i];
-          var oldSendSync = oldProperties[i];
-          this.updateSync = function(sync) {
-            newSendSync.call(this, sync);
-            oldSendSync.call(this, sync);
-          };
-       }
-       else if(i === 'setSync') {
-          var newRecvSync = this[i];
-          var oldRecvSync = oldProperties[i];
-          this.setSync = function(sync) {
-            newRecvSync.call(this, sync);
-            oldRecvSync.call(this, sync);
-          };
-       } else {
-        console.warn("Detected a potentially unacceptable overwrite of " + i + 'on ' + this.getId());
+    // Note: We've ended up here because of the natural evolution of 
+    // how these components have traditionally worked
+    // clearly this code is sub-optimal, and it'll get fixed next time
+    // these entities become painful to deal with (just like how this happened
+    // last time these entities became painful to deal with)
+    for(var i in this) {
+      if(oldProperties[i] && oldProperties[i] !== this[i]) {
+         if(i === 'doLogic') {
+            var newLogic = this[i];
+            var oldLogic = oldProperties[i];
+            self.doLogic = function() {
+              oldLogic.call(this);
+              newLogic.call(this);
+            }
+         }
+         else if(i === 'updateSync') {
+            var newSendSync = this[i];
+            var oldSendSync = oldProperties[i];
+            self.updateSync = function(sync) {
+              newSendSync.call(this, sync);
+              oldSendSync.call(this, sync);
+            };
+         }
+         else if(i === 'setSync') {
+            var newRecvSync = this[i];
+            var oldRecvSync = oldProperties[i];
+            self.setSync = function(sync) {
+              newRecvSync.call(this, sync);
+              oldRecvSync.call(this, sync);
+            };
+         } else {
+          console.warn("Detected a potentially unacceptable overwrite of " + i + 'on ' + this.getId());
+        }
       }
     }
-  }
-};
+  };
 
-Entity.prototype.sendMessage = function(msg, data) {
-  var functionName = msg;
-  if(this[functionName])
-    this[functionName](data);
-};
+  self.sendMessage = function(msg, data) {
+    var functionName = msg;
+    if(this[functionName])
+      this[functionName](data);
+  };
 
-Entity.prototype.doLogic = function() {
-	this.raiseEvent('tick', {});
-};
+  self.doLogic = function() {
+	  self.raiseEvent('tick', {});
+  };
 
-Entity.prototype.setScene = function(scene) {
-	this._scene = scene;
-};
+  self.setScene = function(scene) {
+	  self._scene = scene;
+  };
 
-Entity.prototype.getSync = function() {
-  var sync = {};
-  this.updateSync(sync);
-  return sync;
-};
+  self.getSync = function() {
+    var sync = {};
+    self.updateSync(sync);
+    return sync;
+  };
 
-Entity.prototype.is = function(component) {
-  for(var x = 0; x < this.components.length; x++) {
-    if(this.components[x] === component) return true;
-  }
-  return false;
-};
+  self.is = function(component) {
+    for(var x = 0; x < self.components.length; x++) {
+      if(self.components[x] === component) return true;
+    }
+    return false;
+  };
 
-Entity.prototype.updateSync = function(sync) {
+  self.updateSync = function(sync) {
 
-};
+  };
 
-Entity.prototype.setSync = function(sync) {
+  self.setSync = function(sync) {
 
-};
+  };
 
-Entity.prototype.render = function(context){
-    if(!this._model) { return; }
-	var gl = context.gl;
+  self.render = function(context){
+    if(!self._model) { return; }
+	  var gl = context.gl;
 
-	var viewMatrix = this._scene.camera.getViewMatrix();
-	var projectionMatrix = this._scene.camera.getProjectionMatrix();
-    
-	var worldMatrix = mat4.create();
-    mat4.identity(worldMatrix);
-    mat4.translate(worldMatrix, this.position);
-    mat4.rotateY(worldMatrix, this.rotationY);
-    
-    var modelViewMatrix = mat4.create();
-    mat4.multiply(viewMatrix, worldMatrix, modelViewMatrix);
-    
-    var normalMatrix = mat3.create();
-    mat3.identity(normalMatrix);
-    mat4.toInverseMat3(modelViewMatrix, normalMatrix);
-    mat3.transpose(normalMatrix);
-    
-	  var program = context.setActiveProgram(this._model.getProgram());
+	  var viewMatrix = self._scene.camera.getViewMatrix();
+	  var projectionMatrix = self._scene.camera.getProjectionMatrix();
       
-	  this._model.upload(context);
+	  var worldMatrix = mat4.create();
+      mat4.identity(worldMatrix);
+      mat4.translate(worldMatrix, this.position);
+      mat4.rotateY(worldMatrix, this.rotationY);
+      
+      var modelViewMatrix = mat4.create();
+      mat4.multiply(viewMatrix, worldMatrix, modelViewMatrix);
+      
+      var normalMatrix = mat3.create();
+      mat3.identity(normalMatrix);
+      mat4.toInverseMat3(modelViewMatrix, normalMatrix);
+      mat3.transpose(normalMatrix);
+      
+	    var program = context.setActiveProgram(self._model.getProgram());
+        
+	    self._model.upload(context);
 
-	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
-	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
-	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
-    gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormalMatrix"), false, normalMatrix);
+	    gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
+	    gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);
+	    gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
+      gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormalMatrix"), false, normalMatrix);
 
-	this._model.render(context);
+	  self._model.render(context);
+  };
 };
 
 exports.Entity = Entity;
@@ -3221,6 +3209,7 @@ var NamedItem = require('./nameditem').NamedItem;
 var FiringController = require('./firingcontroller').FiringController;
 var Destructable = require('./destructable').Destructable;
 var Explodable = require('./explodable').Explodable;
+var Smoother = require('./smoother').Smoother;
 
 var HovercraftFactory = function(app){
   this._app = app;  
@@ -3238,8 +3227,10 @@ HovercraftFactory.prototype.create = function(id) {
   entity.attach(FiringController);
   entity.attach(Destructable);
 
-  if(this._app.isClient)
+  if(this._app.isClient) {
     entity.attach(Explodable);
+    entity.attach(Smoother);
+  }
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
@@ -3247,6 +3238,78 @@ HovercraftFactory.prototype.create = function(id) {
 };
 
 exports.HovercraftFactory = HovercraftFactory;
+}, "hovercraftspawner": function(exports, require, module) {var Entity = require('./entity').Entity;
+var HovercraftFactory = require('./hovercraftfactory').HovercraftFactory;
+
+exports.HovercraftSpawner = function(scene) {
+  Entity.call(this, 'hovercraft-spawner');
+
+  var self = this;  
+  var hovercraftFactory = new HovercraftFactory(scene.app);
+  scene.addEntity(self);
+  
+  var onEntityAdded = function(entity) {
+    if(entity.is(Hovercraft))
+      entity.addEventHandler('entityDestroyed', onEntityDestroyed);
+  };
+  
+  var onEntityRemoved = function(entity) {
+    if(entity.is(Hovercraft))
+      entity.removeEventHandler('entityDestroyed', onEntityDestroyed);
+  };
+
+  var onEntityDestroyed = function() {
+    var id = this.getId();
+    setTimeout(function() {
+      raiseEntityRevived(id);
+    }, 10000);
+  };
+  var raiseEntityRevived = function(id) {
+    self.raiseServerEvent('entityRevived', { id: id });
+  };
+
+  var onEntityRevived = function(data) {
+    self.spawnHovercraft(data.id);
+  };  
+
+  var onPlayerRemoved = function(data) {
+    var craft = scene.getEntity(data.id);
+    scene.removeEntity(craft);
+  };
+
+  var onEntitySpawned = function(data) {
+    var craft = hovercraftFactory.create(data.id);   
+	  craft.position = data.position;
+    scene.addEntity(craft);
+  };
+
+  self.spawnHovercraft = function(id) {
+    var position = vec3.create([
+      Math.random() * 400 - 200,
+       200,
+      Math.random() * 400 - 200
+    ]);
+
+    self.raiseServerEvent('entitySpawned', {
+      id: id,
+      position: position
+    });
+  };
+
+  self.removeHovercraft = function(id) {
+    var craft = scene.getEntity(id);
+    if(!craft) return;
+    self.raiseServerEvent('playerRemoved', {
+      id: id
+    });
+  };
+
+  self._scene.onEntityAdded(onEntityAdded);
+  self._scene.onEntityRemoved(onEntityRemoved);
+  self.addEventHandler('entityRevived', onEntityRevived);
+  self.addEventHandler('playerRemoved', onPlayerRemoved);
+  self.addEventHandler('entitySpawned', onEntitySpawned);
+};
 }, "hud": function(exports, require, module) {var Hovercraft = require('./hovercraft').Hovercraft;
 
 var WarningEntity = function(app, controller, sourceid, targetid) {
@@ -3482,6 +3545,7 @@ exports.Hud = function(app) {
     craft.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
     craft.addEventHandler('missileLock', onEntityMissileLock);
     craft.addEventHandler('fireMissile', onEntityFireMissile);
+    craft.addEventHandler('entityDestroyed', onEntityDestroyed);
 
     if(craft.getId() !== playerId)
       playerIndicators[craft.getId()] = new OtherPlayer(app, craft);
@@ -3492,6 +3556,7 @@ exports.Hud = function(app) {
     craft.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
     craft.removeEventHandler('missileLock', onEntityMissileLock);
     craft.removeEventHandler('fireMissile', onEntityFireMissile);
+    craft.removeEventHandler('entityDestroyed', onEntityDestroyed);
     clearAllKnowledgeOfHovercraft(craft.getId());
   };
 
@@ -3512,6 +3577,12 @@ exports.Hud = function(app) {
   var onEntityFireMissile = function(data) {
     withTrackedEntity(this.getId(), function(trackedEntity) {
       trackedEntity.notifyHasFired(data.missileid);
+    });
+  };
+
+  var onEntityDestroyed = function(data) {
+    withTrackedEntity(this.getId(), function(trackedEntity) {
+      clearTrackedEntity(data.sourceid);
     });
   };
 
@@ -3557,18 +3628,6 @@ exports.Hud = function(app) {
   var withTrackedEntity = function(sourceid, callback) {
     if(trackedCraft[sourceid])
       callback(trackedCraft[sourceid]);
-  };
-
-  self.notifyOfMissileDestruction = function(data) {
-     clearTrackedEntity(data.sourceid);
-  };
-
-  self.notifyOfLockLost = function(data) {
-     clearTrackedEntity(data.sourceid);
-  };
-
-  self.notifyOfHovercraftDestruction = function(data) {
-    clearTrackedEntity(data.sourceid);
   };
 
   self.doLogic = function() {
@@ -4335,6 +4394,10 @@ exports.Model = Model;
 var MissileFirer = require('../missilefirer').MissileFirer;
 var MissileFactory = require('../missilefactory').MissileFactory;
 var TrailsAndExplosions = require('../trailsandexplosions').TrailsAndExplosions;
+var HovercraftSpawner = require('../hovercraftspawner').HovercraftSpawner;
+var HovercraftFactory = require('../hovercraftfactory').HovercraftFactory;
+
+var Hud = require('../hud').Hud;
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;
@@ -4347,6 +4410,7 @@ exports.ClientGameReceiver = function(app, server) {
   var playerId = null;
   var chaseCamera = null;
   var controller = null;
+  var spawner = new HovercraftSpawner(app.scene);
   var hovercraftFactory = new HovercraftFactory(app);
 
   var missileFirer = null;
@@ -4356,7 +4420,7 @@ exports.ClientGameReceiver = function(app, server) {
 	  playerId = data.id;
 
     createGameComponents();
-    createPlayerCraft();
+    initializeHud();
     waitForAssetsToLoad();   
   };
   
@@ -4364,13 +4428,13 @@ exports.ClientGameReceiver = function(app, server) {
     missileFirer = new MissileFirer(app, new MissileFactory());
     trailsAndExplosions = new TrailsAndExplosions(app);
     chaseCamera = new ChaseCamera(app.scene, playerId);
-  };
-
-  var createPlayerCraft = function() {
-    craft = hovercraftFactory.create(playerId);   
     controller = new HovercraftController(playerId, server);
-	  craft.attach(Smoother);
-    craft.player = true;
+  };
+ 
+  var initializeHud = function() {
+    app.scene.withEntity(Hud.ID, function(hud) {
+        hud.setPlayerId(playerId);
+      });
   };
 
   var waitForAssetsToLoad = function() {
@@ -4393,70 +4457,24 @@ exports.ClientGameReceiver = function(app, server) {
      document.location = 'login.html'; 
   };
 
-  self._destroyTarget = function(data) {
-
-	  if(craft.getId() === data.targetid) {    
-
-      // Disable input
-		  controller.disable();   
-		
-	  }
-	  else {
-		  removeHovercraftFromScene(data.targetid);
-	  }	
-  };
-
-  self._reviveTarget = function(data) {
-	  if(data.id === craft.getId()) {
-
-		  // Re-add entity to scene
-		  app.scene.addEntity(craft);
-		  craft.setSync(data.sync);
-
-      // Reset camera
-      chaseCamera.resetDeltas();
-		  chaseCamera.setTrackedEntity(craft);
-      chaseCamera.unfixLocation();
-
-      // Re-add input control
-		  controller.enable();
-	  }
-	  else {
-      var revivedCraft = allCraft[data.id];
-      app.scene.addEntity(revivedCraft);
-       revivedCraft.setSync(data.sync);
-	  }
-  };    
-
   self._syncscene = function(data) {
 
 	  for(i in data.craft) {
-		  var serverCraft = data.craft[i];
-		
-		  var clientCraft = 
-		  serverCraft.id === playerId 
-					  ? craft
-					  : app.scene.getEntity(serverCraft.id);
+		  var serverCraft = data.craft[i];		
+		  var clientCraft = app.scene.getEntity(serverCraft.id);
 
-		  if(!clientCraft) {
-      		clientCraft = addHovercraftToScene(serverCraft.id, serverCraft.sync);
-		  }
-		  clientCraft.setSync(serverCraft.sync);		
-	  }
-
-	  if(!started) {
-		  started = true;
-		  app.scene.addEntity(craft);
+		  if(!clientCraft)
+      	 addHovercraftToScene(serverCraft.id, serverCraft.sync);
+		  else 
+        clientCraft.setSync(serverCraft.sync);      
 	  }
   };
 
   self._sync = function(data) {
-      var entity = app.scene.getEntity(data.id);
-
-	  if(!entity) {
-		  console.log('Message received to sync entity that does not exist: ' + data.id);
-		  return;
-	  }
+    var entity = app.scene.getEntity(data.id);
+    if(!entity)
+	    addHovercraftToScene(data.id, data.sync);
+    else
       entity.setSync(data.sync);
   };
 
@@ -4469,23 +4487,10 @@ exports.ClientGameReceiver = function(app, server) {
       entity.setSync(data.sync);
   };
 
-  self._removeplayer = function(data) {
-      delete allCraft[data.id];
-      removeHovercraftFromScene(data.id);
-  };
-
-  var removeHovercraftFromScene = function(id) {
-      app.scene.withEntity(id, function(craftToRemove) {
-        app.scene.removeEntity(craftToRemove);
-      });
-  };
-
   var addHovercraftToScene = function(id, sync) {
       var craftToAdd = hovercraftFactory.create(id);
-	    craftToAdd.attach(Smoother);
       craftToAdd.setSync(sync);
       app.scene.addEntity(craftToAdd);
-      allCraft[id] = craftToAdd;
 	    return craftToAdd;
   };
 };
@@ -4517,7 +4522,6 @@ EntityReceiver.prototype._startForward = function(data) {
       entity.startForward();
     });
 };
-
 
 EntityReceiver.prototype._cancelForward = function(data) {
     this.withEntity(data.id, function(entity) {
@@ -4574,25 +4578,6 @@ exports.EntityReceiver = EntityReceiver;
       entity.raiseEvent(msg.event, msg.data);
     });
   };
-};
-}, "network/hudreceiver": function(exports, require, module) {var Hud = require('../hud').Hud;
-
-exports.HudReceiver = function(app, communication) {
-  var self = this;
-  var app = app;
-  var communication = communication;
-
-  self._init = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-      hud.setPlayerId(data.id);
-    });
-  };  
-
-  self._destroyTarget = function(data) {
-    app.scene.withEntity(Hud.ID, function(hud) {
-        hud.notifyOfHovercraftDestruction(data);
-    });
-  };   
 };
 }, "network/scorereceiver": function(exports, require, module) {exports.ScoreReceiver = function(app, communication) {
   var self = this;

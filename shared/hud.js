@@ -233,6 +233,7 @@ exports.Hud = function(app) {
     craft.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
     craft.addEventHandler('missileLock', onEntityMissileLock);
     craft.addEventHandler('fireMissile', onEntityFireMissile);
+    craft.addEventHandler('entityDestroyed', onEntityDestroyed);
 
     if(craft.getId() !== playerId)
       playerIndicators[craft.getId()] = new OtherPlayer(app, craft);
@@ -243,6 +244,7 @@ exports.Hud = function(app) {
     craft.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
     craft.removeEventHandler('missileLock', onEntityMissileLock);
     craft.removeEventHandler('fireMissile', onEntityFireMissile);
+    craft.removeEventHandler('entityDestroyed', onEntityDestroyed);
     clearAllKnowledgeOfHovercraft(craft.getId());
   };
 
@@ -263,6 +265,12 @@ exports.Hud = function(app) {
   var onEntityFireMissile = function(data) {
     withTrackedEntity(this.getId(), function(trackedEntity) {
       trackedEntity.notifyHasFired(data.missileid);
+    });
+  };
+
+  var onEntityDestroyed = function(data) {
+    withTrackedEntity(this.getId(), function(trackedEntity) {
+      clearTrackedEntity(data.sourceid);
     });
   };
 
@@ -308,18 +316,6 @@ exports.Hud = function(app) {
   var withTrackedEntity = function(sourceid, callback) {
     if(trackedCraft[sourceid])
       callback(trackedCraft[sourceid]);
-  };
-
-  self.notifyOfMissileDestruction = function(data) {
-     clearTrackedEntity(data.sourceid);
-  };
-
-  self.notifyOfLockLost = function(data) {
-     clearTrackedEntity(data.sourceid);
-  };
-
-  self.notifyOfHovercraftDestruction = function(data) {
-    clearTrackedEntity(data.sourceid);
   };
 
   self.doLogic = function() {

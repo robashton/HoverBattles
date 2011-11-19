@@ -50,7 +50,6 @@ ServerCommunication.prototype.rejectClient = function(id) {
 
 ServerCommunication.prototype.hookClient = function(socket) {
     var server = this;
-	  this.game.addPlayer(socket.id);
 	  this.initializeClient(socket);
     socket.on('message', function(msg) { server.dispatchMessage(socket, msg); });    
     socket.on('disconnect', function() {server.unhookClient(socket);});
@@ -62,7 +61,6 @@ ServerCommunication.prototype.initializeClient = function(socket) {
 
 ServerCommunication.prototype.unhookClient = function(socket) {
     this.game.removePlayer(socket.id);    
-    this.sendMessage('removeplayer', { id: socket.id}, socket.id);
     delete this.clients[socket.id];  
 };
 
@@ -82,10 +80,10 @@ ServerCommunication.prototype.sendMessage = function(command, data) {
 
 ServerCommunication.prototype.sendMessageToClient = function(socket, command, data){
   try {
-  socket.json.send({
-      command: command,
-      data: data
-  });
+    socket.json.send({
+        command: command,
+        data: data
+    });
   } catch(ex) {
     console.log('Failed to write to a socket for id: ' + socket.id + ', closing socket');
     this.unhookClient(socket);
@@ -108,7 +106,7 @@ ServerCommunication.prototype.syncPlayerFull = function(id) {
 ServerCommunication.prototype.syncPlayer = function(id, force) {
 	var socket = this.clients[id];
 	var sync = this.game.getSyncForPlayer(id);
-  if(!sync) return; // This is valid, the player might not be currently in the scene
+  if(!sync) return;
 
   this.broadcast('sync', {
        id: id,
