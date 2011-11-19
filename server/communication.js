@@ -5,29 +5,28 @@ MessageDispatcher = require('../shared/messagedispatcher').MessageDispatcher;
 EntityReceiver = require('../shared/network/entityreceiver').EntityReceiver;
 ProxyReceiver = require('./network/proxyreceiver').ProxyReceiver;
 ServerGameReceiver = require('./network/servergamereceiver').ServerGameReceiver;
-ScoreKeepingReceiver = require('./network/scorekeepingreceiver').ScoreKeepingReceiver;
-PersistenceReceiver = require('./network/persistencereceiver').PersistenceReceiver;
 
 ServerCommunication = function(app, server){
   var self = this;
   this.server = server;
   this.app = app;
   var listener = io.listen(server);
+
   listener.configure(function(){
       listener.set('log level', 1);
     });
   
   this.socket = listener.sockets;
   this.clients = {};
-  this.game = new ServerGameReceiver(this.app, this);
-  
+
   this.dispatcher = new MessageDispatcher();
-  this.dispatcher.addReceiver(new EntityReceiver(this.app));
-  this.dispatcher.addReceiver(this.game); 
-  this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
-  this.dispatcher.addReceiver(new ScoreKeepingReceiver(this.app, this));
-  this.dispatcher.addReceiver(new PersistenceReceiver(this.app, this));
+
   this.dispatcher.addReceiver(new EventReceiver(this.app, this));
+  this.dispatcher.addReceiver(new EntityReceiver(this.app));
+  this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
+
+  this.game = new ServerGameReceiver(this.app, this);
+  this.dispatcher.addReceiver(this.game); 
   this.socket.on('connection', function(socket) { self.onConnection(socket); });
 };
 

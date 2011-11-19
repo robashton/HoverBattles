@@ -21,7 +21,7 @@ Scene.prototype.onEntityRemoved = function(callback) {
 };
 
 Scene.prototype.raiseEntityAdded = function(entity) {
-  if(!(entity instanceof Entity)) return;
+  if(!(entity instanceof Entity)) return; // Hack to get around non-entity based entities (legacy)
   for(var i = 0; i < this.entityAddedListeners.length ; i++){ 
     var listener = this.entityAddedListeners[i];
     listener(entity);
@@ -29,7 +29,7 @@ Scene.prototype.raiseEntityAdded = function(entity) {
 };
 
 Scene.prototype.raiseEntityRemoved = function(entity) {
-  if(!(entity instanceof Entity)) return;
+  if(!(entity instanceof Entity)) return; // Hack to get around non-entity based entities (legacy)
   for(var i = 0; i < this.entityRemovedListeners.length ; i++){ 
     var listener = this.entityRemovedListeners[i];
     listener(entity);
@@ -81,6 +81,11 @@ Scene.prototype.doLogic = function() {
 Scene.prototype.forEachEntity = function(callback) {
   for(var i in this._entities)
       callback(this._entities[i]);
+};
+
+Scene.prototype.notifyEntityEventRaised = function(source, eventName, data) {
+  if(eventName !== 'tick') 
+    console.log('Event raised ' + eventName);
 };
 
 Scene.prototype.render = function(context){

@@ -38,7 +38,8 @@ ForwardedEvents = [
       events: [
         'entityRevived',
         'entitySpawned',
-        'playerRemoved'
+        'playerRemoved',
+        'playerNamed'
       ]
    }
 ];
@@ -85,6 +86,7 @@ exports.EventReceiver = function(app, communication) {
   };
 
   var forwardEventForEntity = function(event, id, data) {
+    console.log('Forwarding ' + event + ' from ' + id);
     communication.sendMessage('entityEvent', {
       id: id,
       event: event,

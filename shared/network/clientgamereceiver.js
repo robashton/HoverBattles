@@ -18,7 +18,7 @@ exports.ClientGameReceiver = function(app, server) {
   var playerId = null;
   var chaseCamera = null;
   var controller = null;
-  var spawner = new HovercraftSpawner(app.scene);
+  var spawner = HovercraftSpawner.Create(app.scene);
   var hovercraftFactory = new HovercraftFactory(app);
 
   var missileFirer = null;

@@ -2,10 +2,10 @@ var Entity = require('./entity').Entity;
 var HovercraftFactory = require('./hovercraftfactory').HovercraftFactory;
 
 exports.HovercraftSpawner = function(scene) {
-  Entity.call(this, 'hovercraft-spawner');
-
   var self = this;  
   var hovercraftFactory = new HovercraftFactory(scene.app);
+  var playerNames = {};
+
   scene.addEntity(self);
   
   var onEntityAdded = function(entity) {
@@ -24,6 +24,7 @@ exports.HovercraftSpawner = function(scene) {
       raiseEntityRevived(id);
     }, 10000);
   };
+
   var raiseEntityRevived = function(id) {
     self.raiseServerEvent('entityRevived', { id: id });
   };
@@ -40,7 +41,13 @@ exports.HovercraftSpawner = function(scene) {
   var onEntitySpawned = function(data) {
     var craft = hovercraftFactory.create(data.id);   
 	  craft.position = data.position;
+    craft.displayName(playerNames[data.id]);
     scene.addEntity(craft);
+  };
+
+  var onPlayerNamed = function(data) {
+    playerNames[data.id] = data.name;
+    console.log(data.id + ' ' + data.name);
   };
 
   self.spawnHovercraft = function(id) {
@@ -64,9 +71,24 @@ exports.HovercraftSpawner = function(scene) {
     });
   };
 
+  self.namePlayer = function(id, name) {
+    self.raiseServerEvent('playerNamed', {
+      id: id,
+      name: name
+    });
+  };
+
   self._scene.onEntityAdded(onEntityAdded);
   self._scene.onEntityRemoved(onEntityRemoved);
+
+  self.addEventHandler('playerNamed', onPlayerNamed);
   self.addEventHandler('entityRevived', onEntityRevived);
   self.addEventHandler('playerRemoved', onPlayerRemoved);
   self.addEventHandler('entitySpawned', onEntitySpawned);
+};
+
+exports.HovercraftSpawner.Create = function(scene) {
+  var entity = new Entity('hovercraft-spawner');
+  entity.attach(exports.HovercraftSpawner, [scene]);
+  return entity;
 };

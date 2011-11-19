@@ -734,6 +734,8 @@ var Entity = function(id){
 	  if(!self.eventHandlers[eventName])
 		  self.eventHandlers[eventName] = [];
 	  self.eventHandlers[eventName].push(callback);
+
+    // TODO: Go via the scene for this
   };
 
   self.removeEventHandler = function(eventName, callback) {
@@ -746,6 +748,8 @@ var Entity = function(id){
           newItems.push(self.eventHandlers[eventName][i]);
     
     self.eventHandlers[eventName] = newItems;
+
+    // TODO: Go via the scene for this
   };
 
   self.raiseServerEvent = function(eventName, data) {
@@ -754,12 +758,15 @@ var Entity = function(id){
   };
 
   self.raiseEvent = function(eventName, data) {
+    self._scene.notifyEntityEventRaised(self, eventName, data);
 	  if(!self.eventHandlers[eventName]) return;
-
+  
+    // TODO: Remove capacity for this sort of thing, we'll put everything through the scene thanks
 	  for(var x = 0 ; x < self.eventHandlers[eventName].length; x++){
 		  var handler = 	self.eventHandlers[eventName][x];
 		  handler.call(this, data);
 	  }
+
   };
 
   self.attach = function(component, args) {
@@ -878,7 +885,7 @@ var Entity = function(id){
 	    gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
       gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormalMatrix"), false, normalMatrix);
 
-	  self._model.render(context);
+	    self._model.render(context);
   };
 };
 
@@ -3242,10 +3249,10 @@ exports.HovercraftFactory = HovercraftFactory;
 var HovercraftFactory = require('./hovercraftfactory').HovercraftFactory;
 
 exports.HovercraftSpawner = function(scene) {
-  Entity.call(this, 'hovercraft-spawner');
-
   var self = this;  
   var hovercraftFactory = new HovercraftFactory(scene.app);
+  var playerNames = {};
+
   scene.addEntity(self);
   
   var onEntityAdded = function(entity) {
@@ -3264,6 +3271,7 @@ exports.HovercraftSpawner = function(scene) {
       raiseEntityRevived(id);
     }, 10000);
   };
+
   var raiseEntityRevived = function(id) {
     self.raiseServerEvent('entityRevived', { id: id });
   };
@@ -3280,7 +3288,13 @@ exports.HovercraftSpawner = function(scene) {
   var onEntitySpawned = function(data) {
     var craft = hovercraftFactory.create(data.id);   
 	  craft.position = data.position;
+    craft.displayName(playerNames[data.id]);
     scene.addEntity(craft);
+  };
+
+  var onPlayerNamed = function(data) {
+    playerNames[data.id] = data.name;
+    console.log(data.id + ' ' + data.name);
   };
 
   self.spawnHovercraft = function(id) {
@@ -3304,11 +3318,26 @@ exports.HovercraftSpawner = function(scene) {
     });
   };
 
+  self.namePlayer = function(id, name) {
+    self.raiseServerEvent('playerNamed', {
+      id: id,
+      name: name
+    });
+  };
+
   self._scene.onEntityAdded(onEntityAdded);
   self._scene.onEntityRemoved(onEntityRemoved);
+
+  self.addEventHandler('playerNamed', onPlayerNamed);
   self.addEventHandler('entityRevived', onEntityRevived);
   self.addEventHandler('playerRemoved', onPlayerRemoved);
   self.addEventHandler('entitySpawned', onEntitySpawned);
+};
+
+exports.HovercraftSpawner.Create = function(scene) {
+  var entity = new Entity('hovercraft-spawner');
+  entity.attach(exports.HovercraftSpawner, [scene]);
+  return entity;
 };
 }, "hud": function(exports, require, module) {var Hovercraft = require('./hovercraft').Hovercraft;
 
@@ -4375,21 +4404,7 @@ exports.Model = Model;
     }
     return displayName;
   }; 
-
-  self.updateSync = function(sync) {
-   // if(displayNameChanged) {
-   //   displayNameChanged = false;
-      sync.displayName = displayName;
-  //  }
-  };
-
-  self.setSync = function(sync) {
-	  displayName = sync.displayName || displayName;
-	};
-
 };
-
-
 }, "network/clientgamereceiver": function(exports, require, module) {var Explosion = require('../explosion').Explosion;
 var MissileFirer = require('../missilefirer').MissileFirer;
 var MissileFactory = require('../missilefactory').MissileFactory;
@@ -4410,7 +4425,7 @@ exports.ClientGameReceiver = function(app, server) {
   var playerId = null;
   var chaseCamera = null;
   var controller = null;
-  var spawner = new HovercraftSpawner(app.scene);
+  var spawner = HovercraftSpawner.Create(app.scene);
   var hovercraftFactory = new HovercraftFactory(app);
 
   var missileFirer = null;
@@ -5458,7 +5473,7 @@ Scene.prototype.onEntityRemoved = function(callback) {
 };
 
 Scene.prototype.raiseEntityAdded = function(entity) {
-  if(!(entity instanceof Entity)) return;
+  if(!(entity instanceof Entity)) return; // Hack to get around non-entity based entities (legacy)
   for(var i = 0; i < this.entityAddedListeners.length ; i++){ 
     var listener = this.entityAddedListeners[i];
     listener(entity);
@@ -5466,7 +5481,7 @@ Scene.prototype.raiseEntityAdded = function(entity) {
 };
 
 Scene.prototype.raiseEntityRemoved = function(entity) {
-  if(!(entity instanceof Entity)) return;
+  if(!(entity instanceof Entity)) return; // Hack to get around non-entity based entities (legacy)
   for(var i = 0; i < this.entityRemovedListeners.length ; i++){ 
     var listener = this.entityRemovedListeners[i];
     listener(entity);
@@ -5520,6 +5535,11 @@ Scene.prototype.forEachEntity = function(callback) {
       callback(this._entities[i]);
 };
 
+Scene.prototype.notifyEntityEventRaised = function(source, eventName, data) {
+  if(eventName !== 'tick') 
+    console.log('Event raised ' + eventName);
+};
+
 Scene.prototype.render = function(context){
   var gl = context.gl;
   
@@ -5540,6 +5560,49 @@ Scene.prototype.render = function(context){
 };
 
 exports.Scene = Scene;
+}, "scorekeeper": function(exports, require, module) {var Entity = require('./entity').Entity;
+var Hovercraft = require('./hovercraft').Hovercraft;
+
+
+exports.ScoreKeeper = function(scene) {
+  var self = this;
+  var playerScores = {};
+
+  var onEntityAdded = function(entity) {
+    if(!entity.is(Hovercraft)) return;
+    hookCraftEvents(entity);
+  };
+
+  var onEntityRemoved = function(entity) {
+    if(!entity.is(Hovercraft)) return;
+    unhookCraftEvents(entity);
+  };
+
+  var hookCraftEvents = function(craft) {
+    craft.addEventHandler('healthZeroed', onCraftDestroyed);
+  };
+
+  var unhookCraftEvents = function(craft) {
+    craft.removeEventHandler('healthZeroed', onCraftDestroyed);
+  };
+
+  var onCraftDestroyed = function(data) {
+     self.raiseServerEvent('playerScoreIncreased', data.sourceid);
+  };
+
+  var onScoreIncreased = function(data) {
+    // Increase the player score
+  };
+
+  scene.onEntityAdded(onEntityAdded);
+  scene.onEntityRemoved(onEntityRemoved);
+};
+
+exports.ScoreKeeper.Create = function(scene) {
+  var entity = new Entity('score-keeper');
+  entity.attach(exports.ScoreKeeper, [scene]);
+  return entity;
+};
 }, "smoother": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 
 var Smoother = function() {

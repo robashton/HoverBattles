@@ -28,6 +28,8 @@ var Entity = function(id){
 	  if(!self.eventHandlers[eventName])
 		  self.eventHandlers[eventName] = [];
 	  self.eventHandlers[eventName].push(callback);
+
+    // TODO: Go via the scene for this
   };
 
   self.removeEventHandler = function(eventName, callback) {
@@ -40,6 +42,8 @@ var Entity = function(id){
           newItems.push(self.eventHandlers[eventName][i]);
     
     self.eventHandlers[eventName] = newItems;
+
+    // TODO: Go via the scene for this
   };
 
   self.raiseServerEvent = function(eventName, data) {
@@ -48,12 +52,15 @@ var Entity = function(id){
   };
 
   self.raiseEvent = function(eventName, data) {
+    self._scene.notifyEntityEventRaised(self, eventName, data);
 	  if(!self.eventHandlers[eventName]) return;
-
+  
+    // TODO: Remove capacity for this sort of thing, we'll put everything through the scene thanks
 	  for(var x = 0 ; x < self.eventHandlers[eventName].length; x++){
 		  var handler = 	self.eventHandlers[eventName][x];
 		  handler.call(this, data);
 	  }
+
   };
 
   self.attach = function(component, args) {
@@ -172,7 +179,7 @@ var Entity = function(id){
 	    gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, worldMatrix);
       gl.uniformMatrix3fv(gl.getUniformLocation(program, "uNormalMatrix"), false, normalMatrix);
 
-	  self._model.render(context);
+	    self._model.render(context);
   };
 };
 

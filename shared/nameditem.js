@@ -10,18 +10,4 @@ exports.NamedItem = function() {
     }
     return displayName;
   }; 
-
-  self.updateSync = function(sync) {
-   // if(displayNameChanged) {
-   //   displayNameChanged = false;
-      sync.displayName = displayName;
-  //  }
-  };
-
-  self.setSync = function(sync) {
-	  displayName = sync.displayName || displayName;
-	};
-
 };
-
-

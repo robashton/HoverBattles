@@ -4,12 +4,14 @@ MissileFirer = require('../../shared/missilefirer').MissileFirer;
 Hovercraft = require('../../shared/hovercraft').Hovercraft;
 Identity = require('../identity').Identity;
 HovercraftSpawner = require('../../shared/hovercraftspawner').HovercraftSpawner;
+ScoreKeeper = require('../../shared/scorekeeper').ScoreKeeper;
 
 exports.ServerGameReceiver = function(app, communication) {
   var self = this;
   var guestCount = 0;
   var missileFirer = new MissileFirer(app, new MissileFactory());
-  var spawner = new HovercraftSpawner(app.scene);
+  var spawner = HovercraftSpawner.Create(app.scene);
+  var scoreKeeper = ScoreKeeper.Create(app.scene);
 
   self.removePlayer = function(id) {
     spawner.removeHovercraft(id);
@@ -33,7 +35,7 @@ exports.ServerGameReceiver = function(app, communication) {
 		  state.craft.push(craftState);   
     });
 	  return state;	
-  };  
+  };
   
   self._ready = function(data) {
     if(data.username) {
@@ -42,24 +44,12 @@ exports.ServerGameReceiver = function(app, communication) {
         return;
       }
     } else {
-      data.username = 'guest-' + this.guestCount++;
+      data.username = 'guest-' + guestCount++;
     }; 
 
+    spawner.namePlayer(data.source, data.username);
     spawner.spawnHovercraft(data.source);
-    var craft = app.scene.getEntity(data.source);
-    craft.displayName(data.username);
-
 	  communication.syncPlayerFull(data.source);
-    communication.sendMessage('updateplayer', {
-      id:  data.source,
-      sync: craft.getSync()
-    });
-
-    // Let everybody know about this id/username pair
-    communication.sendMessage('playerNamed', {
-      id: data.source,
-      username: data.username
-    });
   };
 
   self._fireRequest = function(data) {
