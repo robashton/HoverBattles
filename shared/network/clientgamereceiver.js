@@ -4,9 +4,12 @@ var MissileFactory = require('../missilefactory').MissileFactory;
 var TrailsAndExplosions = require('../trailsandexplosions').TrailsAndExplosions;
 var HovercraftSpawner = require('../hovercraftspawner').HovercraftSpawner;
 var HovercraftFactory = require('../hovercraftfactory').HovercraftFactory;
+var HovercraftController = require('../hovercraftcontroller').HovercraftController;
 var ScoreKeeper = require('../scorekeeper').ScoreKeeper;
 var ScoreDisplay = require('./scoredisplay').ScoreDisplay;
 var Hud = require('../hud').Hud;
+var ChaseCamera = require('../chasecamera').ChaseCamera;
+
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;

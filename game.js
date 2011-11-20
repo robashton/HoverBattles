@@ -520,7 +520,7 @@ exports.ChaseCamera  = function(scene, playerId) {
 
 exports.ChaseCamera.Create = function(scene, playerId) {
   var entity = new Entity('chase-camera');
-  entity.attach(ChaseCamera, [scene, playerId]);
+  entity.attach(exports.ChaseCamera, [scene, playerId]);
   scene.addEntity(entity);
   return entity;
 };
@@ -680,7 +680,9 @@ DefaultModelLoader.prototype.load = function(path, callback) {
     return model;
 };
 
-exports.DefaultModelLoader = DefaultModelLoader;}, "defaulttextureloader": function(exports, require, module) {var DefaultTextureLoader = function(app){
+exports.DefaultModelLoader = DefaultModelLoader;}, "defaulttextureloader": function(exports, require, module) {var Texture = require('./texture').Texture;
+
+var DefaultTextureLoader = function(app){
     this._app = app;  
 };
 
@@ -696,7 +698,8 @@ DefaultTextureLoader.prototype.load = function(path, callback) {
   return texture; 
 };
 
-exports.DefaultTextureLoader = DefaultTextureLoader;}, "destructable": function(exports, require, module) {exports.Destructable = function() {
+exports.DefaultTextureLoader = DefaultTextureLoader;
+}, "destructable": function(exports, require, module) {exports.Destructable = function() {
   var self = this;
 
   var onNoHealthLeft = function(data) {
@@ -3915,6 +3918,8 @@ exports.LandChunk = LandChunk;
 }, "landchunkloader": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4
 var LazyLoad = require('./lazyload').LazyLoad;
+var LandChunk = require('./landchunk').LandChunk;
+
 
 
 var LandChunkModelLoader = function(resources){
@@ -3947,7 +3952,8 @@ LandChunkModelLoader.prototype.load = function(id, callback) {
     return model;
 };
 
-exports.LandChunkModelLoader = LandChunkModelLoader;}, "landscapecontroller": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
+exports.LandChunkModelLoader = LandChunkModelLoader;
+}, "landscapecontroller": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var Entity = require('./entity').Entity;
 
@@ -4505,9 +4511,12 @@ var MissileFactory = require('../missilefactory').MissileFactory;
 var TrailsAndExplosions = require('../trailsandexplosions').TrailsAndExplosions;
 var HovercraftSpawner = require('../hovercraftspawner').HovercraftSpawner;
 var HovercraftFactory = require('../hovercraftfactory').HovercraftFactory;
+var HovercraftController = require('../hovercraftcontroller').HovercraftController;
 var ScoreKeeper = require('../scorekeeper').ScoreKeeper;
 var ScoreDisplay = require('./scoredisplay').ScoreDisplay;
 var Hud = require('../hud').Hud;
+var ChaseCamera = require('../chasecamera').ChaseCamera;
+
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;

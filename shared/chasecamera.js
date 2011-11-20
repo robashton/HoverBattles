@@ -181,7 +181,7 @@ exports.ChaseCamera  = function(scene, playerId) {
 
 exports.ChaseCamera.Create = function(scene, playerId) {
   var entity = new Entity('chase-camera');
-  entity.attach(ChaseCamera, [scene, playerId]);
+  entity.attach(exports.ChaseCamera, [scene, playerId]);
   scene.addEntity(entity);
   return entity;
 };

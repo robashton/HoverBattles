@@ -1,3 +1,5 @@
+var Texture = require('./texture').Texture;
+
 var DefaultTextureLoader = function(app){
     this._app = app;  
 };

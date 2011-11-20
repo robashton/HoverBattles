@@ -38,6 +38,9 @@
             setInterval(function() {  app.render(); }, 1000 / 30);            
             setInterval(function() {  app.tick(); }, 1000 / 30); 
 
+            var LandscapeController = require('./landscapecontroller').LandscapeController;
+            var ClientCommunication = require('./communication').ClientCommunication;
+
             app.scene.camera.setLocation([0, 1000, -10]);
             var landscapeController = new LandscapeController(app);    
             var clientOne = new ClientCommunication(app);
