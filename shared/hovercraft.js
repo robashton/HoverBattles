@@ -4,7 +4,7 @@ var mat4 = require('./glmatrix').mat4;
 var Hovercraft = function() {
   var self = this;
 
-  self._decay = 0.99;
+  self._decay = 0.985;
 
   self.reset = function() {
     self._velocity = vec3.create([0.01,0,0.01]);
@@ -127,7 +127,7 @@ var Hovercraft = function() {
     if(heightDelta < 0.5) {
       self.position[1] = terrainHeight + (0.5 - heightDelta);
       if(self._velocity[1] < 0)
-        self._velocity[1] = -self._velocity[1] * 0.5;
+        self._velocity[1] = -self._velocity[1] * 0.25;
     }
 
     if(Math.abs(self._velocity[1]) < 0.0001)

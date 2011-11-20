@@ -6,7 +6,6 @@ var HovercraftSpawner = require('../hovercraftspawner').HovercraftSpawner;
 var HovercraftFactory = require('../hovercraftfactory').HovercraftFactory;
 var ScoreKeeper = require('../scorekeeper').ScoreKeeper;
 var ScoreDisplay = require('./scoredisplay').ScoreDisplay;
-
 var Hud = require('../hud').Hud;
 
 exports.ClientGameReceiver = function(app, server) {
@@ -14,9 +13,7 @@ exports.ClientGameReceiver = function(app, server) {
 
   var app = app;
   var server = server;
-  var started = false;
-  var craft = null;
-  var allCraft = {};
+
   var playerId = null;
   var chaseCamera = null;
   var controller = null;
@@ -27,10 +24,10 @@ exports.ClientGameReceiver = function(app, server) {
 
   var missileFirer = null;
   var trailsAndExplosions = null;
- 
+  var hud = null;
+
   self._init = function(data) {
 	  playerId = data.id;
-
     createGameComponents();
     initializeHud();
     waitForAssetsToLoad();   
@@ -41,17 +38,19 @@ exports.ClientGameReceiver = function(app, server) {
     trailsAndExplosions = new TrailsAndExplosions(app);
     chaseCamera = ChaseCamera.Create(app.scene, playerId);
     controller = new HovercraftController(playerId, server);
+    scoreDisplay.setPlayerId(playerId);
   };
- 
+
   var initializeHud = function() {
-    app.scene.withEntity(Hud.ID, function(hud) {
-        hud.setPlayerId(playerId);
-      });
+    hud = Hud.create(app);
+    hud.setPlayerId(playerId);
+    hud.disable();
   };
 
   var waitForAssetsToLoad = function() {
 	  app.resources.onAllAssetsLoaded(function() {
       sendReadyWithCredentialsToServer();
+      hud.enable();
     });
   };
 
@@ -71,6 +70,20 @@ exports.ClientGameReceiver = function(app, server) {
 
   self._syncscene = function(data) {
 
+    // Note: To casual readers, this is NOT how regular syncing works in this application
+    // This will get called at least 'once' when the game first fires up, and then when something really
+    // major happens on the server. It's a "belt and braces" sync where all entities get all their state effectively
+    // refreshed - the real sync is below (and you'll notice that we don't just accept the server values as is, we
+    // do rubber banding around the values provided
+    // Also, for the most part we rely on event-forwarding to keep state in sync, multiple models all receiving the same input
+    // == multiple (mostly) identical models
+    for(i in data.others) {
+      var serverEntity = data.others[i];
+      var clientEntity = app.scene.getEntity(serverEntity.id);
+
+      if(clientEntity)
+        clientEntity.setSync(serverEntity.sync);
+    }
 	  for(i in data.craft) {
 		  var serverCraft = data.craft[i];		
 		  var clientCraft = app.scene.getEntity(serverCraft.id);
@@ -80,31 +93,13 @@ exports.ClientGameReceiver = function(app, server) {
 		  else 
         clientCraft.setSync(serverCraft.sync);      
 	  }
-
-    for(i in data.others) {
-      var serverEntity = data.others[i];
-      var clientEntity = app.scene.getEntity(serverEntity.id);
-
-      if(clientEntity)
-        clientEntity.setSync(serverEntity.sync);
-    }
+    app.scene.broadcastEvent(app.scene, 'fullSyncCompleted', {});
   };
 
   self._sync = function(data) {
-    var entity = app.scene.getEntity(data.id);
-    if(!entity)
-	    addHovercraftToScene(data.id, data.sync);
-    else
-      entity.setSync(data.sync);
-  };
-
-  var terrain = app.scene.getEntity('terrain');
-  self._updateplayer = function(data) {
-    var entity = app.scene.getEntity(data.id);
-    if(!entity)
-	    addHovercraftToScene(data.id, data.sync);
-    else
-      entity.setSync(data.sync);
+    app.scene.withEntity(data.id, function(entity) {
+        entity.setSync(data.sync);
+    });
   };
 
   var addHovercraftToScene = function(id, sync) {

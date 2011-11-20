@@ -68,9 +68,6 @@ blah.Application.prototype.go = function(context) {
   app.overlay = new Overlay(this);
   app.overlay.activate(context);
 
-  var Hud = require('./hud').Hud;
-  app.hud = Hud.create(this);
-
   var RenderPipeline = require('renderpipeline').RenderPipeline;
 
   this.rendering = new RenderPipeline(this);

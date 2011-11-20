@@ -3,11 +3,10 @@
   var MainPage = function() {
     var self = this;
     var playerId = null;
-    var playerName = null;
 
-    self.setPlayerInfo = function(id, username) {
+    self.setPlayerId = function(id) {
       playerId = id;
-      playerName = username;      
+ 
     };
     
     self.setScores = function(scores) {
@@ -36,7 +35,7 @@
 
         var item = $('<li/>').text(text);
 
-         if(value.name === playerName)
+         if(value.playerid === playerId)
             item.addClass('current-player');
 
         scores.append(item);

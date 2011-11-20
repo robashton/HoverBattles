@@ -30,10 +30,8 @@ exports.ScoreKeeper = function(scene) {
   };
 
   var onPlayerJoined = function(data) {
-    playerScores[data.id] = {
-      name: '',
-      score: 0
-    };
+    var player = ensurePlayer(data.id);
+    player.score = 0;
   };
 
   var onPlayerLeft = function(data) {
@@ -45,28 +43,37 @@ exports.ScoreKeeper = function(scene) {
   };
 
   var setPlayerName = function(playerId, name) {
-    var player = playerScores[playerId];
+    var player = ensurePlayer(playerId);
     if(!player) return;
     player.name = name;
   };
 
   var getPlayerScore = function(playerId) {
-    if(playerScores[playerId])
-      return playerScores[playerId].score;
-    return 0;
+    var player = ensurePlayer(playerId);
+    return player.score;
   };
 
   var setPlayerScore = function(playerId, score) {
-    var player = playerScores[playerId];
-    if(!player) return;
+    var player = ensurePlayer(playerId);
     player.score = score;
   };
 
+  var ensurePlayer = function(id) {
+     var player = playerScores[id];
+     if(!player) {
+      player = playerScores[id] = {
+        name: '',
+        score: 0
+      };
+     }
+     return player;
+  };
+
   self.addEventHandler('playerScoreChanged', onScoreChanged);
-  scene.on('healthZeroed', Hovercraft, onCraftDestroyed);
-  scene.on('playerJoined', HovercraftSpawner, onPlayerJoined);
-  scene.on('playerLeft', HovercraftSpawner, onPlayerLeft); 
-  scene.on('playerNamed', HovercraftSpawner, onPlayerNamed);
+  scene.on('healthZeroed', onCraftDestroyed);
+  scene.on('playerJoined', onPlayerJoined);
+  scene.on('playerLeft',  onPlayerLeft); 
+  scene.on('playerNamed', onPlayerNamed);
 };
 
 exports.ScoreKeeper.GetFrom = function(scene) {

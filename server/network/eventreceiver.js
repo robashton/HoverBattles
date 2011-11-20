@@ -6,58 +6,27 @@ var HovercraftSpawner = require('../../shared/hovercraftspawner').HovercraftSpaw
 var ScoreKeeper = require('../../shared/scorekeeper').ScoreKeeper;
 
 
-var ForwardedEvents = {};
-ForwardedEvents = [
-   {
-      type: FiringController,
-      events: [
-        'missileLock',
-        'fireMissile'
-      ]
-   },
-   {
-      type: Missile,
-      events: [
-        'missileLost',
-        'targetHit',
-        'missileExpired'
-      ]
-   },
-   {
-     type: Destructable,
-     events: [
-      'entityDestroyed'
-     ]
-   },
-   {
-      type: Hovercraft,
-      events: [
-       'healthZeroed'
-      ]
-   },
-   {
-      type: HovercraftSpawner,
-      events: [
-        'entityRevived',
-        'entitySpawned',
-        'playerJoined',
-        'playerLeft',
-        'playerNamed'
-      ]
-   },
-   {
-      type: ScoreKeeper,
-      events: [
-        'playerScoreChanged'
-      ]
-   }
+var ForwardedEvents = [
+  'missileLock',
+  'fireMissile',
+  'missileLost',
+  'targetHit',
+  'missileExpired',
+  'entityDestroyed',
+  'healthZeroed',
+  'entityRevived',
+  'entitySpawned',
+  'playerJoined',
+  'playerLeft',
+  'playerNamed',
+  'playerScoreChanged'
 ];
 
 exports.EventReceiver = function(app, communication) {
   var self = this;
 
   var addEventProxy = function(event, type) {
-     app.scene.on(event, group.type, function(data) {
+     app.scene.on(event, function(data) {
         forwardEventForEntity(event, this.getId(), data);
      });
   };
@@ -72,14 +41,10 @@ exports.EventReceiver = function(app, communication) {
   }; 
 
   self._entityEvent = function(msg) {
-  };  
-
+  };
 
   for(var i in ForwardedEvents) {
-    var group = ForwardedEvents[i];
-    for(var j in group.events) {
-      var event = group.events[j];
-      addEventProxy(event, group.type);     
-    }
+    var event = ForwardedEvents[i];
+    addEventProxy(event);     
   }
 };

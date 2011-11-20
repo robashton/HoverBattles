@@ -45,10 +45,23 @@ exports.HovercraftSpawner = function(scene) {
 
   self.setSync = function(sync) {
     playerNames = sync.playerNames;
+    updateAllPlayerNames();
   };
 
   self.updateSync = function(sync) {
     sync.playerNames = playerNames;
+  };
+  
+  var onEntityAddedToScene = function(entity) {
+    if(!entity.is(Hovercraft)) return;
+    entity.displayName(playerNames[entity.getId()]);
+  };
+
+  var updateAllPlayerNames = function() {
+    for(var playerId in playerNames)
+      scene.withEntity(playerId, function(entity) {
+        entity.displayName(playerNames[playerId]);
+      });
   };
 
   var onEntityDestroyed = function() {
@@ -76,7 +89,6 @@ exports.HovercraftSpawner = function(scene) {
   var onEntitySpawned = function(data) {
     var craft = hovercraftFactory.create(data.id);   
 	  craft.position = data.position;
-    craft.displayName(playerNames[data.id]);
     scene.addEntity(craft);
   };
 
@@ -88,7 +100,8 @@ exports.HovercraftSpawner = function(scene) {
     self.spawnHovercraft(data.id);
   };
 
-  scene.on('entityDestroyed', Hovercraft, onEntityDestroyed);
+  scene.on('entityDestroyed', onEntityDestroyed);
+  scene.onEntityAdded(onEntityAddedToScene);
 
   self.addEventHandler('playerNamed', onPlayerNamed);
   self.addEventHandler('entityRevived', onEntityRevived);

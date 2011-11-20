@@ -2,51 +2,41 @@ var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var Camera = require('./camera').Camera;
 var CollisionManager = require('./collisionmanager').CollisionManager;
-var TypedEventContainer = require('./typedeventcontainer').TypedEventContainer;
+var EventContainer = require('./eventcontainer').EventContainer;
 
 var Scene = function(app){
   this._entities = {};
   this.app = app;
   this.camera = new Camera();
   this.collisionManager = new CollisionManager();
-  this.entityAddedListeners = [];
-  this.entityRemovedListeners = [];
-
-  this.eventContainer = new TypedEventContainer();
-
-  this.completedEventCount = 0;
-  this.pendingEvents = [];
+  this.entityAddedListeners = new EventContainer();
+  this.entityRemovedListeners = new EventContainer();
+  this.entityEventListeners = {};
 };
 
 Scene.prototype.onEntityAdded = function(callback) {
-  this.entityAddedListeners.push(callback);
+  this.entityAddedListeners.add(callback);
 };
 
 Scene.prototype.onEntityRemoved = function(callback) {
-  this.entityRemovedListeners.push(callback);
+  this.entityRemovedListeners.add(callback);
 };
 
 Scene.prototype.raiseEntityAdded = function(entity) {
   if(!(entity instanceof Entity)) return; // Hack to get around non-entity based entities (legacy)
-  for(var i = 0; i < this.entityAddedListeners.length ; i++){ 
-    var listener = this.entityAddedListeners[i];
-    listener(entity);
-  }
+  this.entityAddedListeners.raise(this, entity);
 };
 
 Scene.prototype.raiseEntityRemoved = function(entity) {
   if(!(entity instanceof Entity)) return; // Hack to get around non-entity based entities (legacy)
-  for(var i = 0; i < this.entityRemovedListeners.length ; i++){ 
-    var listener = this.entityRemovedListeners[i];
-    listener(entity);
-  }
+  this.entityRemovedListeners.raise(this, entity);
 };
 
 Scene.prototype.withEntity = function(id, callback) {
   var entity = this.getEntity(id);
   if(entity) {
     callback(entity);
-  } else { console.log('Failed to find entity ' + id); console.trace() }
+  } else { console.log('Failed to find entity ' + id); }
 };
 
 Scene.prototype.getEntity = function(id) {
@@ -86,45 +76,30 @@ Scene.prototype.doLogic = function() {
 
 Scene.prototype.forEachEntity = function(callback) {
   for(var i in this._entities)
-      callback(this._entities[i]);
+    callback(this._entities[i]);
 };
 
 Scene.prototype.broadcastEvent = function(source, eventName, data) {
-  this.eventContainer.raise(source, eventName, data);
-
-/*
-  this.pendingEvents.push({
-    source: source,
-    eventName: eventName,
-    data: data
-  }); */
+  var container = this.entityEventListeners[eventName];
+  if(container)
+    container.raise(source, data);
 };
 
-Scene.prototype.endEvent = function() {
-/*
-  this.completedEventCount++;
-
-  if(this.completedEventCount === this.pendingEvents.length) {
-    var events = this.pendingEvents;
-    this.completedEventCount = 0;
-    this.pendingEvents = [];
-    this.raiseAllEvents(events);
-  }*/
-};
-
-Scene.prototype.raiseAllEvents = function(events) {
-  for(var i = 0 ; i < events.length; i++) {
-    var ev = events[i];
-
+Scene.prototype.eventContainerFor = function(eventName) {
+  var container = this.entityEventListeners[eventName];
+  if(!container) {
+    container =  new EventContainer();
+    this.entityEventListeners[eventName] = container;
   }
+  return container;
 };
 
-Scene.prototype.on = function(eventName, type, callback) {
-  this.eventContainer.add(eventName, type, callback);
+Scene.prototype.on = function(eventName, callback) {
+  this.eventContainerFor(eventName).add(callback);
 };
 
 Scene.prototype.off = function(eventName, type, callback) {
-  this.eventContainer.remove(eventName, type, callback);
+  this.eventContainerFor(eventName).remove(callback);
 };
 
 Scene.prototype.render = function(context){

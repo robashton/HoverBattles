@@ -56,7 +56,7 @@ exports.ServerGameReceiver = function(app, communication) {
       data.username = 'guest-' + guestCount++;
     }; 
 
-    spawner.namePlayer(data.source, data.username);
+    spawner.namePlayer(data.source, data.username, true);
     spawner.createPlayer(data.source);
 	  communication.syncPlayerFull(data.source);
   };

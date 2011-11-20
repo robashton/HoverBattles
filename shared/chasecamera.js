@@ -95,6 +95,7 @@ exports.ChaseCamera  = function(scene, playerId) {
   };
 
   self.doLogic = function() {
+    if(!entity) return;
     workOutWhereTargetIs();
     doLogicAfterAscertainingTarget();
   };
@@ -113,7 +114,7 @@ exports.ChaseCamera  = function(scene, playerId) {
     }
   };
 
-  var updateDesiredCameraPositionBehindPlayer = function() {
+  var updateDesiredCameraPositionBehindPlayer = function() {    
     var craftRotation = entity.rotationY;
     directionBackZ = distanceBack * Math.cos(craftRotation);
     directionBackX = distanceBack * Math.sin(craftRotation);
@@ -123,9 +124,9 @@ exports.ChaseCamera  = function(scene, playerId) {
 
   var tweenBetweenCompetingLocations = function() {
     if(includedTargetId && percentageTowardsTarget < 1.0)
-      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.02);
+      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.015);
     else if(percentageTowardsTarget > 0.0)
-      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.02);
+      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.015);
 
     var targetComponent = vec3.create([0,0,0]);
     var chaseComponent = vec3.create([0,0,0]);

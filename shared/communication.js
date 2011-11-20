@@ -6,7 +6,6 @@ var MessageDispatcher = require('./messagedispatcher').MessageDispatcher;
 var ClientGameReceiver = require('./network/clientgamereceiver').ClientGameReceiver;
 var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 var MissileFactory = require('./missilefactory').MissileFactory;
-var ScoreReceiver = require('./network/scorereceiver').ScoreReceiver;
 var EventReceiver = require('./network/eventreceiver').EventReceiver;
 
 ClientCommunication = function(app){
@@ -19,7 +18,6 @@ ClientCommunication = function(app){
     this.dispatcher = new MessageDispatcher();
     this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
-    this.dispatcher.addReceiver(new ScoreReceiver(this.app, this));
     this.dispatcher.addReceiver(new EventReceiver(this.app.scene));
 };
 

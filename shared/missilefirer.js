@@ -30,7 +30,7 @@ exports.MissileFirer = function(app, missileFactory) {
     });	
   };      
 
-  app.scene.on('fireMissile', FiringController, onEntityFiredMissile);
-  app.scene.on('targetHit', Missile, onTargetHit);
-  app.scene.on('missileExpired', Missile, onMissileExpired);
+  app.scene.on('fireMissile', onEntityFiredMissile);
+  app.scene.on('targetHit',  onTargetHit);
+  app.scene.on('missileExpired', onMissileExpired);
 };

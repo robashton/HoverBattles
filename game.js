@@ -434,6 +434,7 @@ exports.ChaseCamera  = function(scene, playerId) {
   };
 
   self.doLogic = function() {
+    if(!entity) return;
     workOutWhereTargetIs();
     doLogicAfterAscertainingTarget();
   };
@@ -452,7 +453,7 @@ exports.ChaseCamera  = function(scene, playerId) {
     }
   };
 
-  var updateDesiredCameraPositionBehindPlayer = function() {
+  var updateDesiredCameraPositionBehindPlayer = function() {    
     var craftRotation = entity.rotationY;
     directionBackZ = distanceBack * Math.cos(craftRotation);
     directionBackX = distanceBack * Math.sin(craftRotation);
@@ -462,9 +463,9 @@ exports.ChaseCamera  = function(scene, playerId) {
 
   var tweenBetweenCompetingLocations = function() {
     if(includedTargetId && percentageTowardsTarget < 1.0)
-      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.02);
+      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.015);
     else if(percentageTowardsTarget > 0.0)
-      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.02);
+      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.015);
 
     var targetComponent = vec3.create([0,0,0]);
     var chaseComponent = vec3.create([0,0,0]);
@@ -585,7 +586,6 @@ var MessageDispatcher = require('./messagedispatcher').MessageDispatcher;
 var ClientGameReceiver = require('./network/clientgamereceiver').ClientGameReceiver;
 var EntityReceiver = require('./network/entityreceiver').EntityReceiver;
 var MissileFactory = require('./missilefactory').MissileFactory;
-var ScoreReceiver = require('./network/scorereceiver').ScoreReceiver;
 var EventReceiver = require('./network/eventreceiver').EventReceiver;
 
 ClientCommunication = function(app){
@@ -598,7 +598,6 @@ ClientCommunication = function(app){
     this.dispatcher = new MessageDispatcher();
     this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
-    this.dispatcher.addReceiver(new ScoreReceiver(this.app, this));
     this.dispatcher.addReceiver(new EventReceiver(this.app.scene));
 };
 
@@ -912,6 +911,27 @@ var Entity = function(id){
 };
 
 exports.Entity = Entity;
+}, "eventcontainer": function(exports, require, module) {exports.EventContainer = function() {
+  var self = this;
+  var handlers = [];
+
+  self.raise = function(source, data) {
+    for(var i = 0; i < handlers.length; i++)
+      handlers[i].call(source, data);
+  };
+ 
+  self.add = function(handler) {
+    handlers.push(handler);
+  };
+
+  self.remove = function(handler) {
+    var newItems = [];
+    for(var i = 0; i < handlers.length; i++)
+        if(handlers[i] !== callback) 
+          newItems.push(handlers[i]);
+    handlers = newItems;
+  };
+};
 }, "explodable": function(exports, require, module) {var Explosion = require('./explosion').Explosion;
 
 exports.Explodable = function() {
@@ -2985,7 +3005,7 @@ var mat4 = require('./glmatrix').mat4;
 var Hovercraft = function() {
   var self = this;
 
-  self._decay = 0.99;
+  self._decay = 0.985;
 
   self.reset = function() {
     self._velocity = vec3.create([0.01,0,0.01]);
@@ -3108,7 +3128,7 @@ var Hovercraft = function() {
     if(heightDelta < 0.5) {
       self.position[1] = terrainHeight + (0.5 - heightDelta);
       if(self._velocity[1] < 0)
-        self._velocity[1] = -self._velocity[1] * 0.5;
+        self._velocity[1] = -self._velocity[1] * 0.25;
     }
 
     if(Math.abs(self._velocity[1]) < 0.0001)
@@ -3311,10 +3331,23 @@ exports.HovercraftSpawner = function(scene) {
 
   self.setSync = function(sync) {
     playerNames = sync.playerNames;
+    updateAllPlayerNames();
   };
 
   self.updateSync = function(sync) {
     sync.playerNames = playerNames;
+  };
+  
+  var onEntityAddedToScene = function(entity) {
+    if(!entity.is(Hovercraft)) return;
+    entity.displayName(playerNames[entity.getId()]);
+  };
+
+  var updateAllPlayerNames = function() {
+    for(var playerId in playerNames)
+      scene.withEntity(playerId, function(entity) {
+        entity.displayName(playerNames[playerId]);
+      });
   };
 
   var onEntityDestroyed = function() {
@@ -3342,7 +3375,6 @@ exports.HovercraftSpawner = function(scene) {
   var onEntitySpawned = function(data) {
     var craft = hovercraftFactory.create(data.id);   
 	  craft.position = data.position;
-    craft.displayName(playerNames[data.id]);
     scene.addEntity(craft);
   };
 
@@ -3354,7 +3386,8 @@ exports.HovercraftSpawner = function(scene) {
     self.spawnHovercraft(data.id);
   };
 
-  scene.on('entityDestroyed', Hovercraft, onEntityDestroyed);
+  scene.on('entityDestroyed', onEntityDestroyed);
+  scene.onEntityAdded(onEntityAddedToScene);
 
   self.addEventHandler('playerNamed', onPlayerNamed);
   self.addEventHandler('entityRevived', onEntityRevived);
@@ -3479,7 +3512,7 @@ var TargettingEntity = function(app, sourceid, targetid) {
   var textItem = null;
   var rotation = 0;
   var isPlayer = isPlayer;
-  
+
   self.notifyHasFired = function(missileid) {
     firedMissileId = missileid;
   };
@@ -3535,6 +3568,16 @@ var TargettingEntity = function(app, sourceid, targetid) {
     hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
     textItem = app.overlay.addTextItem('text-' + sourceid, entity.displayName(), 128, 128, 'red', 'bold 14px verdana');
   });
+
+  self.enable = function() {
+     hudItem.show();
+     textItem.show();
+  };
+
+  self.disable = function() {
+     hudItem.hide();
+     textItem.hide();
+  };
   
   self.tick();  
 };
@@ -3542,6 +3585,7 @@ var TargettingEntity = function(app, sourceid, targetid) {
 var OtherPlayer = function(app, entity) {
    var self = this;
    var hudItem = null;
+   var enabled = true;
 
    self.dispose = function() {
     if(hudItem)
@@ -3559,7 +3603,7 @@ var OtherPlayer = function(app, entity) {
     var centre = transformedSphere.centre;
     var radius = transformedSphere.radius;
 
-    if(centre[2] < 100.0)
+    if(centre[2] < 100.0 || !enabled)
       hudItem.hide();
     else
       hudItem.show();
@@ -3571,6 +3615,14 @@ var OtherPlayer = function(app, entity) {
     hudItem.width(8.0);
     hudItem.height(8.0);   
   };
+
+  self.enable = function() {
+     enabled = true;
+  };
+
+  self.disable = function() {
+    enabled = false;
+  };
 };
 
 
@@ -3579,6 +3631,7 @@ exports.Hud = function(app) {
   var app = app;
   var playerId = null;
   var warnings = null;
+  var enabled = true;
 
   var trackedCraft = {};
   var playerIndicators = {};
@@ -3599,8 +3652,15 @@ exports.Hud = function(app) {
   };
 
   var hookHovercraftEvents = function(craft) {
-    if(craft.getId() !== playerId)
-      playerIndicators[craft.getId()] = new OtherPlayer(app, craft);
+    if(craft.getId() !== playerId) {
+      createPlayerIndicator(craft);
+    }
+  };
+
+  var createPlayerIndicator = function(craft) {
+    var id = craft.getId();
+    playerIndicators[id] = new OtherPlayer(app, craft);
+    if(!enabled) playerIndicators[id].disable();
   };
 
   var unHookHovercraftEvents = function(craft) {
@@ -3636,9 +3696,12 @@ exports.Hud = function(app) {
  var createTrackedHovercraft = function(sourceid, targetid) {
    if(sourceid === playerId) {
       trackedCraft[sourceid] = new TargettingEntity(app, sourceid, targetid);
+      
     } else if(targetid === playerId){ 
       trackedCraft[sourceid] = new WarningEntity(app, warnings, sourceid, targetid);
     }
+    if(trackedCraft[sourceid] && !enabled)
+      trackedCraft[sourceid].disable();
   };
 
   var clearTrackedHovercraft = function(sourceid) {
@@ -3651,7 +3714,7 @@ exports.Hud = function(app) {
   };
 
   var clearIndicators = function(sourceid) {
-    if(sourceid == playerId) return;
+    if(sourceid === playerId) return;
     var indicator = playerIndicators[sourceid];
     delete playerIndicators[sourceid];
     indicator.dispose();
@@ -3677,22 +3740,37 @@ exports.Hud = function(app) {
       callback(trackedCraft[sourceid]);
   };
 
+  self.enable = function() {
+    enabled = true;
+    for(var i in trackedCraft)
+      trackedCraft[i].enable();
+    for(var i in playerIndicators)
+      playerIndicators[i].enable();
+  };
+
+  self.disable = function() {
+    enabled = false;
+    for(var i in trackedCraft)
+      trackedCraft[i].disable();
+    for(var i in playerIndicators)
+      playerIndicators[i].disable();
+  };
+
   self.doLogic = function() {
     if(warnings) warnings.tick();
     for(var i in trackedCraft) {
       var entity = trackedCraft[i];
       entity.tick();
-    }   
-
+    }
     for(var i in playerIndicators)
       playerIndicators[i].update();
   };
 
-  app.scene.on('trackingTarget', Hovercraft, onEntityTrackingTarget);
-  app.scene.on('cancelledTrackingTarget', Hovercraft, onEntityCancelledTrackingTarget);
-  app.scene.on('missileLock', Hovercraft, onEntityMissileLock);
-  app.scene.on('fireMissile', Hovercraft, onEntityFireMissile);
-  app.scene.on('healthZeroed', Hovercraft, onEntityHealthZeroed);
+  app.scene.on('trackingTarget', onEntityTrackingTarget);
+  app.scene.on('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+  app.scene.on('missileLock', onEntityMissileLock);
+  app.scene.on('fireMissile', onEntityFireMissile);
+  app.scene.on('healthZeroed', onEntityHealthZeroed);
   app.scene.onEntityAdded(onEntityAdded);
   app.scene.onEntityRemoved(onEntityRemoved);
 };
@@ -4243,9 +4321,9 @@ exports.MissileFirer = function(app, missileFactory) {
     });	
   };      
 
-  app.scene.on('fireMissile', FiringController, onEntityFiredMissile);
-  app.scene.on('targetHit', Missile, onTargetHit);
-  app.scene.on('missileExpired', Missile, onMissileExpired);
+  app.scene.on('fireMissile', onEntityFiredMissile);
+  app.scene.on('targetHit',  onTargetHit);
+  app.scene.on('missileExpired', onMissileExpired);
 };
 }, "model": function(exports, require, module) {var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
@@ -4429,7 +4507,6 @@ var HovercraftSpawner = require('../hovercraftspawner').HovercraftSpawner;
 var HovercraftFactory = require('../hovercraftfactory').HovercraftFactory;
 var ScoreKeeper = require('../scorekeeper').ScoreKeeper;
 var ScoreDisplay = require('./scoredisplay').ScoreDisplay;
-
 var Hud = require('../hud').Hud;
 
 exports.ClientGameReceiver = function(app, server) {
@@ -4437,9 +4514,7 @@ exports.ClientGameReceiver = function(app, server) {
 
   var app = app;
   var server = server;
-  var started = false;
-  var craft = null;
-  var allCraft = {};
+
   var playerId = null;
   var chaseCamera = null;
   var controller = null;
@@ -4450,10 +4525,10 @@ exports.ClientGameReceiver = function(app, server) {
 
   var missileFirer = null;
   var trailsAndExplosions = null;
- 
+  var hud = null;
+
   self._init = function(data) {
 	  playerId = data.id;
-
     createGameComponents();
     initializeHud();
     waitForAssetsToLoad();   
@@ -4464,17 +4539,19 @@ exports.ClientGameReceiver = function(app, server) {
     trailsAndExplosions = new TrailsAndExplosions(app);
     chaseCamera = ChaseCamera.Create(app.scene, playerId);
     controller = new HovercraftController(playerId, server);
+    scoreDisplay.setPlayerId(playerId);
   };
- 
+
   var initializeHud = function() {
-    app.scene.withEntity(Hud.ID, function(hud) {
-        hud.setPlayerId(playerId);
-      });
+    hud = Hud.create(app);
+    hud.setPlayerId(playerId);
+    hud.disable();
   };
 
   var waitForAssetsToLoad = function() {
 	  app.resources.onAllAssetsLoaded(function() {
       sendReadyWithCredentialsToServer();
+      hud.enable();
     });
   };
 
@@ -4494,6 +4571,20 @@ exports.ClientGameReceiver = function(app, server) {
 
   self._syncscene = function(data) {
 
+    // Note: To casual readers, this is NOT how regular syncing works in this application
+    // This will get called at least 'once' when the game first fires up, and then when something really
+    // major happens on the server. It's a "belt and braces" sync where all entities get all their state effectively
+    // refreshed - the real sync is below (and you'll notice that we don't just accept the server values as is, we
+    // do rubber banding around the values provided
+    // Also, for the most part we rely on event-forwarding to keep state in sync, multiple models all receiving the same input
+    // == multiple (mostly) identical models
+    for(i in data.others) {
+      var serverEntity = data.others[i];
+      var clientEntity = app.scene.getEntity(serverEntity.id);
+
+      if(clientEntity)
+        clientEntity.setSync(serverEntity.sync);
+    }
 	  for(i in data.craft) {
 		  var serverCraft = data.craft[i];		
 		  var clientCraft = app.scene.getEntity(serverCraft.id);
@@ -4503,31 +4594,13 @@ exports.ClientGameReceiver = function(app, server) {
 		  else 
         clientCraft.setSync(serverCraft.sync);      
 	  }
-
-    for(i in data.others) {
-      var serverEntity = data.others[i];
-      var clientEntity = app.scene.getEntity(serverEntity.id);
-
-      if(clientEntity)
-        clientEntity.setSync(serverEntity.sync);
-    }
+    app.scene.broadcastEvent(app.scene, 'fullSyncCompleted', {});
   };
 
   self._sync = function(data) {
-    var entity = app.scene.getEntity(data.id);
-    if(!entity)
-	    addHovercraftToScene(data.id, data.sync);
-    else
-      entity.setSync(data.sync);
-  };
-
-  var terrain = app.scene.getEntity('terrain');
-  self._updateplayer = function(data) {
-    var entity = app.scene.getEntity(data.id);
-    if(!entity)
-	    addHovercraftToScene(data.id, data.sync);
-    else
-      entity.setSync(data.sync);
+    app.scene.withEntity(data.id, function(entity) {
+        entity.setSync(data.sync);
+    });
   };
 
   var addHovercraftToScene = function(id, sync) {
@@ -4627,39 +4700,20 @@ exports.EntityReceiver = EntityReceiver;
 exports.ScoreDisplay = function(scene) {
   var self = this;
 
-  var onPlayerScoreChanged = function(data) {
+ var updateView = function() {
     var scoreKeeper = ScoreKeeper.GetFrom(scene);
     var scores = scoreKeeper.getScores();
     GlobalViewModel.setScores(scores);
   };
 
-  scene.on('playerScoreChanged', ScoreKeeper, onPlayerScoreChanged);  
-};
-}, "network/scorereceiver": function(exports, require, module) {exports.ScoreReceiver = function(app, communication) {
-  var self = this;
-  var scores = { };
-
-  var playerId = null;
-
-  self._updateScore = function(data) {
-      scores[data.playerid] = data.value;
-      GlobalViewModel.setScores(scores);
+  self.setPlayerId = function(id) {
+    GlobalViewModel.setPlayerId(id);
   };
 
-  self._updateAllScores = function(data) {
-      scores = data.scores;
-      GlobalViewModel.setScores(scores);
-  };
-
-  self._init = function(data) {
-    playerId = data.id;
-  };
-
-  self._playerNamed = function(data) {
-      if(data.id === playerId)
-        GlobalViewModel.setPlayerInfo(playerId, data.username);
-  };
-
+  scene.on('fullSyncCompleted', updateView);
+  scene.on('playerScoreChanged', updateView);
+  scene.on('playerJoined', updateView);
+  scene.on('playerLeft', updateView);
 };
 }, "overlay": function(exports, require, module) {var mat4 = require('glmatrix').mat4;
 
@@ -5495,51 +5549,41 @@ exports.ResourceManager = ResourceManager;}, "scene": function(exports, require,
 var mat4 = require('./glmatrix').mat4;
 var Camera = require('./camera').Camera;
 var CollisionManager = require('./collisionmanager').CollisionManager;
-var TypedEventContainer = require('./typedeventcontainer').TypedEventContainer;
+var EventContainer = require('./eventcontainer').EventContainer;
 
 var Scene = function(app){
   this._entities = {};
   this.app = app;
   this.camera = new Camera();
   this.collisionManager = new CollisionManager();
-  this.entityAddedListeners = [];
-  this.entityRemovedListeners = [];
-
-  this.eventContainer = new TypedEventContainer();
-
-  this.completedEventCount = 0;
-  this.pendingEvents = [];
+  this.entityAddedListeners = new EventContainer();
+  this.entityRemovedListeners = new EventContainer();
+  this.entityEventListeners = {};
 };
 
 Scene.prototype.onEntityAdded = function(callback) {
-  this.entityAddedListeners.push(callback);
+  this.entityAddedListeners.add(callback);
 };
 
 Scene.prototype.onEntityRemoved = function(callback) {
-  this.entityRemovedListeners.push(callback);
+  this.entityRemovedListeners.add(callback);
 };
 
 Scene.prototype.raiseEntityAdded = function(entity) {
   if(!(entity instanceof Entity)) return; // Hack to get around non-entity based entities (legacy)
-  for(var i = 0; i < this.entityAddedListeners.length ; i++){ 
-    var listener = this.entityAddedListeners[i];
-    listener(entity);
-  }
+  this.entityAddedListeners.raise(this, entity);
 };
 
 Scene.prototype.raiseEntityRemoved = function(entity) {
   if(!(entity instanceof Entity)) return; // Hack to get around non-entity based entities (legacy)
-  for(var i = 0; i < this.entityRemovedListeners.length ; i++){ 
-    var listener = this.entityRemovedListeners[i];
-    listener(entity);
-  }
+  this.entityRemovedListeners.raise(this, entity);
 };
 
 Scene.prototype.withEntity = function(id, callback) {
   var entity = this.getEntity(id);
   if(entity) {
     callback(entity);
-  } else { console.log('Failed to find entity ' + id); console.trace() }
+  } else { console.log('Failed to find entity ' + id); }
 };
 
 Scene.prototype.getEntity = function(id) {
@@ -5579,45 +5623,30 @@ Scene.prototype.doLogic = function() {
 
 Scene.prototype.forEachEntity = function(callback) {
   for(var i in this._entities)
-      callback(this._entities[i]);
+    callback(this._entities[i]);
 };
 
 Scene.prototype.broadcastEvent = function(source, eventName, data) {
-  this.eventContainer.raise(source, eventName, data);
-
-/*
-  this.pendingEvents.push({
-    source: source,
-    eventName: eventName,
-    data: data
-  }); */
+  var container = this.entityEventListeners[eventName];
+  if(container)
+    container.raise(source, data);
 };
 
-Scene.prototype.endEvent = function() {
-/*
-  this.completedEventCount++;
-
-  if(this.completedEventCount === this.pendingEvents.length) {
-    var events = this.pendingEvents;
-    this.completedEventCount = 0;
-    this.pendingEvents = [];
-    this.raiseAllEvents(events);
-  }*/
-};
-
-Scene.prototype.raiseAllEvents = function(events) {
-  for(var i = 0 ; i < events.length; i++) {
-    var ev = events[i];
-
+Scene.prototype.eventContainerFor = function(eventName) {
+  var container = this.entityEventListeners[eventName];
+  if(!container) {
+    container =  new EventContainer();
+    this.entityEventListeners[eventName] = container;
   }
+  return container;
 };
 
-Scene.prototype.on = function(eventName, type, callback) {
-  this.eventContainer.add(eventName, type, callback);
+Scene.prototype.on = function(eventName, callback) {
+  this.eventContainerFor(eventName).add(callback);
 };
 
 Scene.prototype.off = function(eventName, type, callback) {
-  this.eventContainer.remove(eventName, type, callback);
+  this.eventContainerFor(eventName).remove(callback);
 };
 
 Scene.prototype.render = function(context){
@@ -5672,10 +5701,8 @@ exports.ScoreKeeper = function(scene) {
   };
 
   var onPlayerJoined = function(data) {
-    playerScores[data.id] = {
-      name: '',
-      score: 0
-    };
+    var player = ensurePlayer(data.id);
+    player.score = 0;
   };
 
   var onPlayerLeft = function(data) {
@@ -5687,28 +5714,37 @@ exports.ScoreKeeper = function(scene) {
   };
 
   var setPlayerName = function(playerId, name) {
-    var player = playerScores[playerId];
+    var player = ensurePlayer(playerId);
     if(!player) return;
     player.name = name;
   };
 
   var getPlayerScore = function(playerId) {
-    if(playerScores[playerId])
-      return playerScores[playerId].score;
-    return 0;
+    var player = ensurePlayer(playerId);
+    return player.score;
   };
 
   var setPlayerScore = function(playerId, score) {
-    var player = playerScores[playerId];
-    if(!player) return;
+    var player = ensurePlayer(playerId);
     player.score = score;
   };
 
+  var ensurePlayer = function(id) {
+     var player = playerScores[id];
+     if(!player) {
+      player = playerScores[id] = {
+        name: '',
+        score: 0
+      };
+     }
+     return player;
+  };
+
   self.addEventHandler('playerScoreChanged', onScoreChanged);
-  scene.on('healthZeroed', Hovercraft, onCraftDestroyed);
-  scene.on('playerJoined', HovercraftSpawner, onPlayerJoined);
-  scene.on('playerLeft', HovercraftSpawner, onPlayerLeft); 
-  scene.on('playerNamed', HovercraftSpawner, onPlayerNamed);
+  scene.on('healthZeroed', onCraftDestroyed);
+  scene.on('playerJoined', onPlayerJoined);
+  scene.on('playerLeft',  onPlayerLeft); 
+  scene.on('playerNamed', onPlayerNamed);
 };
 
 exports.ScoreKeeper.GetFrom = function(scene) {
@@ -5878,79 +5914,5 @@ exports.TrailsAndExplosions = function(app) {
   app.scene.onEntityAdded(onEntityAdded);
   app.scene.onEntityRemoved(onEntityRemoved); 
     
-};
-}, "typedeventcontainer": function(exports, require, module) {exports.TypedEventContainer = function() {
-  var self = this;
-  var eventHandlers = {};
-
-  self.add = function(eventName, type, callback) {
-    var container = ensureGetContainerForTypeAndEvent(eventName, type); 
-    container.addHandler(callback);
-  };
-
-  self.remove = function(eventName, type, callback) {
-    var container = ensureGetContainerForTypeAndEvent(eventName, type); 
-    container.removeHandler(callback);
-  };
-
-  self.raise = function(source, eventName, data) {
-    var eventContainer = eventHandlers[eventName];
-    if(!eventContainer) return;
-
-    for(var i = 0; i < eventContainer.length; i++)
-      if(eventContainer[i].isForEntity(source))
-        eventContainer[i].raise(source, data);   
-  };
-
-  var ensureGetContainerForTypeAndEvent = function(eventName, type) {
-    var containers = ensureGetEventHandlerContainers(eventName);
-    for(var i = 0 ; i < containers.length; i++)
-      if(containers[i].isForType(type))
-        return containers[i];
-
-    var container = new EventHandlerContainer(type);
-    containers.push(container);
-    return container;
-  };
-
-
-  var ensureGetEventHandlerContainers = function(eventName) {
-    var containers = eventHandlers[eventName];
-    if(!containers){ 
-      containers = [];
-      eventHandlers[eventName] = containers;
-    }
-    return containers;
-  };
-};
-
-var EventHandlerContainer = function(type) {
-  var self = this;
-  var handlers = [];
-
-  self.raise = function(source, data) {
-    for(var i = 0; i < handlers.length; i++)
-      handlers[i].call(source, data);
-  };
-
-  self.isForType = function(otherType) {
-    return type === otherType;
-  };
-
-  self.isForEntity = function(entity) {
-    return entity.is(type);
-  };
-  
-  self.addHandler = function(handler) {
-    handlers.push(handler);
-  };
-
-  self.removeHandler = function(handler) {
-    var newItems = [];
-    for(var i = 0; i < handlers.length; i++)
-        if(handlers[i] !== callback) 
-          newItems.push(handlers[i]);
-    handlers = newItems;
-  };
 };
 }});

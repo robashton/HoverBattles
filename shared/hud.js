@@ -109,7 +109,7 @@ var TargettingEntity = function(app, sourceid, targetid) {
   var textItem = null;
   var rotation = 0;
   var isPlayer = isPlayer;
-  
+
   self.notifyHasFired = function(missileid) {
     firedMissileId = missileid;
   };
@@ -165,6 +165,16 @@ var TargettingEntity = function(app, sourceid, targetid) {
     hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
     textItem = app.overlay.addTextItem('text-' + sourceid, entity.displayName(), 128, 128, 'red', 'bold 14px verdana');
   });
+
+  self.enable = function() {
+     hudItem.show();
+     textItem.show();
+  };
+
+  self.disable = function() {
+     hudItem.hide();
+     textItem.hide();
+  };
   
   self.tick();  
 };
@@ -172,6 +182,7 @@ var TargettingEntity = function(app, sourceid, targetid) {
 var OtherPlayer = function(app, entity) {
    var self = this;
    var hudItem = null;
+   var enabled = true;
 
    self.dispose = function() {
     if(hudItem)
@@ -189,7 +200,7 @@ var OtherPlayer = function(app, entity) {
     var centre = transformedSphere.centre;
     var radius = transformedSphere.radius;
 
-    if(centre[2] < 100.0)
+    if(centre[2] < 100.0 || !enabled)
       hudItem.hide();
     else
       hudItem.show();
@@ -201,6 +212,14 @@ var OtherPlayer = function(app, entity) {
     hudItem.width(8.0);
     hudItem.height(8.0);   
   };
+
+  self.enable = function() {
+     enabled = true;
+  };
+
+  self.disable = function() {
+    enabled = false;
+  };
 };
 
 
@@ -209,6 +228,7 @@ exports.Hud = function(app) {
   var app = app;
   var playerId = null;
   var warnings = null;
+  var enabled = true;
 
   var trackedCraft = {};
   var playerIndicators = {};
@@ -229,8 +249,15 @@ exports.Hud = function(app) {
   };
 
   var hookHovercraftEvents = function(craft) {
-    if(craft.getId() !== playerId)
-      playerIndicators[craft.getId()] = new OtherPlayer(app, craft);
+    if(craft.getId() !== playerId) {
+      createPlayerIndicator(craft);
+    }
+  };
+
+  var createPlayerIndicator = function(craft) {
+    var id = craft.getId();
+    playerIndicators[id] = new OtherPlayer(app, craft);
+    if(!enabled) playerIndicators[id].disable();
   };
 
   var unHookHovercraftEvents = function(craft) {
@@ -266,9 +293,12 @@ exports.Hud = function(app) {
  var createTrackedHovercraft = function(sourceid, targetid) {
    if(sourceid === playerId) {
       trackedCraft[sourceid] = new TargettingEntity(app, sourceid, targetid);
+      
     } else if(targetid === playerId){ 
       trackedCraft[sourceid] = new WarningEntity(app, warnings, sourceid, targetid);
     }
+    if(trackedCraft[sourceid] && !enabled)
+      trackedCraft[sourceid].disable();
   };
 
   var clearTrackedHovercraft = function(sourceid) {
@@ -281,7 +311,7 @@ exports.Hud = function(app) {
   };
 
   var clearIndicators = function(sourceid) {
-    if(sourceid == playerId) return;
+    if(sourceid === playerId) return;
     var indicator = playerIndicators[sourceid];
     delete playerIndicators[sourceid];
     indicator.dispose();
@@ -307,22 +337,37 @@ exports.Hud = function(app) {
       callback(trackedCraft[sourceid]);
   };
 
+  self.enable = function() {
+    enabled = true;
+    for(var i in trackedCraft)
+      trackedCraft[i].enable();
+    for(var i in playerIndicators)
+      playerIndicators[i].enable();
+  };
+
+  self.disable = function() {
+    enabled = false;
+    for(var i in trackedCraft)
+      trackedCraft[i].disable();
+    for(var i in playerIndicators)
+      playerIndicators[i].disable();
+  };
+
   self.doLogic = function() {
     if(warnings) warnings.tick();
     for(var i in trackedCraft) {
       var entity = trackedCraft[i];
       entity.tick();
-    }   
-
+    }
     for(var i in playerIndicators)
       playerIndicators[i].update();
   };
 
-  app.scene.on('trackingTarget', Hovercraft, onEntityTrackingTarget);
-  app.scene.on('cancelledTrackingTarget', Hovercraft, onEntityCancelledTrackingTarget);
-  app.scene.on('missileLock', Hovercraft, onEntityMissileLock);
-  app.scene.on('fireMissile', Hovercraft, onEntityFireMissile);
-  app.scene.on('healthZeroed', Hovercraft, onEntityHealthZeroed);
+  app.scene.on('trackingTarget', onEntityTrackingTarget);
+  app.scene.on('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+  app.scene.on('missileLock', onEntityMissileLock);
+  app.scene.on('fireMissile', onEntityFireMissile);
+  app.scene.on('healthZeroed', onEntityHealthZeroed);
   app.scene.onEntityAdded(onEntityAdded);
   app.scene.onEntityRemoved(onEntityRemoved);
 };
