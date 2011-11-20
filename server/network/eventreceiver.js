@@ -3,6 +3,8 @@ var Missile = require('../../shared/missile').Missile;
 var Destructable = require('../../shared/destructable').Destructable;
 var Hovercraft = require('../../shared/hovercraft').Hovercraft;
 var HovercraftSpawner = require('../../shared/hovercraftspawner').HovercraftSpawner;
+var ScoreKeeper = require('../../shared/scorekeeper').ScoreKeeper;
+
 
 var ForwardedEvents = {};
 ForwardedEvents = [
@@ -38,8 +40,15 @@ ForwardedEvents = [
       events: [
         'entityRevived',
         'entitySpawned',
-        'playerRemoved',
+        'playerJoined',
+        'playerLeft',
         'playerNamed'
+      ]
+   },
+   {
+      type: ScoreKeeper,
+      events: [
+        'playerScoreChanged'
       ]
    }
 ];
@@ -47,42 +56,10 @@ ForwardedEvents = [
 exports.EventReceiver = function(app, communication) {
   var self = this;
 
-  var hookEvents = function(entity) {
-    for(var i in ForwardedEvents) {
-      var ev = ForwardedEvents[i];
-      if(entity.is(ev.type))
-        hookEventsForType(ev.events, entity);
-    }
-  };
-
-  var unhookEvents = function(entity) {
-    for(var i in ForwardedEvents) {
-      var ev = ForwardedEvents[i];
-      if(entity.is(ev.type))
-        unhookEventsForType(ev.events, entity);
-    }
-  };  
-
-  var hookEventsForType = function(events, entity) {
-    for(i in events)
-      hookEventHandlerFor(events[i], entity);
-  };
-
-  var unhookEventsForType = function(events, entity) {
-    for(i in events)
-      unhookEventHandlerFor(events[i], entity);
-  };
-
-  var hookEventHandlerFor = function(event, entity) {
-    entity.addEventHandler(event, function(data) {
-      forwardEventForEntity(event, entity.getId(), data);
-    });
-  };
-
-  var unhookEventHandlerFor = function(event, entity) {
-    entity.removeEventHandler(event, function(data) {
-      forwardEventForEntity(event, entity.getId());
-    });
+  var addEventProxy = function(event, type) {
+     app.scene.on(event, group.type, function(data) {
+        forwardEventForEntity(event, this.getId(), data);
+     });
   };
 
   var forwardEventForEntity = function(event, id, data) {
@@ -95,9 +72,14 @@ exports.EventReceiver = function(app, communication) {
   }; 
 
   self._entityEvent = function(msg) {
-    console.log('Ignoring event because our messaging structure is changing');
   };  
 
-  app.scene.onEntityAdded(hookEvents);
-  app.scene.onEntityRemoved(unhookEvents);
+
+  for(var i in ForwardedEvents) {
+    var group = ForwardedEvents[i];
+    for(var j in group.events) {
+      var event = group.events[j];
+      addEventProxy(event, group.type);     
+    }
+  }
 };

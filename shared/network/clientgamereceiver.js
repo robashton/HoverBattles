@@ -4,6 +4,8 @@ var MissileFactory = require('../missilefactory').MissileFactory;
 var TrailsAndExplosions = require('../trailsandexplosions').TrailsAndExplosions;
 var HovercraftSpawner = require('../hovercraftspawner').HovercraftSpawner;
 var HovercraftFactory = require('../hovercraftfactory').HovercraftFactory;
+var ScoreKeeper = require('../scorekeeper').ScoreKeeper;
+var ScoreDisplay = require('./scoredisplay').ScoreDisplay;
 
 var Hud = require('../hud').Hud;
 
@@ -20,6 +22,8 @@ exports.ClientGameReceiver = function(app, server) {
   var controller = null;
   var spawner = HovercraftSpawner.Create(app.scene);
   var hovercraftFactory = new HovercraftFactory(app);
+  var scoreKeeper = ScoreKeeper.Create(app.scene);
+  var scoreDisplay = new ScoreDisplay(app.scene);
 
   var missileFirer = null;
   var trailsAndExplosions = null;
@@ -35,7 +39,7 @@ exports.ClientGameReceiver = function(app, server) {
   var createGameComponents = function() {
     missileFirer = new MissileFirer(app, new MissileFactory());
     trailsAndExplosions = new TrailsAndExplosions(app);
-    chaseCamera = new ChaseCamera(app.scene, playerId);
+    chaseCamera = ChaseCamera.Create(app.scene, playerId);
     controller = new HovercraftController(playerId, server);
   };
  
@@ -76,6 +80,14 @@ exports.ClientGameReceiver = function(app, server) {
 		  else 
         clientCraft.setSync(serverCraft.sync);      
 	  }
+
+    for(i in data.others) {
+      var serverEntity = data.others[i];
+      var clientEntity = app.scene.getEntity(serverEntity.id);
+
+      if(clientEntity)
+        clientEntity.setSync(serverEntity.sync);
+    }
   };
 
   self._sync = function(data) {

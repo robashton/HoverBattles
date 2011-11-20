@@ -96,49 +96,48 @@ var Hovercraft = function() {
   };
   
   self.processInput = function() {
-      if(self._left) {
-          self.impulseLeft();
-      }
-      else if(self._right) {
-          self.impulseRight();
-      }
-      
-      if(self._forward) {
-          self.impulseForward();
-      } 
-      else if( self._backward) {
-          self.impulseBackward();
-      };
-      
-      if(self._jump) {
-       self.impulseUp();   
-      }
+    if(self._left) {
+      self.impulseLeft();
+    }
+    else if(self._right) {
+      self.impulseRight();
+    }
+    
+    if(self._forward) {
+      self.impulseForward();
+    } 
+    else if( self._backward) {
+      self.impulseBackward();
+    };
+    
+    if(self._jump) {
+     self.impulseUp();   
+    }
   };
   
   self.doLogic = function() {
-      self.processInput();
-      
-      var terrain = self._scene.getEntity("terrain");
-      vec3.add(self.position, self._velocity);
-                   
-      var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
-      var heightDelta = self.position[1] - terrainHeight;
-      
-      if(heightDelta < 0.5) {
-          self.position[1] = terrainHeight + (0.5 - heightDelta);
-          if(self._velocity[1] < 0)
-            self._velocity[1] = -self._velocity[1] * 0.5;
-      }
+    self.processInput();
+    
+    var terrain = self._scene.getEntity("terrain");
+    vec3.add(self.position, self._velocity);
+                 
+    var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
+    var heightDelta = self.position[1] - terrainHeight;
+    
+    if(heightDelta < 0.5) {
+      self.position[1] = terrainHeight + (0.5 - heightDelta);
+      if(self._velocity[1] < 0)
+        self._velocity[1] = -self._velocity[1] * 0.5;
+    }
 
-	    if(Math.abs(self._velocity[1]) < 0.0001)
-		    self._velocity[1] = 0;
-       
-       if(heightDelta < 5.0){
-             self._velocity[1] += (5.0 - heightDelta) * 0.03;
-       }
-       self._velocity[1] -= 0.025;              
-       vec3.scale(self._velocity, self._decay);
-
+    if(Math.abs(self._velocity[1]) < 0.0001)
+	    self._velocity[1] = 0;
+     
+     if(heightDelta < 5.0){
+         self._velocity[1] += (5.0 - heightDelta) * 0.03;
+     }
+     self._velocity[1] -= 0.025;              
+     vec3.scale(self._velocity, self._decay);
   };
   
   self.updateSync = function(sync) {

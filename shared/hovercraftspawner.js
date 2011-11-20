@@ -1,5 +1,6 @@
 var Entity = require('./entity').Entity;
 var HovercraftFactory = require('./hovercraftfactory').HovercraftFactory;
+var Hovercraft = require('./hovercraft').Hovercraft;
 
 exports.HovercraftSpawner = function(scene) {
   var self = this;  
@@ -7,47 +8,11 @@ exports.HovercraftSpawner = function(scene) {
   var playerNames = {};
 
   scene.addEntity(self);
-  
-  var onEntityAdded = function(entity) {
-    if(entity.is(Hovercraft))
-      entity.addEventHandler('entityDestroyed', onEntityDestroyed);
-  };
-  
-  var onEntityRemoved = function(entity) {
-    if(entity.is(Hovercraft))
-      entity.removeEventHandler('entityDestroyed', onEntityDestroyed);
-  };
 
-  var onEntityDestroyed = function() {
-    var id = this.getId();
-    setTimeout(function() {
-      raiseEntityRevived(id);
-    }, 10000);
-  };
-
-  var raiseEntityRevived = function(id) {
-    self.raiseServerEvent('entityRevived', { id: id });
-  };
-
-  var onEntityRevived = function(data) {
-    self.spawnHovercraft(data.id);
-  };  
-
-  var onPlayerRemoved = function(data) {
-    var craft = scene.getEntity(data.id);
-    scene.removeEntity(craft);
-  };
-
-  var onEntitySpawned = function(data) {
-    var craft = hovercraftFactory.create(data.id);   
-	  craft.position = data.position;
-    craft.displayName(playerNames[data.id]);
-    scene.addEntity(craft);
-  };
-
-  var onPlayerNamed = function(data) {
-    playerNames[data.id] = data.name;
-    console.log(data.id + ' ' + data.name);
+  self.createPlayer = function(id) {
+    self.raiseServerEvent('playerJoined', {
+      id: id
+    });
   };
 
   self.spawnHovercraft = function(id) {
@@ -63,10 +28,10 @@ exports.HovercraftSpawner = function(scene) {
     });
   };
 
-  self.removeHovercraft = function(id) {
+  self.removePlayer = function(id) {
     var craft = scene.getEntity(id);
     if(!craft) return;
-    self.raiseServerEvent('playerRemoved', {
+    self.raiseServerEvent('playerLeft', {
       id: id
     });
   };
@@ -78,12 +43,57 @@ exports.HovercraftSpawner = function(scene) {
     });
   };
 
-  self._scene.onEntityAdded(onEntityAdded);
-  self._scene.onEntityRemoved(onEntityRemoved);
+  self.setSync = function(sync) {
+    playerNames = sync.playerNames;
+  };
+
+  self.updateSync = function(sync) {
+    sync.playerNames = playerNames;
+  };
+
+  var onEntityDestroyed = function() {
+    var id = this.getId();
+    scene.removeEntity(this);
+
+    setTimeout(function() {
+      raiseEntityRevived(id);
+    }, 10000);
+  };
+
+  var raiseEntityRevived = function(id) {
+    self.raiseServerEvent('entityRevived', { id: id });
+  };
+
+  var onEntityRevived = function(data) {
+    self.spawnHovercraft(data.id);
+  };  
+
+  var onPlayerLeft = function(data) {
+    var craft = scene.getEntity(data.id);
+    scene.removeEntity(craft);
+  };
+
+  var onEntitySpawned = function(data) {
+    var craft = hovercraftFactory.create(data.id);   
+	  craft.position = data.position;
+    craft.displayName(playerNames[data.id]);
+    scene.addEntity(craft);
+  };
+
+  var onPlayerNamed = function(data) {
+    playerNames[data.id] = data.name;
+  };
+
+  var onPlayerJoined = function(data) {
+    self.spawnHovercraft(data.id);
+  };
+
+  scene.on('entityDestroyed', Hovercraft, onEntityDestroyed);
 
   self.addEventHandler('playerNamed', onPlayerNamed);
   self.addEventHandler('entityRevived', onEntityRevived);
-  self.addEventHandler('playerRemoved', onPlayerRemoved);
+  self.addEventHandler('playerLeft', onPlayerLeft);
+  self.addEventHandler('playerJoined', onPlayerJoined);
   self.addEventHandler('entitySpawned', onEntitySpawned);
 };
 

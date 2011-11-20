@@ -179,8 +179,8 @@ var OtherPlayer = function(app, entity) {
    };   
  
   var hudItem = app.overlay.addItem('indicator-' + entity.getId(), '/data/textures/indicator.png');
-  
-  entity.addEventHandler('tick', function() {
+    
+  self.update = function() {
     var camera = app.scene.camera;
 
     var worldSphere = entity.getSphere();
@@ -200,7 +200,7 @@ var OtherPlayer = function(app, entity) {
     hudItem.top(position[1]);
     hudItem.width(8.0);
     hudItem.height(8.0);   
-  }); 
+  };
 };
 
 
@@ -229,22 +229,11 @@ exports.Hud = function(app) {
   };
 
   var hookHovercraftEvents = function(craft) {
-    craft.addEventHandler('trackingTarget', onEntityTrackingTarget);
-    craft.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-    craft.addEventHandler('missileLock', onEntityMissileLock);
-    craft.addEventHandler('fireMissile', onEntityFireMissile);
-    craft.addEventHandler('entityDestroyed', onEntityDestroyed);
-
     if(craft.getId() !== playerId)
       playerIndicators[craft.getId()] = new OtherPlayer(app, craft);
   };
 
   var unHookHovercraftEvents = function(craft) {
-    craft.removeEventHandler('trackingTarget', onEntityTrackingTarget);
-    craft.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-    craft.removeEventHandler('missileLock', onEntityMissileLock);
-    craft.removeEventHandler('fireMissile', onEntityFireMissile);
-    craft.removeEventHandler('entityDestroyed', onEntityDestroyed);
     clearAllKnowledgeOfHovercraft(craft.getId());
   };
 
@@ -268,9 +257,9 @@ exports.Hud = function(app) {
     });
   };
 
-  var onEntityDestroyed = function(data) {
-    withTrackedEntity(this.getId(), function(trackedEntity) {
-      clearTrackedEntity(data.sourceid);
+  var onEntityHealthZeroed = function(data) {
+    withTrackedEntity(this.getId(), function(trackedEntity) {       
+      clearTrackedHovercraft(data.sourceid);
     });
   };
 
@@ -324,8 +313,16 @@ exports.Hud = function(app) {
       var entity = trackedCraft[i];
       entity.tick();
     }   
+
+    for(var i in playerIndicators)
+      playerIndicators[i].update();
   };
 
+  app.scene.on('trackingTarget', Hovercraft, onEntityTrackingTarget);
+  app.scene.on('cancelledTrackingTarget', Hovercraft, onEntityCancelledTrackingTarget);
+  app.scene.on('missileLock', Hovercraft, onEntityMissileLock);
+  app.scene.on('fireMissile', Hovercraft, onEntityFireMissile);
+  app.scene.on('healthZeroed', Hovercraft, onEntityHealthZeroed);
   app.scene.onEntityAdded(onEntityAdded);
   app.scene.onEntityRemoved(onEntityRemoved);
 };

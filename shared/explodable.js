@@ -10,7 +10,6 @@ exports.Explodable = function() {
       }
     );    
   };  
-
-  self.addEventHandler('entityDestroyed', onEntityDestroyed);
-
+ 
+  self.addEventHandler('healthZeroed', onEntityDestroyed);
 };

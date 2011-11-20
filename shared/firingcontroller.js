@@ -19,7 +19,7 @@ exports.FiringController = function() {
       self.resetFiringState();
   };
 	
-  var onTick = function() {
+  self.doLogic = function() {
 	  if(!trackedTarget || fired) return;
 	  var currentTime = new Date();
 	  var timeElapsedSinceStartedTracking = currentTime - trackingStartTime;
@@ -58,5 +58,4 @@ exports.FiringController = function() {
   self.addEventHandler('trackingTarget', onTrackingTarget);
   self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
   self.addEventHandler('fireRequest', onFireRequest);
-  self.addEventHandler('tick', onTick);  
 };

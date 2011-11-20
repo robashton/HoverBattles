@@ -2,7 +2,7 @@ var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 
 
-var ChaseCamera = function(scene, playerId) {
+exports.ChaseCamera  = function(scene, playerId) {
   var self = this;
   var cameraMode = "chase";
   var entity = null;
@@ -52,14 +52,12 @@ var ChaseCamera = function(scene, playerId) {
   var hookEntityEvents = function(entity) {
     entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);    
-    entity.addEventHandler('tick', doLogic);
     entity.addEventHandler('healthZeroed', onPlayerHealthZeroed);
   };
 
   var unhookEntityEvents = function(entity) {
     entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
     entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-    entity.removeEventHandler('tick', doLogic);
     entity.removeEventHandler('healthZeroed', onPlayerHealthZeroed);
   };
 
@@ -96,7 +94,7 @@ var ChaseCamera = function(scene, playerId) {
       destinationCameraLocation = vec3.create(position);
   };
 
-  var doLogic = function() {
+  self.doLogic = function() {
     workOutWhereTargetIs();
     doLogicAfterAscertainingTarget();
   };
@@ -180,4 +178,9 @@ var ChaseCamera = function(scene, playerId) {
   scene.onEntityAdded(onEntityAdded);
 };
 
-exports.ChaseCamera = ChaseCamera;
+exports.ChaseCamera.Create = function(scene, playerId) {
+  var entity = new Entity('chase-camera');
+  entity.attach(ChaseCamera, [scene, playerId]);
+  scene.addEntity(entity);
+  return entity;
+};

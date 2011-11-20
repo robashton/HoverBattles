@@ -1,15 +1,9 @@
 var vec3 = require('./glmatrix').vec3;
+var FiringController = require('./firingcontroller').FiringController;
+var Missile = require('./missile').Missile;
 
 exports.MissileFirer = function(app, missileFactory) {
   var self = this;
-
-  app.scene.onEntityAdded(function(entity) {
-    entity.addEventHandler('fireMissile', onEntityFiredMissile);
-  });
-
-  app.scene.onEntityRemoved(function(entity) {
-    entity.removeEventHandler('fireMissile', onEntityFiredMissile);
-  });
 
   var onEntityFiredMissile = function(data) {
     var source = app.scene.getEntity(data.sourceid);
@@ -20,12 +14,6 @@ exports.MissileFirer = function(app, missileFactory) {
 
     var missile = missileFactory.create(data.missileid, data.sourceid, data.targetid, source.position);
     app.scene.addEntity(missile);
-	  self.attachHandlersToCoordinateMissile(missile);
-  };
-
-  self.attachHandlersToCoordinateMissile = function(missile) {
-	  missile.addEventHandler('targetHit', onTargetHit );
-    missile.addEventHandler('missileExpired', onMissileExpired );
   };
 
   var onTargetHit = function(data) {
@@ -39,8 +27,10 @@ exports.MissileFirer = function(app, missileFactory) {
   var removeMissileFromScene = function(id) {
     app.scene.withEntity(id, function(missile) {
 	    app.scene.removeEntity(missile);
-	    missile.removeEventHandler('targetHit', onTargetHit );
-      missile.removeEventHandler('missileExpired', onMissileExpired );
     });	
   };      
+
+  app.scene.on('fireMissile', FiringController, onEntityFiredMissile);
+  app.scene.on('targetHit', Missile, onTargetHit);
+  app.scene.on('missileExpired', Missile, onMissileExpired);
 };

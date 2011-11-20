@@ -2,6 +2,7 @@ var vec3 = require('./glmatrix').vec3;
 var mat4 = require('./glmatrix').mat4;
 var Camera = require('./camera').Camera;
 var CollisionManager = require('./collisionmanager').CollisionManager;
+var TypedEventContainer = require('./typedeventcontainer').TypedEventContainer;
 
 var Scene = function(app){
   this._entities = {};
@@ -10,6 +11,11 @@ var Scene = function(app){
   this.collisionManager = new CollisionManager();
   this.entityAddedListeners = [];
   this.entityRemovedListeners = [];
+
+  this.eventContainer = new TypedEventContainer();
+
+  this.completedEventCount = 0;
+  this.pendingEvents = [];
 };
 
 Scene.prototype.onEntityAdded = function(callback) {
@@ -61,20 +67,20 @@ Scene.prototype.removeEntity = function(entity) {
 
 Scene.prototype.doLogic = function() {
     for(i in this._entities){ 
-        this._entities[i].doLogic();
+      this._entities[i].doLogic();
     }
     
     for(i in this._entities){ 
-        for(j in this._entities){ 
-            if(i === j) continue;
-            
-            // Note: I know this is sub-optimal
-            // When it becomes an issue I'll go all DoD on its ass
-            // But not until then
-            var entityOne = this._entities[i];
-            var entityTwo = this._entities[j];
-            this.collisionManager.processPair(entityOne, entityTwo);            
-        }
+      for(j in this._entities){ 
+        if(i === j) continue;
+        
+        // Note: I know this is sub-optimal
+        // When it becomes an issue I'll go all DoD on its ass
+        // But not until then
+        var entityOne = this._entities[i];
+        var entityTwo = this._entities[j];
+        this.collisionManager.processPair(entityOne, entityTwo);            
+      }
     }
 };
 
@@ -83,9 +89,42 @@ Scene.prototype.forEachEntity = function(callback) {
       callback(this._entities[i]);
 };
 
-Scene.prototype.notifyEntityEventRaised = function(source, eventName, data) {
-  if(eventName !== 'tick') 
-    console.log('Event raised ' + eventName);
+Scene.prototype.broadcastEvent = function(source, eventName, data) {
+  this.eventContainer.raise(source, eventName, data);
+
+/*
+  this.pendingEvents.push({
+    source: source,
+    eventName: eventName,
+    data: data
+  }); */
+};
+
+Scene.prototype.endEvent = function() {
+/*
+  this.completedEventCount++;
+
+  if(this.completedEventCount === this.pendingEvents.length) {
+    var events = this.pendingEvents;
+    this.completedEventCount = 0;
+    this.pendingEvents = [];
+    this.raiseAllEvents(events);
+  }*/
+};
+
+Scene.prototype.raiseAllEvents = function(events) {
+  for(var i = 0 ; i < events.length; i++) {
+    var ev = events[i];
+
+  }
+};
+
+Scene.prototype.on = function(eventName, type, callback) {
+  this.eventContainer.add(eventName, type, callback);
+};
+
+Scene.prototype.off = function(eventName, type, callback) {
+  this.eventContainer.remove(eventName, type, callback);
 };
 
 Scene.prototype.render = function(context){
@@ -99,9 +138,9 @@ Scene.prototype.render = function(context){
 	  var entity = this._entities[i];
         
     if(entity.getSphere){
-        if(!this.camera.frustum.intersectSphere(entity.getSphere())){
-            continue;
-        }
+      if(!this.camera.frustum.intersectSphere(entity.getSphere())){
+        continue;
+      }
     }      
 	  entity.render(context);
   }       

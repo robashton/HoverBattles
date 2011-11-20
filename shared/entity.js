@@ -12,6 +12,9 @@ var Entity = function(id){
 	self.eventHandlers = {};
   self.components = [];
 
+  var eventQueue = [];
+  var eventCount = 0;
+
   self.getId = function(){
 	  return self._id;
   };
@@ -28,8 +31,6 @@ var Entity = function(id){
 	  if(!self.eventHandlers[eventName])
 		  self.eventHandlers[eventName] = [];
 	  self.eventHandlers[eventName].push(callback);
-
-    // TODO: Go via the scene for this
   };
 
   self.removeEventHandler = function(eventName, callback) {
@@ -42,8 +43,6 @@ var Entity = function(id){
           newItems.push(self.eventHandlers[eventName][i]);
     
     self.eventHandlers[eventName] = newItems;
-
-    // TODO: Go via the scene for this
   };
 
   self.raiseServerEvent = function(eventName, data) {
@@ -52,16 +51,35 @@ var Entity = function(id){
   };
 
   self.raiseEvent = function(eventName, data) {
-    self._scene.notifyEntityEventRaised(self, eventName, data);
-	  if(!self.eventHandlers[eventName]) return;
-  
-    // TODO: Remove capacity for this sort of thing, we'll put everything through the scene thanks
-	  for(var x = 0 ; x < self.eventHandlers[eventName].length; x++){
-		  var handler = 	self.eventHandlers[eventName][x];
-		  handler.call(this, data);
-	  }
+    eventQueue.push({
+      name: eventName,
+      data: data
+    });
 
+   eventCount++;
+   sendEventToInternalListeners(eventName, data);
+   eventCount--;
+   
+   // Ensure that events are published in the order that we processed them internally
+   if(eventCount === 0) {
+      var queue = eventQueue;
+      eventQueue = [];
+      publishEventQueue(queue);
+   }
   };
+
+  var publishEventQueue = function(queue) {
+    for(var i = 0; i < queue.length; i++)
+      self._scene.broadcastEvent(self, queue[i].name, queue[i].data);
+  };
+
+  var sendEventToInternalListeners = function(eventName, data) {
+	  if(!self.eventHandlers[eventName]) return;
+	  for(var x = 0 ; x < self.eventHandlers[eventName].length; x++){
+		  var handler = self.eventHandlers[eventName][x];
+		  handler.call(self, data);
+	  }
+  };  
 
   self.attach = function(component, args) {
     self.components.push(component);
@@ -122,7 +140,7 @@ var Entity = function(id){
   };
 
   self.doLogic = function() {
-	  self.raiseEvent('tick', {});
+
   };
 
   self.setScene = function(scene) {

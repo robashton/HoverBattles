@@ -17,7 +17,7 @@
         orderedScores.push({
           playerid: playerid,
           name: scores[playerid].name,
-          value: scores[playerid].value
+          value: scores[playerid].score
         });
       }     
 

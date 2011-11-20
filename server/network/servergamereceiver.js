@@ -14,7 +14,7 @@ exports.ServerGameReceiver = function(app, communication) {
   var scoreKeeper = ScoreKeeper.Create(app.scene);
 
   self.removePlayer = function(id) {
-    spawner.removeHovercraft(id);
+    spawner.removePlayer(id);
   };
 
   self.getSyncForPlayer = function(id) {
@@ -27,13 +27,22 @@ exports.ServerGameReceiver = function(app, communication) {
   self.getSceneState = function() {
 	  var state = {};
 	  state.craft = [];
+    state.others = [];
+
     app.scene.forEachEntity(function(entity) {
-      if(!entity.is(Hovercraft)) return;
-		  var craftState = {};
-		  craftState.id = entity.getId();
-		  craftState.sync = entity.getSync();
-		  state.craft.push(craftState);   
+      if(entity.is(Hovercraft)) {
+		    var craftState = {};
+		    craftState.id = entity.getId();
+		    craftState.sync = entity.getSync();
+		    state.craft.push(craftState);
+      } else if(entity.getSync) {
+        var otherState = {};
+        otherState.id = entity.getId();
+        otherState.sync = entity.getSync();
+        state.others.push(otherState);
+      }
     });
+
 	  return state;	
   };
   
@@ -48,7 +57,7 @@ exports.ServerGameReceiver = function(app, communication) {
     }; 
 
     spawner.namePlayer(data.source, data.username);
-    spawner.spawnHovercraft(data.source);
+    spawner.createPlayer(data.source);
 	  communication.syncPlayerFull(data.source);
   };
 
