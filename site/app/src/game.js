@@ -1901,7 +1901,7 @@ Model.prototype.upload = function(context) {
 };
 
 Model.prototype.render = function(context) {
-  if(!this._hasData) { console.log('Attempt to use model that is not yet loaded'); return; }
+  if(!this._hasData) { return; }
 	var gl = context.gl;
 	gl.drawElements(gl.TRIANGLES, this._indices.length , gl.UNSIGNED_SHORT, 0);
 };
@@ -4682,13 +4682,13 @@ exports.LandscapeHandler = function() {
     fs.writeFile('./cache/' + filename, data);
   };
 };
-}, "server/persistencereceiver": function(exports, require, module) {var data = require('../data').Data;
+}, "server/persistencelistener": function(exports, require, module) {var data = require('../data').Data;
 
-exports.PersistenceReceiver = function() {
+exports.PersistenceListener = function(scene) {
   var self = this;
   var playerNameMap = {};
   
-  self._fireMissile = function(data) {
+  var onMissileFired = function(data) {
     storeEvent('missileFired', {
       targetuser: playerNameMap[data.targetid],
       targetsessionid: data.targetid,
@@ -4697,7 +4697,7 @@ exports.PersistenceReceiver = function() {
     });
   };
 
-  self._playerNamed = function(data) {
+  var onPlayerNamed = function(data) {
     playerNameMap[data.id] = data.username;
     storeEvent('playerStart', {
       username: data.username,
@@ -4705,7 +4705,7 @@ exports.PersistenceReceiver = function() {
     });
   };
 
-  self._destroyTarget = function(data) {
+  var onPlayerKilled = function(data) {
     storeEvent('playerKilled', {
       targetuser: playerNameMap[data.targetid],
       targetsessionid: data.targetid,
@@ -4717,6 +4717,10 @@ exports.PersistenceReceiver = function() {
   var storeEvent = function(eventName, eventData) {
     data.storeEvent(eventName, eventData);
   };
+
+  scene.on('playerNamed', onPlayerNamed);
+  scene.on('healthZeroed', onPlayerKilled);
+  scene.on('fireMissile', onMissileFired);
 };
 }, "server/proxyreceiver": function(exports, require, module) {
 var ProxyReceiver = function(app, communication) {
@@ -4757,7 +4761,7 @@ MissileFirer = require('../entities/missilefirer').MissileFirer;
 Hovercraft = require('../entities/hovercraft').Hovercraft;
 HovercraftSpawner = require('../entities/hovercraftspawner').HovercraftSpawner;
 ScoreKeeper = require('../entities/scorekeeper').ScoreKeeper;
-
+PersistenceListener = require('./persistencelistener').PersistenceListener;
 Identity = require('./identity').Identity;
 
 exports.ServerGameReceiver = function(app, communication) {
@@ -4766,6 +4770,7 @@ exports.ServerGameReceiver = function(app, communication) {
   var missileFirer = new MissileFirer(app, new MissileFactory());
   var spawner = HovercraftSpawner.Create(app.scene);
   var scoreKeeper = ScoreKeeper.Create(app.scene);
+  var persistenceListener = new PersistenceListener(app.scene);
 
   self.removePlayer = function(id) {
     spawner.removePlayer(id);

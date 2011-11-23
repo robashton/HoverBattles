@@ -1,10 +1,10 @@
-var data = require('../data').Data;
+var data = require('./data').Data;
 
-exports.PersistenceReceiver = function() {
+exports.PersistenceListener = function(scene) {
   var self = this;
   var playerNameMap = {};
   
-  self._fireMissile = function(data) {
+  var onMissileFired = function(data) {
     storeEvent('missileFired', {
       targetuser: playerNameMap[data.targetid],
       targetsessionid: data.targetid,
@@ -13,7 +13,7 @@ exports.PersistenceReceiver = function() {
     });
   };
 
-  self._playerNamed = function(data) {
+  var onPlayerNamed = function(data) {
     playerNameMap[data.id] = data.username;
     storeEvent('playerStart', {
       username: data.username,
@@ -21,7 +21,7 @@ exports.PersistenceReceiver = function() {
     });
   };
 
-  self._destroyTarget = function(data) {
+  var onPlayerKilled = function(data) {
     storeEvent('playerKilled', {
       targetuser: playerNameMap[data.targetid],
       targetsessionid: data.targetid,
@@ -33,4 +33,8 @@ exports.PersistenceReceiver = function() {
   var storeEvent = function(eventName, eventData) {
     data.storeEvent(eventName, eventData);
   };
+
+  scene.on('playerNamed', onPlayerNamed);
+  scene.on('healthZeroed', onPlayerKilled);
+  scene.on('fireMissile', onMissileFired);
 };

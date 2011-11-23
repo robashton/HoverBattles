@@ -4,7 +4,7 @@ MissileFirer = require('../entities/missilefirer').MissileFirer;
 Hovercraft = require('../entities/hovercraft').Hovercraft;
 HovercraftSpawner = require('../entities/hovercraftspawner').HovercraftSpawner;
 ScoreKeeper = require('../entities/scorekeeper').ScoreKeeper;
-
+PersistenceListener = require('./persistencelistener').PersistenceListener;
 Identity = require('./identity').Identity;
 
 exports.ServerGameReceiver = function(app, communication) {
@@ -13,6 +13,7 @@ exports.ServerGameReceiver = function(app, communication) {
   var missileFirer = new MissileFirer(app, new MissileFactory());
   var spawner = HovercraftSpawner.Create(app.scene);
   var scoreKeeper = ScoreKeeper.Create(app.scene);
+  var persistenceListener = new PersistenceListener(app.scene);
 
   self.removePlayer = function(id) {
     spawner.removePlayer(id);
