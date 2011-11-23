@@ -75,8 +75,7 @@ LandscapeController.prototype.loadChunks = function(x, z){
 			var chunkEntity = new Entity('Chunk_' + key);
       chunkEntity.setModel(model);
       chunkEntity.attach(LandChunkEntity);
-			chunkEntity.x = x;
-			chunkEntity.z = z;
+			chunkEntity.position = vec3.create([x * this._scale, 0, z * this._scale]);
 
 			this._chunks[key] = chunkEntity;
 			this.app.scene.addEntity(chunkEntity);			

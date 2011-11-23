@@ -3,8 +3,6 @@ precision highp float;
 #endif
 
 varying vec2 vTexCoords;
-varying vec3 vNormal;
-varying float vDistance;
 uniform sampler2D uSampler;
 
 void main(void) {    

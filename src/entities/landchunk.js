@@ -11,9 +11,9 @@ var LandChunk = function(width, height, maxHeight, scale,x,y){
 
   this._vertexBuffer = null;
   this._indexBuffer = null;
-  this._normalBuffer = null;
   this._indexCount = 0;
   this._texturecoordsBuffer = null;
+  this._heightBuffer = null;
 
   this._diffuseTexture = null;
   this._data = null;
@@ -41,10 +41,10 @@ LandChunk.prototype.activate = function(context) {
 	this._vertexBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.vertices), gl.STATIC_DRAW);
-    
-    this._normalBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.normals), gl.STATIC_DRAW);
+
+  this._heightBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, this._heightBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.heights), gl.STATIC_DRAW);
     
 	this._texturecoordsBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
@@ -62,25 +62,26 @@ LandChunk.prototype.upload = function(context) {
     var gl = context.gl;
 	var program = context.program;
 
+  // Theoretically we'll not to keep re-uploading these if we do something with our scene
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
+	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 2, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
-    
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aNormal'), 3, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aNormal'));
-		
+
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
 	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoord'), 2, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoord'));
-
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-    
-    gl.uniform3fv(gl.getUniformLocation(program, "uLightPosition"), this._playerPosition);
-	  
+      
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, this._diffuseTexture.get());
 	gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0); 
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+
+  // This is the only thing we have to re-upload
+	gl.bindBuffer(gl.ARRAY_BUFFER, this._heightBuffer);
+	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexHeight'), 1, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexHeight'));
+
 
 };
 

@@ -3294,9 +3294,9 @@ var LandChunk = function(width, height, maxHeight, scale,x,y){
 
   this._vertexBuffer = null;
   this._indexBuffer = null;
-  this._normalBuffer = null;
   this._indexCount = 0;
   this._texturecoordsBuffer = null;
+  this._heightBuffer = null;
 
   this._diffuseTexture = null;
   this._data = null;
@@ -3324,10 +3324,10 @@ LandChunk.prototype.activate = function(context) {
 	this._vertexBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.vertices), gl.STATIC_DRAW);
-    
-    this._normalBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.normals), gl.STATIC_DRAW);
+
+  this._heightBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, this._heightBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.heights), gl.STATIC_DRAW);
     
 	this._texturecoordsBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
@@ -3345,25 +3345,26 @@ LandChunk.prototype.upload = function(context) {
     var gl = context.gl;
 	var program = context.program;
 
+  // Theoretically we'll not to keep re-uploading these if we do something with our scene
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
+	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 2, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
-    
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._normalBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aNormal'), 3, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aNormal'));
-		
+
 	gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
 	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoord'), 2, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoord'));
-
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-    
-    gl.uniform3fv(gl.getUniformLocation(program, "uLightPosition"), this._playerPosition);
-	  
+      
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, this._diffuseTexture.get());
 	gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0); 
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+
+  // This is the only thing we have to re-upload
+	gl.bindBuffer(gl.ARRAY_BUFFER, this._heightBuffer);
+	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexHeight'), 1, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexHeight'));
+
 
 };
 
@@ -3485,8 +3486,7 @@ LandscapeController.prototype.loadChunks = function(x, z){
 			var chunkEntity = new Entity('Chunk_' + key);
       chunkEntity.setModel(model);
       chunkEntity.attach(LandChunkEntity);
-			chunkEntity.x = x;
-			chunkEntity.z = z;
+			chunkEntity.position = vec3.create([x * this._scale, 0, z * this._scale]);
 
 			this._chunks[key] = chunkEntity;
 			this.app.scene.addEntity(chunkEntity);			
@@ -4478,7 +4478,6 @@ var self = exports.Identity;
     var data = generateTerrainData();
     return {
 		  heights: heightMap,
-    	normals: data.normals,
       vertices: data.vertices,
       indices: data.indices,
       texturecoords: data.texturecoords
@@ -4488,30 +4487,22 @@ var self = exports.Identity;
   var generateTerrainData = function() {
   
     var indexCount = (height - 1) * width * 2;
-    var vertices = new Array(width* height * 3);
-    var vertexNormals = new Array(width * height * 3);
+    var vertices = new Array(width* height * 2);
     var texturecoords = new Array(width * height * 2);
-    var colours = new Array(width * height * 4);
     var indices = new Array(indexCount);
      
     for(var y = 0 ; y < height ; y++ ) {
         for(var x = 0 ; x < width ; x++ ) {
         	var index = (x + y * width);
     
-    		var vertexIndex = index * 3;
-    		var colourIndex = index * 4;
-    		var texcoordsIndex = index * 2;    
-        	    		
-    		vertices[vertexIndex] = (startX + x) * scale;
-    		vertices[vertexIndex+1] = heightMap[index];
-    		vertices[vertexIndex+2] = (startY + y) * scale;
-            
-        vertexNormals[vertexIndex] = 0.0;
-    		vertexNormals[vertexIndex+1] = 0.0;
-    		vertexNormals[vertexIndex+2] = 0.0;
-    
-    		texturecoords[texcoordsIndex] = x / width;
-    		texturecoords[texcoordsIndex+1] = y / height;
+      		var vertexIndex = index * 2;
+      		var texcoordsIndex = index * 2;    
+          	    		
+      		vertices[vertexIndex] = (x) * scale;
+      		vertices[vertexIndex+1] = (y) * scale;
+      
+      		texturecoords[texcoordsIndex] = x / width;
+      		texturecoords[texcoordsIndex+1] = y / height;
     	}
     }
     
@@ -4547,64 +4538,13 @@ var self = exports.Identity;
     		}
     	}
     }	
-    
-    /*
-    AB=B-A;
-    AC=C-A;
-    N=normalize(AB cross AC); */
-    
-    
-    // Now calculate the face normals
-    i = 0;
-    var zeroVector = vec3.create([0,0,0]);
-    while(i + 2 < indexCount) {      
-        var iOne = indices[i];
-        var iTwo = indices[i+1];
-        var iThree = indices[i+2];
-    
-        var vOne = iOne * 3;
-        var vTwo = iTwo * 3;
-        var vThree = iThree * 3;
-        
-        var a = vec3.create([vertices[vOne], vertices[vOne+1], vertices[vOne+2]]);
-        var b = vec3.create([vertices[vTwo], vertices[vTwo+1], vertices[vTwo+2]]);
-        var c = vec3.create([vertices[vThree], vertices[vThree+1], vertices[vThree+2]]);
-        
-        var ab = vec3.create([0,0,0]);
-        var ac = vec3.create([0,0,0]);
-        var cross = vec3.create([0,0,0]);
-        var normal = vec3.create([0,0,0]);
-        
-        vec3.subtract(a, b, ab);
-        vec3.subtract(a, c, ac);
-        vec3.cross(ac, ab, cross);
-        vec3.normalize(cross, normal);
-        
-        // Cos we're doing a indexed triangle strip, it goes odd/even/odd/even
-        // But to make thing worse, because we double back on ourselves this flips every row
-        // Rather than do complicated logic to sort this out, it's gonna be easier to just check the y direction
-        // And invert the normal for the 'odd' faces
-        if(normal[1] < 0){
-            vec3.negate(normal);
-        }
-            
-        for(var x = 0; x < 3 ; x++){
-            vertexNormals[vOne + x] += normal[x];
-            vertexNormals[vTwo + x] +=  normal[x];
-            vertexNormals[vThree + x] += normal[x];   
-        }
-                  
-        i++;
-    }
 
     return {
-      normals: vertexNormals,
       vertices: vertices,
       indices: indices,
       texturecoords: texturecoords     
     };
-  };
- 
+  }; 
 };
 }, "server/landscapehandler": function(exports, require, module) {path = require('path');
 fs = require('fs');
@@ -4682,7 +4622,7 @@ exports.LandscapeHandler = function() {
     fs.writeFile('./cache/' + filename, data);
   };
 };
-}, "server/persistencelistener": function(exports, require, module) {var data = require('../data').Data;
+}, "server/persistencelistener": function(exports, require, module) {var data = require('./data').Data;
 
 exports.PersistenceListener = function(scene) {
   var self = this;
