@@ -787,7 +787,7 @@ LandChunkModelLoader.prototype.load = function(id, callback) {
 };
 
 exports.LandChunkModelLoader = LandChunkModelLoader;
-}, "client/overlay": function(exports, require, module) {var mat4 = require('../thirdparty/glmatrix').mat4;
+}, "client/loader": function(exports, require, module) {}, "client/overlay": function(exports, require, module) {var mat4 = require('../thirdparty/glmatrix').mat4;
 
 var OverlayItem = function(id, texture) {
   var self = this;
@@ -1772,31 +1772,32 @@ var bounding = require('./bounding');
 
 var Model = function(data){
   this._programName = "default";
-    
+  this._hasData = false;
+ 
   if(data) { this.setData(data); }
   this._vertexBuffer = null;
   this._indexBuffer = null;
   this._colourBuffer = null;
   this._textureBuffer = null;
   this._normalBuffer = null;
-  this._hasData = false;
+
   this.boundingSphere = new bounding.Sphere(0.0, [0,0,0]);
 };
 
 Model.prototype.setData = function(data) {
-    this._vertices = data.vertices;
-    this._colours = data.colours;
-	  this._indices = data.indices;
-    this._texCoords = data.texCoords;
-    this._normals = data.normals;
-    this._texture = data.texture;
-    
-    if(data.sphere){
-        this.boundingSphere = new bounding.Sphere(data.sphere.radius, data.sphere.centre);
-    }
-    this._hasData = true;
-    if(this._texCoords) { this._programName = "texture"; }
-    else if( this._colours ) { this._programName = "colour"; }
+  this._vertices = data.vertices;
+  this._colours = data.colours;
+  this._indices = data.indices;
+  this._texCoords = data.texCoords;
+  this._normals = data.normals;
+  this._texture = data.texture;
+  
+  if(data.sphere){
+      this.boundingSphere = new bounding.Sphere(data.sphere.radius, data.sphere.centre);
+  }
+  this._hasData = true;
+  if(this._texCoords) { this._programName = "texture"; }
+  else if( this._colours ) { this._programName = "colour"; }
 };
 
 Model.prototype.getProgram = function() {
@@ -1864,6 +1865,7 @@ Model.prototype.getProgram = function() {
 };
 
 Model.prototype.upload = function(context) {
+  if(!this._hasData) { return; }
 	var gl = context.gl;
 	var program = context.program;
 
@@ -1899,6 +1901,7 @@ Model.prototype.upload = function(context) {
 };
 
 Model.prototype.render = function(context) {
+  if(!this._hasData) { console.log('Attempt to use model that is not yet loaded'); return; }
 	var gl = context.gl;
 	gl.drawElements(gl.TRIANGLES, this._indices.length , gl.UNSIGNED_SHORT, 0);
 };
@@ -3338,6 +3341,7 @@ LandChunk.prototype.activate = function(context) {
 };
 
 LandChunk.prototype.upload = function(context) {
+  if(!this._data) { return; }
     var gl = context.gl;
 	var program = context.program;
 
@@ -3364,7 +3368,8 @@ LandChunk.prototype.upload = function(context) {
 };
 
 LandChunk.prototype.render = function(context) {
-    this._frame++;
+  if(!this._data) { return; }
+  this._frame++;
 	var gl = context.gl;
 	gl.drawElements(gl.TRIANGLE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
 };

@@ -24,41 +24,39 @@
 			            
           var app = new Application('game');             
           app.init(function() {
-          
-              // Create the splash screen
-              var backdrop = app.overlay.addItem('loading-backdrop', '/data/textures/splashscreenbackground.jpg');
-              var backdropspinner = app.overlay.addItem('loading-spinner', '/data/textures/locked.png');
+            setInterval(function() {  app.render(); }, 1000 / 30);            
+            setInterval(function() {  app.tick(); }, 1000 / 30); 
 
-              backdrop.left(0); backdrop.width(800);
-              backdrop.top(0);backdrop.height(600);  
+            // Create the splash screen
+            var backdrop = app.overlay.addItem('loading-backdrop', '/data/textures/splashscreenbackground.jpg');
+            var backdropspinner = app.overlay.addItem('loading-spinner', '/data/textures/locked.png');
 
-              backdropspinner.left(280); backdropspinner.width(100);
-              backdropspinner.top(240);backdropspinner.height(100);   
+            backdrop.left(0); backdrop.width(800);
+            backdrop.top(0);backdrop.height(600);  
 
-              var spinnerInterval = setInterval(
-                  function() {  
-    
-                    backdropspinner.rotation( backdropspinner.rotation() + 0.1 ); 
-                                
-                  }, 
-              1000 / 30);               
+            backdropspinner.left(280); backdropspinner.width(100);
+            backdropspinner.top(240);backdropspinner.height(100);   
 
-              setInterval(function() {  app.render(); }, 1000 / 30);            
-              setInterval(function() {  app.tick(); }, 1000 / 30); 
+            var spinnerInterval = setInterval(
+              function() {    
+                backdropspinner.rotation( backdropspinner.rotation() + 0.1 );   
+              }, 1000 / 30);
 
+            app.scene.camera.setLocation([0, 1000, -10]);
 
-
-              app.scene.camera.setLocation([0, 1000, -10]);
+            app.resources.onAllAssetsLoaded(function() {
               var landscapeController = new LandscapeController(app);    
               var clientOne = new ClientCommunication(app);
-     
+    
               // On all resources loaded, hide the splash screen
               app.resources.onAllAssetsLoaded(function() {
                 app.overlay.removeItem(backdrop);
                 app.overlay.removeItem(backdropspinner);
                 clearInterval(spinnerInterval);    
               });
-          });
+            });
+
+          });          
         });
 		</script>
 

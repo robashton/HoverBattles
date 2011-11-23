@@ -5,31 +5,32 @@ var bounding = require('./bounding');
 
 var Model = function(data){
   this._programName = "default";
-    
+  this._hasData = false;
+ 
   if(data) { this.setData(data); }
   this._vertexBuffer = null;
   this._indexBuffer = null;
   this._colourBuffer = null;
   this._textureBuffer = null;
   this._normalBuffer = null;
-  this._hasData = false;
+
   this.boundingSphere = new bounding.Sphere(0.0, [0,0,0]);
 };
 
 Model.prototype.setData = function(data) {
-    this._vertices = data.vertices;
-    this._colours = data.colours;
-	  this._indices = data.indices;
-    this._texCoords = data.texCoords;
-    this._normals = data.normals;
-    this._texture = data.texture;
-    
-    if(data.sphere){
-        this.boundingSphere = new bounding.Sphere(data.sphere.radius, data.sphere.centre);
-    }
-    this._hasData = true;
-    if(this._texCoords) { this._programName = "texture"; }
-    else if( this._colours ) { this._programName = "colour"; }
+  this._vertices = data.vertices;
+  this._colours = data.colours;
+  this._indices = data.indices;
+  this._texCoords = data.texCoords;
+  this._normals = data.normals;
+  this._texture = data.texture;
+  
+  if(data.sphere){
+      this.boundingSphere = new bounding.Sphere(data.sphere.radius, data.sphere.centre);
+  }
+  this._hasData = true;
+  if(this._texCoords) { this._programName = "texture"; }
+  else if( this._colours ) { this._programName = "colour"; }
 };
 
 Model.prototype.getProgram = function() {
@@ -97,6 +98,7 @@ Model.prototype.getProgram = function() {
 };
 
 Model.prototype.upload = function(context) {
+  if(!this._hasData) { return; }
 	var gl = context.gl;
 	var program = context.program;
 
@@ -132,6 +134,7 @@ Model.prototype.upload = function(context) {
 };
 
 Model.prototype.render = function(context) {
+  if(!this._hasData) { return; }
 	var gl = context.gl;
 	gl.drawElements(gl.TRIANGLES, this._indices.length , gl.UNSIGNED_SHORT, 0);
 };

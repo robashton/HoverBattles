@@ -58,6 +58,7 @@ LandChunk.prototype.activate = function(context) {
 };
 
 LandChunk.prototype.upload = function(context) {
+  if(!this._data) { return; }
     var gl = context.gl;
 	var program = context.program;
 
@@ -84,7 +85,8 @@ LandChunk.prototype.upload = function(context) {
 };
 
 LandChunk.prototype.render = function(context) {
-    this._frame++;
+  if(!this._data) { return; }
+  this._frame++;
 	var gl = context.gl;
 	gl.drawElements(gl.TRIANGLE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
 };
