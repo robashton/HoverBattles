@@ -45,7 +45,7 @@
             app.scene.camera.setLocation([0, 1000, -10]);
 
             app.resources.onAllAssetsLoaded(function() {
-              var landscapeController = new LandscapeController(app);    
+              var landscapeController = LandscapeController.Create(app);    
               var clientOne = new ClientCommunication(app);
     
               // On all resources loaded, hide the splash screen

@@ -126,7 +126,11 @@ var Entity = function(id){
               newRecvSync.call(this, sync);
               oldRecvSync.call(this, sync);
             };
-         } else {
+         } 
+        else if(i === 'render') {
+          // ignore
+        }
+        else {
           console.warn("Detected a potentially unacceptable overwrite of " + i + 'on ' + this.getId());
         }
       }

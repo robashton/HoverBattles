@@ -753,29 +753,22 @@ exports.Hud.create = function(app) {
 }, "client/keyboard": function(exports, require, module) {
 exports.KeyboardStates = KeyboardStates;}, "client/landchunkloader": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 var mat4 = require('../thirdparty/glmatrix').mat4
-var LandChunk = require('../entities/landchunk').LandChunk;
+var Landscape = require('../entities/landscape').Landscape;
 
 var LandChunkModelLoader = function(resources){
     this._resources = resources;
 };
 
 LandChunkModelLoader.prototype.handles = function(path){
-  return path.indexOf('chunk_') > -1;
+  return path.indexOf('terrain') > -1;
 };
 
 LandChunkModelLoader.prototype.load = function(id, callback) {
-  var data = JSON.parse(id.substr(6, id.length - 6));
+ 
+  var url = '/Landscape&landid=1';
   
-  var url = '/Landscape&height=' + (data.height) +
-    '&width=' + (data.width) + 
-    '&maxheight=' + data.maxHeight + 
-    '&scale=' + data.scale +
-    '&startx=' + data.x + 
-    '&starty=' + data.y;
-  
-  var model = new LandChunk(data.width, data.height, data.maxHeight, data.scale, data.x, data.y);
-  model.loadTextures(this._resources);
-  
+  var model = new Landscape();
+  model.loadTextures(this._resources);  
   var loader = this;
 
   $.getJSON(url, function(data, err) {
@@ -1442,7 +1435,11 @@ var Entity = function(id){
               newRecvSync.call(this, sync);
               oldRecvSync.call(this, sync);
             };
-         } else {
+         } 
+        else if(i === 'render') {
+          // ignore
+        }
+        else {
           console.warn("Detected a potentially unacceptable overwrite of " + i + 'on ' + this.getId());
         }
       }
@@ -3284,102 +3281,135 @@ exports.HovercraftSpawner.Create = function(scene) {
 }, "entities/landchunk": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 var mat4 = require('../thirdparty/glmatrix').mat4;
 
-var LandChunk = function(width, height, maxHeight, scale,x,y){
-  this._maxHeight = maxHeight;
-  this._width = width;
-  this._height = height;
-  this._x = x;
-  this._y = y;
-  this._scale = scale;
 
-  this._vertexBuffer = null;
-  this._indexBuffer = null;
-  this._indexCount = 0;
-  this._texturecoordsBuffer = null;
-  this._heightBuffer = null;
+exports.LandChunk = function(data) {
+  var self = this;
 
-  this._diffuseTexture = null;
-  this._data = null;
+  var heightBuffer = null;
+  var transform = mat4.create();
+  mat4.translate(transform, [data.x, 0, data.y]);
 
-  this._frame = 0.0;
-  this._playerPosition = vec3.create();
-  this._cameraPosition = vec3.create();
-};
-
-LandChunk.prototype.getProgram = function(){
-    return "landscape";
-};
-
-LandChunk.prototype.loadTextures = function(resources) {
-    this._diffuseTexture = resources.getTexture('/data/textures/grid.png');
-};
-
-LandChunk.prototype.setData = function(data) {
-    this._data = data;
-};
-
-LandChunk.prototype.activate = function(context) {
+  self.upload = function(context) {
     var gl = context.gl;
-  	 
-	this._vertexBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.vertices), gl.STATIC_DRAW);
+	  var program = context.program;
 
-  this._heightBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, this._heightBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.heights), gl.STATIC_DRAW);
-    
-	this._texturecoordsBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._data.texturecoords), gl.STATIC_DRAW)
+	  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uWorld"), false, transform);
+   
+	  gl.bindBuffer(gl.ARRAY_BUFFER, heightBuffer);
+	  gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexHeight'), 1, gl.FLOAT, false, 0, 0);
+	  gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexHeight'));
+  };
 
-	this._indexBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this._data.indices), gl.STATIC_DRAW);
-
-	this._indexCount = this._data.indices.length;    	
-};
-
-LandChunk.prototype.upload = function(context) {
-  if(!this._data) { return; }
+  self.activate = function(context) {
     var gl = context.gl;
-	var program = context.program;
+    heightBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, heightBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.heights), gl.STATIC_DRAW);
+  };
+};
+}, "entities/landscape": function(exports, require, module) {var Chunk = require('./landchunk').LandChunk;
 
-  // Theoretically we'll not to keep re-uploading these if we do something with our scene
-	gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 2, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
+exports.Landscape = function() {
+  var self = this;
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, this._texturecoordsBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoord'), 2, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoord'));
+  var chunks = [];
+  var data = null;
+  var texture = null;
+
+  var vertexBuffer = null;
+  var indexBuffer = null;
+  var indexCount = 0;
+  var texturecoordsBuffer = null;
+  var scene = null;
+
+  self.setScene = function(newScene) {
+    scene = newScene;
+  };  
+
+  self.setData = function(newData) {
+    data = newData;
+    createChunksFromData();
+  };
+
+  self.loadTextures = function(resources) {
+    texture = resources.getTexture('/data/textures/grid.png');
+  };
+
+  self.render = function(context) {
+    if(!data) return;
+	  var gl = context.gl;
+
+    uploadSharedBuffers(context);
+
+    for(var i = 0 ; i < chunks.length; i++) {
+      var chunk = chunks[i];
+      chunk.upload(context);
+      gl.drawElements(gl.TRIANGLE_STRIP, indexCount, gl.UNSIGNED_SHORT, 0);
+    } 
+  };
+
+  var uploadSharedBuffers = function(context) {
+    var gl = context.gl;
+
+    var program = context.setActiveProgram('landscape');
+
+	  var viewMatrix = scene.camera.getViewMatrix();
+	  var projectionMatrix = scene.camera.getProjectionMatrix();
+
+    gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjection"), false, projectionMatrix);
+    gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, viewMatrix);    
+
+	  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+	  gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 2, gl.FLOAT, false, 0, 0);
+	  gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
+
+	  gl.bindBuffer(gl.ARRAY_BUFFER, texturecoordsBuffer);
+	  gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoord'), 2, gl.FLOAT, false, 0, 0);
+	  gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoord'));
+        
+	  gl.activeTexture(gl.TEXTURE0);
+	  gl.bindTexture(gl.TEXTURE_2D, texture.get());
+	  gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0); 
+
+	  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  };
+
+  self.activate = function(context) {
+    var gl = context.gl;
+
+	  vertexBuffer = gl.createBuffer();
+	  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+	  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.shared.vertices), gl.STATIC_DRAW);
       
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, this._diffuseTexture.get());
-	gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0); 
+	  texturecoordsBuffer = gl.createBuffer();
+	  gl.bindBuffer(gl.ARRAY_BUFFER, texturecoordsBuffer);
+	  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.shared.texturecoords), gl.STATIC_DRAW)
 
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+    indexBuffer = gl.createBuffer();
+	  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+	  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(data.shared.indices), gl.STATIC_DRAW);
 
-  // This is the only thing we have to re-upload
-	gl.bindBuffer(gl.ARRAY_BUFFER, this._heightBuffer);
-	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexHeight'), 1, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexHeight'));
+	  indexCount = data.shared.indices.length;    	
 
+    for(var i = 0 ; i < chunks.length; i++)
+      chunks[i].activate(context);
+  };
 
-};
+  self.getHeightAt = function(x, z) {
+    // Index appropriately into the data we've got stored locally
+    return 100;
+  };  
 
-LandChunk.prototype.render = function(context) {
-  if(!this._data) { return; }
-  this._frame++;
-	var gl = context.gl;
-	gl.drawElements(gl.TRIANGLE_STRIP, this._indexCount, gl.UNSIGNED_SHORT, 0);
-};
-
-LandChunk.prototype.getHeightAt = function(x, z) {
-    if(!this._data) {
-        return 6;
+  var createChunksFromData = function() {
+    for(var i = 0; i < data.chunks.length; i++) {
+      var dataForChunk = data.chunks[i];
+      var chunk = new Chunk(dataForChunk);
+      chunks.push(chunk);
     }
-    
+  };
+
+  var getHeightFromChunk = function() {
+/*
     var heightmap = this._data.heights;
     
     // Transform to values we can (almost) index our array with
@@ -3405,109 +3435,41 @@ LandChunk.prototype.getHeightAt = function(x, z) {
     var top = (horizontalWeight*topRight)+(1.0-horizontalWeight)*topLeft;
     var bottom = (horizontalWeight*bottomRight)+(1.0-horizontalWeight)*bottomLeft;
     
-    return (verticalWeight*bottom)+(1.0-verticalWeight)*top;
-};
+    return (verticalWeight*bottom)+(1.0-verticalWeight)*top; */
+  };
 
-exports.LandChunk = LandChunk;
+};
 }, "entities/landscapecontroller": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 var mat4 = require('../thirdparty/glmatrix').mat4;
 var Entity = require('../core/entity').Entity;
 
+// Landscape controller - loads the land, blah
+// Landscape model - the global model containing all the tiny models
+// Chunk model - the little models containing the specific data for a model
 
-exports.LandscapeController = function(app){
+exports.LandscapeController = function(app, test) {
   var self = this;
 
-  var chunks = {};
-  var counter = 0;
-  var chunkWidth = 128;
-  var scale = 5;
-
-  loadChunks = function(){
-    var scene = app.scene;
-          
-	  var minX = 0 - (chunkWidth);
-	  var minZ = 0 - (chunkWidth);
-	  var maxX = 0 + (chunkWidth);
-	  var maxZ = 0 + (chunkWidth);
-
-	  for(var x = minX; x <= maxX ; x += chunkWidth) {
-		  for(var z = minZ; z <= maxZ ; z += chunkWidth) {
-			  var key = x + '_' + z;
-			  if(chunks[key]) { continue; }
-              
-        var data = 'chunk_' + JSON.stringify({
-           height: chunkWidth + 1,
-           width: chunkWidth + 1,
-           maxHeight: 100,
-           scale: scale,
-           x: x,
-           y: z               
-        });
-
-        createChunkFromData(x, z, data, key);
-		  }
-	  }
-  };
-
-  var createChunkFromData = function(x, z, data, key) {
-    var model = app.resources.getModel(data);
-	  var chunkEntity = new Entity('Chunk_' + key);
-
-    chunkEntity.setModel(model);
-    chunkEntity.attach(LandChunkEntity);
-	  chunkEntity.position = vec3.create([x * scale, 0, z * scale]);
-
-	  chunks[key] = chunkEntity;
-	  app.scene.addEntity(chunkEntity);	
-  };
-  
-  self.getId = function() {
-    return "terrain";  
-  };
+  var terrain = null;
 
   self.getHeightAt = function(x, z) {
-    x /= scale;
-    z /= scale; 
-    var key = extractKeyFromRealWorldPosition(x, z);      
-    var chunk = chunks[key];
-    if(chunk)
-        return chunk.getHeightAt(x, z);
-    else
-        return -100;
+     return terrain.getHeightAt(x, z);
   };
 
-  var extractKeyFromRealWorldPosition = function(x, z) {
-    
-    var currentChunkX = parseInt(x / chunkWidth) * chunkWidth;
-    var currentChunkZ = parseInt(z / chunkWidth) * chunkWidth;
-    
-    if(x < 0) { currentChunkX -= chunkWidth; }
-    if(z < 0) { currentChunkZ -= chunkWidth; }
-    
-    return currentChunkX + '_' + currentChunkZ;
+  self.render = function(context) {
+     terrain.render(context);  
   };
 
-  self.doLogic = function() {};
-  self.setScene = function(scene){};
-  self.render = function(context){};
-  self.is = function(){ return false; };
-  self.addEventHandler = function() { };
-  self.removeEventHandler = function() {};
-
-  loadChunks();
-  app.scene.addEntity(this);
-};
-
-var LandChunkEntity = function() {
-  var self = this;
-
-  self.getHeightAt = function(x,z){
-   return self._model.getHeightAt(x,z);   
-  }
+  terrain = app.resources.getModel('terrain');
+  terrain.setScene(app.scene);
 };
 
 
-
+exports.LandscapeController.Create = function(app) {
+  var landscape = new Entity("terrain");
+  landscape.attach(exports.LandscapeController, [app, 5]);
+  app.scene.addEntity(landscape);
+};
 }, "entities/missile": function(exports, require, module) {Sphere = require('../core/bounding').Sphere;
 
 var Missile = function() {
@@ -4446,6 +4408,47 @@ exports.Identity = {
   }
 };
 var self = exports.Identity;
+}, "server/landloader": function(exports, require, module) {var LandscapeGeneration = require('./landscapegeneration').LandscapeGeneration;
+
+exports.LandLoader = function() {
+  var self = this;
+  
+  self.getLand = function(landid) {
+    var chunkWidth = 128;
+    var scale = 5;
+    var maxHeight = 100;   
+    var minX = 0 - (chunkWidth);
+    var minZ = 0 - (chunkWidth);
+    var maxX = 0 + (chunkWidth);
+    var maxZ = 0 + (chunkWidth);
+    var chunks = [];
+
+    for(var x = minX; x <= maxX ; x += chunkWidth) {
+	    for(var z = minZ; z <= maxZ ; z += chunkWidth) {
+		    var key = x + '_' + z;
+        var width = chunkWidth + 1;
+        var breadth = chunkWidth + 1;
+              
+        var chunk = getChunk(width, breadth, x, z, scale, maxHeight);
+        chunks.push(chunk); 
+	    }
+    }
+
+    return {
+      scale: 5,
+      chunkWidth: 128,
+      min: [ minX, minZ ],
+      max: [ maxX, maxZ ],
+      shared: getChunk(width, breadth, 0, 0, scale, maxHeight),
+      chunks: chunks
+    };
+  };
+
+  var getChunk = function(width, breadth, x, z, scale, maxHeight) {
+    var generator = new LandscapeGeneration(width, breadth, x, z, scale, maxHeight);
+    return generator.create();
+  };
+}
 }, "server/landscapegeneration": function(exports, require, module) {exports.LandscapeGeneration = function(width, height, startX, startY, scale, maxHeight) {
   var self = this;
   var heightMap = new Array(width * height);
@@ -4463,7 +4466,9 @@ var self = exports.Identity;
 		  heights: heightMap,
       vertices: data.vertices,
       indices: data.indices,
-      texturecoords: data.texturecoords
+      texturecoords: data.texturecoords,
+      x: startX,
+      y: startY
     };
   };
 
@@ -4535,7 +4540,7 @@ querystring = require('querystring');
 vec3 = require('../thirdparty/glmatrix').vec3;
 gzip = require('gzip');
 Handler = require('./handler').Handler;
-LandscapeGeneration = require('./landscapegeneration').LandscapeGeneration;
+LandLoader = require('./landloader').LandLoader;
 
 exports.LandscapeHandler = function() {
   Handler.call(this);
@@ -4577,18 +4582,13 @@ exports.LandscapeHandler = function() {
   };
 
   var generateFromQueryString = function(req, res, success) {
+
     var query =  querystring.parse(req.url);
-    var maxHeight = parseInt(query.maxheight);
-		var width = parseInt(query.width);
-		var height = parseInt(query.height);
-		var startX = parseInt(query.startx);
-		var startY = parseInt(query.starty);
-		var scale = parseInt(query.scale);
+    var landid = query.landid;
+    var loader = new LandLoader();
+    var land = loader.getLand(landid);
 
-    var generator = new LandscapeGeneration(width, height, startX, startY, scale, maxHeight);
-    var rawData = generator.create();
-
-    convertRawDataIntoString(req, rawData, function(data) {
+    convertRawDataIntoString(req, land, function(data) {
        writeToFile(req.url, data);
        success(data);
     });
@@ -4604,6 +4604,7 @@ exports.LandscapeHandler = function() {
   var writeToFile = function(filename, data) {
     fs.writeFile('./cache/' + filename, data);
   };
+
 };
 }, "server/persistencelistener": function(exports, require, module) {var data = require('./data').Data;
 
@@ -4752,31 +4753,23 @@ exports.ServerGameReceiver = function(app, communication) {
 }, "server/serverlandchunkloader": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 var mat4 = require('../thirdparty/glmatrix').mat4;
 
-var LandChunk = require('../entities/landchunk').LandChunk;
-var LandscapeGeneration = require('./landscapegeneration').LandscapeGeneration;
+var Landscape = require('../entities/landscape').Landscape;
+var LandLoader = require('./landloader').LandLoader;
 
 
 exports.ServerLandChunkModelLoader = function(resources) {
   var self = this;
 
   self.handles = function(path){
-    return path.indexOf('chunk_') > -1;
+    return path.indexOf('terrain') > -1;
   };
 
-  self.load = function(id, callback) {
-    var data = JSON.parse(id.substr(6, id.length - 6));
-        
-    var model = new LandChunk(data.width, data.height, data.maxHeight, data.scale, data.x, data.y);   
-    var data = createTerrainChunk(data.width, data.height, data.x, data.y, data.scale, data.maxHeight);
+  self.load = function(id, callback) {        
+    var model = new Landscape(); 
+    var data = new LandLoader().getLand();
     model.setData(data);
-    callback();
-    
+    callback();    
     return model;
-  };
-  
-  var createTerrainChunk = function(width, height, x, y, scale, maxHeight) {
-    var generator = new LandscapeGeneration(width, height, x, y, scale, maxHeight);
-    return generator.create();
   };
 }; 
 }, "server/servermodelloader": function(exports, require, module) {var Model = require('../core/model').Model;

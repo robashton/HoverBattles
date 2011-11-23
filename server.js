@@ -34,6 +34,7 @@ server = http.createServer(function(req, res){
 		res.end();		
 	});
 });
+
 server.listen(1222);
 console.log("Listening on port 1222");
 
@@ -45,7 +46,7 @@ var LandscapeController = require('./src/entities/landscapecontroller').Landscap
 var app = new ServerApp();
 var controller = new Controller(app.scene);
 var game = new ServerCommunication(app, server);
-var landscape = new LandscapeController(app);
+var landscape = new LandscapeController.Create(app);
 
 app.resources.onAllAssetsLoaded(function(){
        
