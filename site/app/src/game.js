@@ -2842,7 +2842,7 @@ exports.ChaseCamera  = function(scene, playerId) {
       if(entityHeight < -20)
         return entity.position[1] + 10;
       else
-       return Math.max(entity.position[1] + 1, terrainHeight + 1.0);    
+       return Math.max(entity.position[1] + 3, terrainHeight + 1.0);    
     }
   };
 
