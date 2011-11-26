@@ -27,6 +27,7 @@ exports.LandLoader = function() {
     return {
       scale: scale,
       chunkWidth: chunkWidth,
+      vertexWidth: width,
       min: [ minX, minZ ],
       max: [ maxX, maxZ ],
       shared: getChunk(width, breadth, 0, 0, scale, maxHeight),

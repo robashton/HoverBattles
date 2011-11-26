@@ -5,6 +5,8 @@ var Hovercraft = function() {
   var self = this;
 
   self._decay = 0.985;
+  var heightDelta = 100.0;
+  var terrainHeight = 0.0;
 
   self.reset = function() {
     self._velocity = vec3.create([0.01,0,0.01]);
@@ -90,12 +92,12 @@ var Hovercraft = function() {
       var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
       var heightDelta = self.position[1] - terrainHeight;
       
-      if(heightDelta < 20.0) {
+      if(heightDelta < 20.0 && heightDelta > -5.0) {
           self._velocity[1] += amount;
       }
   };
   
-  self.processInput = function() {
+  var processInput = function() {
     if(self._left) {
       self.impulseLeft();
     }
@@ -114,30 +116,46 @@ var Hovercraft = function() {
      self.impulseUp();   
     }
   };
+
+  var adjustPositionByVelocity = function() {
+    vec3.add(self.position, self._velocity);
+  };
+
+  var updateTerrainVariables = function() {
+    var terrain = self._scene.getEntity("terrain");                 
+    terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
+    heightDelta = self.position[1] - terrainHeight;
+  };
   
   self.doLogic = function() {
-    self.processInput();
-    
-    var terrain = self._scene.getEntity("terrain");
-    vec3.add(self.position, self._velocity);
-                 
-    var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
-    var heightDelta = self.position[1] - terrainHeight;
-    
-    if(heightDelta < 0.5) {
-      self.position[1] = terrainHeight + (0.5 - heightDelta);
-      if(self._velocity[1] < 0)
-        self._velocity[1] = -self._velocity[1] * 0.25;
-    }
+    adjustPositionByVelocity();
+    updateTerrainVariables();
+    processInput();
+    interactWithTerrain();
 
-    if(Math.abs(self._velocity[1]) < 0.0001)
-	    self._velocity[1] = 0;
-     
-     if(heightDelta < 5.0){
-         self._velocity[1] += (5.0 - heightDelta) * 0.03;
-     }
      self._velocity[1] -= 0.025;              
      vec3.scale(self._velocity, self._decay);
+
+    if(self.position[1] < -90)
+      raiseLeftWorldEvent();
+  };
+ 
+  var interactWithTerrain = function() {
+    if(heightDelta < -5.0) return;
+    if(heightDelta < 0.5)
+      bounceCraftOffTerrain();     
+    clipCraftToTerrain();
+  };
+
+  var clipCraftToTerrain = function() {
+    if(heightDelta < 5.0)
+       self._velocity[1] += (5.0 - heightDelta) * 0.03;
+  };
+
+  var bounceCraftOffTerrain = function() {
+    self.position[1] = terrainHeight + (0.5 - heightDelta);
+    if(self._velocity[1] < 0)
+      self._velocity[1] = -self._velocity[1] * 0.25;
   };
   
   self.updateSync = function(sync) {
@@ -147,6 +165,10 @@ var Hovercraft = function() {
 
   self.projectileHit = function(data) {
     self.raiseServerEvent('healthZeroed', data);
+  };
+
+  var raiseLeftWorldEvent = function() {
+    self.raiseServerEvent('leftWorld');
   };
 }
          

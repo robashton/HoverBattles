@@ -18,10 +18,25 @@ exports.ScoreKeeper = function(scene) {
     sync.playerScores = playerScores;
   };
 
+  var onLeftWorld = function(data) {
+    decreaseScore(this.getId());
+  };
+
   var onCraftDestroyed = function(data) {
-   self.raiseServerEvent('playerScoreChanged', {
-    id: data.sourceid,
-    score: getPlayerScore(data.sourceid) + 1
+    increaseScore(data.sourceid);
+  };
+
+  var increaseScore = function(playerId) {
+   self.raiseServerEvent('playerScoreIncreased', {
+    id: playerId,
+    score: getPlayerScore(playerId) + 1
+   });
+  };
+
+  var decreaseScore = function(playerId) {
+   self.raiseServerEvent('playerScoreDecreased', {
+    id: playerId,
+    score: getPlayerScore(playerId) - 1
    });
   };
 
@@ -69,11 +84,13 @@ exports.ScoreKeeper = function(scene) {
      return player;
   };
 
-  self.addEventHandler('playerScoreChanged', onScoreChanged);
+  self.addEventHandler('playerScoreIncreased', onScoreChanged);
+  self.addEventHandler('playerScoreDecreased', onScoreChanged);
   scene.on('healthZeroed', onCraftDestroyed);
   scene.on('playerJoined', onPlayerJoined);
   scene.on('playerLeft',  onPlayerLeft); 
   scene.on('playerNamed', onPlayerNamed);
+  scene.on('leftWorld', onLeftWorld);
 };
 
 exports.ScoreKeeper.GetFrom = function(scene) {

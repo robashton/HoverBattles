@@ -105,7 +105,7 @@ exports.Landscape = function() {
   var createChunksFromData = function() {
     for(var i = 0; i < data.chunks.length; i++) {
       var dataForChunk = data.chunks[i];
-      var chunk = new Chunk(dataForChunk, data.scale, data.chunkWidth);
+      var chunk = new Chunk(dataForChunk, data.scale, data.vertexWidth);
       chunks.push(chunk);
       chunksByKey[chunk.key()] = chunk;
     }

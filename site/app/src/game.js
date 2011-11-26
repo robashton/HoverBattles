@@ -985,7 +985,8 @@ exports.ScoreDisplay = function(scene) {
   };
 
   scene.on('fullSyncCompleted', updateView);
-  scene.on('playerScoreChanged', updateView);
+  scene.on('playerScoreIncreased', updateView);
+  scene.on('playerScoreDecreased', updateView);
   scene.on('playerJoined', updateView);
   scene.on('playerLeft', updateView);
 };
@@ -1405,11 +1406,6 @@ var Entity = function(id){
 
     component.apply(this, args);
 
-    // Note: We've ended up here because of the natural evolution of 
-    // how these components have traditionally worked
-    // clearly this code is sub-optimal, and it'll get fixed next time
-    // these entities become painful to deal with (just like how this happened
-    // last time these entities became painful to deal with)
     for(var i in this) {
       if(oldProperties[i] && oldProperties[i] !== this[i]) {
          if(i === 'doLogic') {
@@ -1417,7 +1413,11 @@ var Entity = function(id){
             var oldLogic = oldProperties[i];
             self.doLogic = function() {
               oldLogic.call(this);
-              newLogic.call(this);
+
+              // Entities can raise events that get them removed from scene
+              // No point in continuing with logic if this is the case
+              if(this._scene)
+                newLogic.call(this);
             }
          }
          else if(i === 'updateSync') {
@@ -1437,7 +1437,7 @@ var Entity = function(id){
             };
          } 
         else if(i === 'render') {
-          // ignore
+          // ignore, this is fine
         }
         else {
           console.warn("Detected a potentially unacceptable overwrite of " + i + 'on ' + this.getId());
@@ -2831,7 +2831,14 @@ exports.Clipping = Clipping;
     });
   };
 
+  var onLeftWorld = function(data) {
+    self.raiseServerEvent('entityDestroyed', {
+      id: self.getId()
+    });
+  };
+
   self.addEventHandler('healthZeroed', onNoHealthLeft);
+  self.addEventHandler('leftWorld', onLeftWorld);
 };
 }, "entities/explodable": function(exports, require, module) {var Explosion = require('./explosion').Explosion;
 
@@ -2839,14 +2846,24 @@ exports.Explodable = function() {
   var self = this;
 
   var onEntityDestroyed = function() {
+    createExplosionAtEntityLocation();
+  };
+
+  var onLeftWorld = function() {
+    createExplosionAtEntityLocation();
+  };
+  
+  var createExplosionAtEntityLocation = function() {
+    console.log('kaboom: ' + self.position);
     var explosion = new Explosion(self._scene.app, {
       position: self.position,    
       initialVelocity: vec3.create([0,0,0])
       }
-    );    
-  };  
+    );
+  };
  
   self.addEventHandler('healthZeroed', onEntityDestroyed);
+  self.addEventHandler('leftWorld', onLeftWorld);
 };
 }, "entities/explosion": function(exports, require, module) {var ParticleEmitter = require('./particleemitter').ParticleEmitter;
 
@@ -2974,6 +2991,8 @@ var Hovercraft = function() {
   var self = this;
 
   self._decay = 0.985;
+  var heightDelta = 100.0;
+  var terrainHeight = 0.0;
 
   self.reset = function() {
     self._velocity = vec3.create([0.01,0,0.01]);
@@ -3059,12 +3078,12 @@ var Hovercraft = function() {
       var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
       var heightDelta = self.position[1] - terrainHeight;
       
-      if(heightDelta < 20.0) {
+      if(heightDelta < 20.0 && heightDelta > -5.0) {
           self._velocity[1] += amount;
       }
   };
   
-  self.processInput = function() {
+  var processInput = function() {
     if(self._left) {
       self.impulseLeft();
     }
@@ -3083,30 +3102,46 @@ var Hovercraft = function() {
      self.impulseUp();   
     }
   };
+
+  var adjustPositionByVelocity = function() {
+    vec3.add(self.position, self._velocity);
+  };
+
+  var updateTerrainVariables = function() {
+    var terrain = self._scene.getEntity("terrain");                 
+    terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
+    heightDelta = self.position[1] - terrainHeight;
+  };
   
   self.doLogic = function() {
-    self.processInput();
-    
-    var terrain = self._scene.getEntity("terrain");
-    vec3.add(self.position, self._velocity);
-                 
-    var terrainHeight = terrain == null ? 10 : terrain.getHeightAt(self.position[0], self.position[2]);  
-    var heightDelta = self.position[1] - terrainHeight;
-    
-    if(heightDelta < 0.5) {
-      self.position[1] = terrainHeight + (0.5 - heightDelta);
-      if(self._velocity[1] < 0)
-        self._velocity[1] = -self._velocity[1] * 0.25;
-    }
+    adjustPositionByVelocity();
+    updateTerrainVariables();
+    processInput();
+    interactWithTerrain();
 
-    if(Math.abs(self._velocity[1]) < 0.0001)
-	    self._velocity[1] = 0;
-     
-     if(heightDelta < 5.0){
-         self._velocity[1] += (5.0 - heightDelta) * 0.03;
-     }
      self._velocity[1] -= 0.025;              
      vec3.scale(self._velocity, self._decay);
+
+    if(self.position[1] < -90)
+      raiseLeftWorldEvent();
+  };
+ 
+  var interactWithTerrain = function() {
+    if(heightDelta < -5.0) return;
+    if(heightDelta < 0.5)
+      bounceCraftOffTerrain();     
+    clipCraftToTerrain();
+  };
+
+  var clipCraftToTerrain = function() {
+    if(heightDelta < 5.0)
+       self._velocity[1] += (5.0 - heightDelta) * 0.03;
+  };
+
+  var bounceCraftOffTerrain = function() {
+    self.position[1] = terrainHeight + (0.5 - heightDelta);
+    if(self._velocity[1] < 0)
+      self._velocity[1] = -self._velocity[1] * 0.25;
   };
   
   self.updateSync = function(sync) {
@@ -3116,6 +3151,10 @@ var Hovercraft = function() {
 
   self.projectileHit = function(data) {
     self.raiseServerEvent('healthZeroed', data);
+  };
+
+  var raiseLeftWorldEvent = function() {
+    self.raiseServerEvent('leftWorld');
   };
 }
          
@@ -3330,10 +3369,10 @@ exports.LandChunk = function(data, scale, width) {
     var topX = baseZ; 
     var bottomX = baseZ + 1;
         
-    var topLeft = heightmap[leftX + topX * (width + 1)];
-    var topRight = heightmap[rightX + topX * (width + 1)];
-    var bottomLeft = heightmap[leftX + bottomX * (width + 1)];
-    var bottomRight = heightmap[rightX + bottomX * (width + 1)];
+    var topLeft = heightmap[leftX + topX * (width)];
+    var topRight = heightmap[rightX + topX * (width)];
+    var bottomLeft = heightmap[leftX + bottomX * (width)];
+    var bottomRight = heightmap[rightX + bottomX * (width)];
     
     var top = (horizontalWeight*topRight)+(1.0-horizontalWeight)*topLeft;
     var bottom = (horizontalWeight*bottomRight)+(1.0-horizontalWeight)*bottomLeft;
@@ -3436,6 +3475,8 @@ exports.Landscape = function() {
     var chunkKey = convertWorldCoordsIntoChunkKey(x, z);
     var chunk = retrieveChunkWithKey(chunkKey);
 
+    if(!chunk) return -100;
+
     // Transform world coords into er.. 'global array space'
     var indexX = (x / data.scale);
     var indexZ = (z / data.scale);
@@ -3446,7 +3487,7 @@ exports.Landscape = function() {
   var createChunksFromData = function() {
     for(var i = 0; i < data.chunks.length; i++) {
       var dataForChunk = data.chunks[i];
-      var chunk = new Chunk(dataForChunk, data.scale, data.chunkWidth);
+      var chunk = new Chunk(dataForChunk, data.scale, data.vertexWidth);
       chunks.push(chunk);
       chunksByKey[chunk.key()] = chunk;
     }
@@ -3987,10 +4028,25 @@ exports.ScoreKeeper = function(scene) {
     sync.playerScores = playerScores;
   };
 
+  var onLeftWorld = function(data) {
+    decreaseScore(this.getId());
+  };
+
   var onCraftDestroyed = function(data) {
-   self.raiseServerEvent('playerScoreChanged', {
-    id: data.sourceid,
-    score: getPlayerScore(data.sourceid) + 1
+    increaseScore(data.sourceid);
+  };
+
+  var increaseScore = function(playerId) {
+   self.raiseServerEvent('playerScoreIncreased', {
+    id: playerId,
+    score: getPlayerScore(playerId) + 1
+   });
+  };
+
+  var decreaseScore = function(playerId) {
+   self.raiseServerEvent('playerScoreDecreased', {
+    id: playerId,
+    score: getPlayerScore(playerId) - 1
    });
   };
 
@@ -4038,11 +4094,13 @@ exports.ScoreKeeper = function(scene) {
      return player;
   };
 
-  self.addEventHandler('playerScoreChanged', onScoreChanged);
+  self.addEventHandler('playerScoreIncreased', onScoreChanged);
+  self.addEventHandler('playerScoreDecreased', onScoreChanged);
   scene.on('healthZeroed', onCraftDestroyed);
   scene.on('playerJoined', onPlayerJoined);
   scene.on('playerLeft',  onPlayerLeft); 
   scene.on('playerNamed', onPlayerNamed);
+  scene.on('leftWorld', onLeftWorld);
 };
 
 exports.ScoreKeeper.GetFrom = function(scene) {
@@ -4328,13 +4386,15 @@ exports.Data = new Data();
   'targetHit',
   'missileExpired',
   'entityDestroyed',
+  'leftWorld',
   'healthZeroed',
   'entityRevived',
   'entitySpawned',
   'playerJoined',
   'playerLeft',
   'playerNamed',
-  'playerScoreChanged'
+  'playerScoreIncreased',
+  'playerScoreDecreased',
 ];
 
 exports.EventReceiver = function(app, communication) {
@@ -4466,6 +4526,7 @@ exports.LandLoader = function() {
     return {
       scale: scale,
       chunkWidth: chunkWidth,
+      vertexWidth: width,
       min: [ minX, minZ ],
       max: [ maxX, maxZ ],
       shared: getChunk(width, breadth, 0, 0, scale, maxHeight),

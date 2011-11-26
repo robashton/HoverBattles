@@ -5,13 +5,15 @@ var ForwardedEvents = [
   'targetHit',
   'missileExpired',
   'entityDestroyed',
+  'leftWorld',
   'healthZeroed',
   'entityRevived',
   'entitySpawned',
   'playerJoined',
   'playerLeft',
   'playerNamed',
-  'playerScoreChanged'
+  'playerScoreIncreased',
+  'playerScoreDecreased',
 ];
 
 exports.EventReceiver = function(app, communication) {

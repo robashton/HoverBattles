@@ -96,11 +96,6 @@ var Entity = function(id){
 
     component.apply(this, args);
 
-    // Note: We've ended up here because of the natural evolution of 
-    // how these components have traditionally worked
-    // clearly this code is sub-optimal, and it'll get fixed next time
-    // these entities become painful to deal with (just like how this happened
-    // last time these entities became painful to deal with)
     for(var i in this) {
       if(oldProperties[i] && oldProperties[i] !== this[i]) {
          if(i === 'doLogic') {
@@ -108,7 +103,11 @@ var Entity = function(id){
             var oldLogic = oldProperties[i];
             self.doLogic = function() {
               oldLogic.call(this);
-              newLogic.call(this);
+
+              // Entities can raise events that get them removed from scene
+              // No point in continuing with logic if this is the case
+              if(this._scene)
+                newLogic.call(this);
             }
          }
          else if(i === 'updateSync') {
@@ -128,7 +127,7 @@ var Entity = function(id){
             };
          } 
         else if(i === 'render') {
-          // ignore
+          // ignore, this is fine
         }
         else {
           console.warn("Detected a potentially unacceptable overwrite of " + i + 'on ' + this.getId());

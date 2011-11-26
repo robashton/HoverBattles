@@ -7,5 +7,12 @@ exports.Destructable = function() {
     });
   };
 
+  var onLeftWorld = function(data) {
+    self.raiseServerEvent('entityDestroyed', {
+      id: self.getId()
+    });
+  };
+
   self.addEventHandler('healthZeroed', onNoHealthLeft);
+  self.addEventHandler('leftWorld', onLeftWorld);
 };

@@ -50,10 +50,10 @@ exports.LandChunk = function(data, scale, width) {
     var topX = baseZ; 
     var bottomX = baseZ + 1;
         
-    var topLeft = heightmap[leftX + topX * (width + 1)];
-    var topRight = heightmap[rightX + topX * (width + 1)];
-    var bottomLeft = heightmap[leftX + bottomX * (width + 1)];
-    var bottomRight = heightmap[rightX + bottomX * (width + 1)];
+    var topLeft = heightmap[leftX + topX * (width)];
+    var topRight = heightmap[rightX + topX * (width)];
+    var bottomLeft = heightmap[leftX + bottomX * (width)];
+    var bottomRight = heightmap[rightX + bottomX * (width)];
     
     var top = (horizontalWeight*topRight)+(1.0-horizontalWeight)*topLeft;
     var bottom = (horizontalWeight*bottomRight)+(1.0-horizontalWeight)*bottomLeft;

@@ -14,7 +14,8 @@ exports.ScoreDisplay = function(scene) {
   };
 
   scene.on('fullSyncCompleted', updateView);
-  scene.on('playerScoreChanged', updateView);
+  scene.on('playerScoreIncreased', updateView);
+  scene.on('playerScoreDecreased', updateView);
   scene.on('playerJoined', updateView);
   scene.on('playerLeft', updateView);
 };
