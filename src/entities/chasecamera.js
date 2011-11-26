@@ -142,10 +142,22 @@ exports.ChaseCamera  = function(scene, playerId) {
   var clampLocationToTerrain = function(location) {
      var terrain = scene.getEntity("terrain");   
      var terrainHeightAtCameraLocation = terrain == null ? 10 : terrain.getHeightAt(location[0], location[2]);
+
+     var terrainSuggestedHeight = getAppropriateCameraElevationFromTerrainHeight(terrainHeightAtCameraLocation);
+
      location[1] = Math.max(
-                      Math.max(terrainHeightAtCameraLocation + 5, entity.position[1] + 5), 
+                      terrainSuggestedHeight, 
                       location[1]
                   );
+  };
+
+  var getAppropriateCameraElevationFromTerrainHeight = function(terrainHeight) {
+     if(includedTargetId) {
+      // Allow the camera to go low when aiming at other players
+      return terrainHeight + 1.0;
+     } else {
+       return terrainHeight + 10;     
+    }
   };
 
   var workOutWhereTargetIs = function() {   
