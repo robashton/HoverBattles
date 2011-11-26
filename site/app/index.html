@@ -1,7 +1,7 @@
 <html>
     <head>
     <!--  <script src="https://cvs.khronos.org/svn/repos/registry/trunk/public/webgl/sdk/debug/webgl-debug.js"></script> -->
-    	<script src="jquery-1.5.1.min.js"></script>
+    	<script src="src/jquery-1.5.1.min.js"></script>
       <link href='http://fonts.googleapis.com/css?family=Ubuntu' rel='stylesheet' type='text/css'/>
       <link rel="stylesheet" type="text/css" href="style.css" />
       <script type="text/javascript">        
@@ -41,16 +41,14 @@
                 else
                   showFeedback(result.feedback);
               });
-            });
-
-                  
+            });                  
           });
       </script>
 	</head>
 	<body>		
     <div id="header">
 		  <div id="header-title"><h1>Hoverbattles</h1><p>This is a muck-around game by <a href="http://twitter.com/robashton">@robashton</a></p></div>
-		  <div id="header-instructions"><p>If you want to sign up to keep your score, then you can, e-mail is optional.</p>
+		  <div id="header-instructions"><p>If you want to sign up to keep your score, then you can register, e-mail is optional.</p>
        <p class="guest"><a href="game.html">No way! Just sign in as a guest already</a></p></div>
     </div>
 
@@ -73,10 +71,8 @@
       </div>
     </div> 
     <div id="email-disclaimer">
-      <p>I'll not give your e-mail address to anybody, I'll not use it to send advertisements or spam. I may however use it to get in touch personally if you're hitting me up regularly and ask for a feedback session, or I may not. I'm fickle like that.</p>
-      <p>And yes, I have every intention of hooking up the Twitters and using that for identity purposes, but one thing at a time - the game is barely even started yet</p>
-      <p>Also, I'm aware that my CSS/HTML sucks donkey balls, if you want to fix it then send me a pull request</p>
-      <p>And hey, because i'm not a complete and utter idiot, I don't store your password in any sort of retrievable format and I haven't written a forgotten password functionality anyway, so don't lose it yeah?</p>
+      <p>I'll not give your e-mail address to anybody, I'll not use it to send advertisements or spam, it's entirely optional and may be used for password reset stuff if it is ever asked for.</p>
+      <p>Because i'm not a complete and utter idiot, I don't store your password in any sort of retrievable format and I haven't written the forgotten password functionality yet, so don't lose it.</p>
     </div>      
     </body>
 </html>

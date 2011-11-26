@@ -78,6 +78,16 @@ exports.Services = function() {
       });
   });
 
+  self.route('GET', '/services/highscorers', function(req, res) {
+    data.getHighScorers(function(scorers) {
+      res.writeHead(200, "Content-Type: application/json");
+      res.write(JSON.stringify({
+        items: scorers
+      }));
+      res.end();
+    });
+  });
+
   var validateInput = function(rules, callback) {
     runValidationRule(0, rules, callback);   
   };

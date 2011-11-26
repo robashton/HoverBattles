@@ -4419,17 +4419,35 @@ var Data = function() {
   };
 
   self.userExists = function(username, callback) {
-   db.view('/hoverbattles/_design/users/_view/by_username', { key: username }, function(err, doc) {
-      if(!doc.rows || doc.rows.length == 0) 
-        callback(false);
-      else 
+   self.getUser(username, function(user) {
+      if(user)
         callback(true);
+      else
+        callback(true);
+   });
+  };
+
+  self.getUserByName = function(username, callback) {
+   db.view('/hoverbattles/_design/users/_view/by_username', { key: username }, function(err, doc) {
+      if(!doc.rows || doc.rows.length === 0) 
+        callback(null);
+      else 
+        callback(doc.rows[0].value);
+    });
+  };
+  
+  self.getHighScorers = function(callback) {
+   db.view('/hoverbattles/_design/users/_view/by_totalscore', function(err, doc) {
+      var returnValues = [];
+      for(var i = 0; i < doc.rows.length; i++)
+        returnValues.push(doc.rows[i].value);
+      callback(returnValues);
     });
   };
 
   self.emailExists = function(email, callback) {
    db.view('/hoverbattles/_design/users/_view/by_email', { key: email }, function(err, doc) {
-      if(!doc.rows || doc.rows.length == 0)   
+      if(!doc.rows || doc.rows.length === 0)   
         callback(false);
       else
        callback(true);
@@ -4450,16 +4468,98 @@ var Data = function() {
       }
     });
   };
+
+  self.updatePlayerStats = function(username) {
+    var updater = new PlayerStatsUpdater(self, username);
+    getPlayerScore(username, updater.notifyPlayerScore);
+    getPlayerKills(username, updater.notifyPlayerKills);
+    getPlayerDeaths(username, updater.notifyPlayerDeaths);
+  };
+
+  var getPlayerScore = function(username, callback) {
+   db.view('/hoverbattles/_design/stats/_view/score', { key: username, group: true  }, function(err, doc) {
+      if(!doc.rows || doc.rows.length == 0) 
+        callback(0);
+      else {
+        var score = doc.rows[0].value;
+        callback(score);     
+      }  
+    });
+  };
+
+  var getPlayerKills = function(username, callback) {
+   db.view('/hoverbattles/_design/stats/_view/kills', { key: username, group: true  }, function(err, doc) {
+      if(!doc.rows || doc.rows.length == 0) 
+        callback(0);
+      else {
+        var kills = doc.rows[0].value;
+        callback(kills);
+      }     
+    });
+  };
+
+  var getPlayerDeaths = function(username, callback) {
+   db.view('/hoverbattles/_design/stats/_view/deaths', { key: username, group: true  }, function(err, doc) {
+      if(!doc.rows || doc.rows.length == 0) 
+        callback(0);
+      else {
+        var deaths = doc.rows[0].value;
+        callback(deaths);
+      }
+    });
+  };
   
   self.storeEvent = function(eventName, data) {
-      db.save({
-        type:"event",
-        eventType: eventName,
-        data: data           
-      },
-      function(err, data) {
-        if(err) console.trace(err);
-      });
+    db.save({
+      type:"event",
+      eventType: eventName,
+      data: data           
+    },
+    function(err, data) {
+      if(err) console.trace(err);
+    });
+  };
+};
+
+
+var PlayerStatsUpdater = function(api, username) {
+  var self = this;
+
+  var score = null,
+      kills = null,
+      deaths = null;
+
+  self.notifyPlayerScore = function(data) {
+    score = data;
+    tryUpdateDocument();
+  };    
+
+  self.notifyPlayerKills = function(data) {
+    kills = data;
+     tryUpdateDocument();
+  };
+
+  self.notifyPlayerDeaths = function(data) {
+    deaths = data;
+    tryUpdateDocument();
+  };
+
+  var tryUpdateDocument = function() {
+    if(score !== null && kills !== null && deaths !== null)
+      actuallyUpdateDocument();
+  };  
+
+  var actuallyUpdateDocument = function() {
+    api.getUserByName(username, updateUserDocument);
+  };
+
+  var updateUserDocument = function(document) {
+    if(!document) return;
+
+    document.totalscore = score;
+    document.totalkills = kills;
+    document.totaldeaths = deaths;
+    db.save(document);
   };
 };
 
@@ -4508,7 +4608,9 @@ exports.EventReceiver = function(app, communication) {
     addEventProxy(event);     
   }
 };
-}, "server/handler": function(exports, require, module) {exports.Handler = function() {
+}, "server/handler": function(exports, require, module) {var qs = require('querystring');
+
+exports.Handler = function() {
   var self = this;
 
   var routes = {};
@@ -4532,14 +4634,14 @@ exports.EventReceiver = function(app, communication) {
 
   var parseFormData = function(req, res, callback) {
     if (req.method == 'POST') {
-        var body = '';
-        req.on('data', function (data) {
-            body += data;
-        });
-        req.on('end', function () {
-            req.body = qs.parse(body)             
-            callback();
-        });
+      var body = '';
+      req.on('data', function (data) {
+          body += data;
+      });
+      req.on('end', function () {
+        req.body = qs.parse(body)             
+        callback();
+      });
     } 
     else callback();
   };
@@ -4781,7 +4883,7 @@ exports.LandscapeHandler = function() {
   };
 
 };
-}, "server/persistencelistener": function(exports, require, module) {var data = require('./data').Data;
+}, "server/persistencelistener": function(exports, require, module) {var Data = require('./data').Data;
 
 exports.PersistenceListener = function(scene) {
   var self = this;
@@ -4802,6 +4904,12 @@ exports.PersistenceListener = function(scene) {
       username: data.name,
       sessionid: data.id
     });
+  };
+
+  var onPlayerLeft = function(data) {
+    var username = playerNameMap[data.id];
+    delete playerNameMap[data.id];
+    Data.updatePlayerStats(username);
   };
 
   var onPlayerKilled = function(data) {
@@ -4830,10 +4938,11 @@ exports.PersistenceListener = function(scene) {
   };
 
   var storeEvent = function(eventName, eventData) {
-    data.storeEvent(eventName, eventData);
+    Data.storeEvent(eventName, eventData);
   };
 
   scene.on('playerNamed', onPlayerNamed);
+  scene.on('playerLeft', onPlayerLeft);
   scene.on('healthZeroed', onPlayerKilled);
   scene.on('fireMissile', onMissileFired);
   scene.on('playerScoreDecreased', onPlayerScoreDecreased);
@@ -5067,6 +5176,16 @@ exports.Services = function() {
 		      res.end();
         }
       });
+  });
+
+  self.route('GET', '/services/highscorers', function(req, res) {
+    data.getHighScorers(function(scorers) {
+      res.writeHead(200, "Content-Type: application/json");
+      res.write(JSON.stringify({
+        items: scorers
+      }));
+      res.end();
+    });
   });
 
   var validateInput = function(rules, callback) {

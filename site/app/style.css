@@ -127,3 +127,14 @@ div.break {
   border: 2px solid #BBB;
 }
 
+table.stats {
+  font-size: 24px;
+}
+
+table.stats td {
+  padding-left: 15px;
+  padding-right: 15px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+

@@ -1,3 +1,5 @@
+var qs = require('querystring');
+
 exports.Handler = function() {
   var self = this;
 
@@ -22,14 +24,14 @@ exports.Handler = function() {
 
   var parseFormData = function(req, res, callback) {
     if (req.method == 'POST') {
-        var body = '';
-        req.on('data', function (data) {
-            body += data;
-        });
-        req.on('end', function () {
-            req.body = qs.parse(body)             
-            callback();
-        });
+      var body = '';
+      req.on('data', function (data) {
+          body += data;
+      });
+      req.on('end', function () {
+        req.body = qs.parse(body)             
+        callback();
+      });
     } 
     else callback();
   };

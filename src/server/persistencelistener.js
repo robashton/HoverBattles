@@ -1,4 +1,4 @@
-var data = require('./data').Data;
+var Data = require('./data').Data;
 
 exports.PersistenceListener = function(scene) {
   var self = this;
@@ -19,6 +19,12 @@ exports.PersistenceListener = function(scene) {
       username: data.name,
       sessionid: data.id
     });
+  };
+
+  var onPlayerLeft = function(data) {
+    var username = playerNameMap[data.id];
+    delete playerNameMap[data.id];
+    Data.updatePlayerStats(username);
   };
 
   var onPlayerKilled = function(data) {
@@ -47,10 +53,11 @@ exports.PersistenceListener = function(scene) {
   };
 
   var storeEvent = function(eventName, eventData) {
-    data.storeEvent(eventName, eventData);
+    Data.storeEvent(eventName, eventData);
   };
 
   scene.on('playerNamed', onPlayerNamed);
+  scene.on('playerLeft', onPlayerLeft);
   scene.on('healthZeroed', onPlayerKilled);
   scene.on('fireMissile', onMissileFired);
   scene.on('playerScoreDecreased', onPlayerScoreDecreased);
