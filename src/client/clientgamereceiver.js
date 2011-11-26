@@ -9,7 +9,7 @@ var HovercraftController = require('./hovercraftcontroller').HovercraftControlle
 var TrailsAndExplosions = require('./trailsandexplosions').TrailsAndExplosions;
 var ScoreDisplay = require('./scoredisplay').ScoreDisplay;
 var Hud = require('./hud').Hud;
-
+var PlayerMessageListener = require('./playermessagelistener').PlayerMessageListener;
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;
@@ -28,6 +28,7 @@ exports.ClientGameReceiver = function(app, server) {
   var missileFirer = null;
   var trailsAndExplosions = null;
   var hud = null;
+  var playerMessageListener = new PlayerMessageListener(app);
 
   self._init = function(data) {
 	  playerId = data.id;
@@ -42,6 +43,7 @@ exports.ClientGameReceiver = function(app, server) {
     chaseCamera = ChaseCamera.Create(app.scene, playerId);
     controller = new HovercraftController(playerId, server);
     scoreDisplay.setPlayerId(playerId);
+    playerMessageListener.setPlayerId(playerId);
   };
 
   var initializeHud = function() {
