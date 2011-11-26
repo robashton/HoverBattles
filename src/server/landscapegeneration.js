@@ -16,8 +16,8 @@ exports.LandscapeGeneration = function(width, height, startX, startY, scale, max
       vertices: data.vertices,
       indices: data.indices,
       texturecoords: data.texturecoords,
-      x: startX,
-      y: startY
+      x: startX * scale,
+      y: startY * scale
     };
   };
 

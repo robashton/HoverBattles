@@ -4,6 +4,8 @@ exports.Landscape = function() {
   var self = this;
 
   var chunks = [];
+  var chunksByKey = {};
+
   var data = null;
   var texture = null;
 
@@ -86,47 +88,42 @@ exports.Landscape = function() {
       chunks[i].activate(context);
   };
 
-  self.getHeightAt = function(x, z) {
-    // Index appropriately into the data we've got stored locally
-    return 100;
+  self.getHeightAt = function(x, z) {  
+
+    var chunkKey = convertWorldCoordsIntoChunkKey(x, z);
+    var chunk = retrieveChunkWithKey(chunkKey);
+
+    if(!chunk) return -100;
+
+    // Transform world coords into er.. 'global array space'
+    var indexX = (x / data.scale);
+    var indexZ = (z / data.scale);
+
+    return chunk.getHeightAt(indexX, indexZ);
   };  
 
   var createChunksFromData = function() {
     for(var i = 0; i < data.chunks.length; i++) {
       var dataForChunk = data.chunks[i];
-      var chunk = new Chunk(dataForChunk);
+      var chunk = new Chunk(dataForChunk, data.scale, data.chunkWidth);
       chunks.push(chunk);
+      chunksByKey[chunk.key()] = chunk;
     }
   };
 
-  var getHeightFromChunk = function() {
-/*
-    var heightmap = this._data.heights;
-    
-    // Transform to values we can (almost) index our array with
-    var transformedX = x - this._x;
-    var transformedZ = z - this._y;
-    
-    var baseX = Math.floor(transformedX);
-    var baseZ = Math.floor(transformedZ);
-
-    var horizontalWeight = transformedX - baseX;
-    var verticalWeight = transformedZ - baseZ; 
-    
-    var leftX = baseX;
-    var rightX = baseX + 1;
-    var topX = baseZ; 
-    var bottomX = baseZ + 1;
-        
-    var topLeft = heightmap[leftX + topX * this._width];
-    var topRight = heightmap[rightX + topX * this._width];
-    var bottomLeft = heightmap[leftX + bottomX * this._width];
-    var bottomRight = heightmap[rightX + bottomX * this._width];
-    
-    var top = (horizontalWeight*topRight)+(1.0-horizontalWeight)*topLeft;
-    var bottom = (horizontalWeight*bottomRight)+(1.0-horizontalWeight)*bottomLeft;
-    
-    return (verticalWeight*bottom)+(1.0-verticalWeight)*top; */
+  var retrieveChunkWithKey = function(key) {
+    return chunksByKey[key];
   };
 
+  var convertWorldCoordsIntoChunkKey = function(x, z) {
+    var multiplier = data.chunkWidth * data.scale;
+    
+    var currentChunkX = parseInt(x / multiplier) * multiplier;
+    var currentChunkZ = parseInt(z / multiplier) * multiplier;
+    
+    if(x < 0) { currentChunkX -= multiplier; }
+    if(z < 0) { currentChunkZ -= multiplier; }
+
+    return currentChunkX + '_' + currentChunkZ;    
+  };
 };

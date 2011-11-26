@@ -13,20 +13,20 @@ exports.LandLoader = function() {
     var maxZ = 0 + (chunkWidth);
     var chunks = [];
 
+    var width = chunkWidth + 1;
+    var breadth = chunkWidth + 1;
+
     for(var x = minX; x <= maxX ; x += chunkWidth) {
 	    for(var z = minZ; z <= maxZ ; z += chunkWidth) {
 		    var key = x + '_' + z;
-        var width = chunkWidth + 1;
-        var breadth = chunkWidth + 1;
-              
         var chunk = getChunk(width, breadth, x, z, scale, maxHeight);
         chunks.push(chunk); 
 	    }
     }
 
     return {
-      scale: 5,
-      chunkWidth: 128,
+      scale: scale,
+      chunkWidth: chunkWidth,
       min: [ minX, minZ ],
       max: [ maxX, maxZ ],
       shared: getChunk(width, breadth, 0, 0, scale, maxHeight),
