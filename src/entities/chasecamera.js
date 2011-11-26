@@ -156,7 +156,13 @@ exports.ChaseCamera  = function(scene, playerId) {
       // Allow the camera to go low when aiming at other players
       return terrainHeight + 1.0;
      } else {
-       return terrainHeight + 10;     
+      var entityHeight = entity.position[1] - terrainHeight; 
+
+      // We're probably underground at this point, so skip the terrain check
+      if(entityHeight < -20)
+        return entity.position[1] + 10;
+      else
+       return terrainHeight + 15;    
     }
   };
 
