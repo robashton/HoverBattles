@@ -14,9 +14,9 @@ exports.PersistenceListener = function(scene) {
   };
 
   var onPlayerNamed = function(data) {
-    playerNameMap[data.id] = data.username;
+    playerNameMap[data.id] = data.name;
     storeEvent('playerStart', {
-      username: data.username,
+      username: data.name,
       sessionid: data.id
     });
   };
@@ -30,6 +30,22 @@ exports.PersistenceListener = function(scene) {
     });
   };
 
+  var onPlayerScoreDecreased = function(data) {
+    storeEvent('playerScoreDecreased', {
+      username: playerNameMap[data.id],
+      sessionid: data.id,
+      score: data.score
+    });
+  };
+
+  var onPlayerScoreIncreased = function(data) {
+    storeEvent('playerScoreIncreased', {
+      username: playerNameMap[data.id],
+      sessionid: data.id,
+      score: data.score
+    });
+  };
+
   var storeEvent = function(eventName, eventData) {
     data.storeEvent(eventName, eventData);
   };
@@ -37,4 +53,6 @@ exports.PersistenceListener = function(scene) {
   scene.on('playerNamed', onPlayerNamed);
   scene.on('healthZeroed', onPlayerKilled);
   scene.on('fireMissile', onMissileFired);
+  scene.on('playerScoreDecreased', onPlayerScoreDecreased);
+  scene.on('playerScoreIncreased', onPlayerScoreIncreased);
 };
