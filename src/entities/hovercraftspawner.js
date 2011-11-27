@@ -62,6 +62,7 @@ exports.HovercraftSpawner = function(scene) {
       scene.withEntity(playerId, function(entity) {
         entity.displayName(playerNames[playerId]);
       });
+   self.raiseEvent('playerNamesUpdated', { names: playerNames });
   };
 
   var onEntityDestroyed = function() {

@@ -11,6 +11,7 @@ var ScoreDisplay = require('./scoredisplay').ScoreDisplay;
 var Hud = require('./hud').Hud;
 var Floor = require('./floor').Floor;
 var PlayerMessageListener = require('./playermessagelistener').PlayerMessageListener;
+var ChatDisplay = require('./chatdisplay').ChatDisplay;
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;
@@ -30,6 +31,7 @@ exports.ClientGameReceiver = function(app, server) {
   var trailsAndExplosions = null;
   var hud = null;
   var floor = null;
+  var chatDisplay = null;
   
   var playerMessageListener = new PlayerMessageListener(app);
 
@@ -48,6 +50,7 @@ exports.ClientGameReceiver = function(app, server) {
     controller = new HovercraftController(playerId, server);
     scoreDisplay.setPlayerId(playerId);
     playerMessageListener.setPlayerId(playerId);
+    chatDisplay = new ChatDisplay(server, app.scene, playerId, controller);    
   };
 
   var initializeHud = function() {
@@ -71,6 +74,10 @@ exports.ClientGameReceiver = function(app, server) {
       username: username,
       sign: sign
     });
+  };
+  
+  self._addchatmessage = function(data) {
+    chatDisplay.receiveMessageFromServer(data);
   };
 
   self._noauth = function(data) {

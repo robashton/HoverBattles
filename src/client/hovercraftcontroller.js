@@ -16,6 +16,8 @@ var KeyCodes = {
 
 KeyboardStates = {};
 
+var inputEnabled = true;
+
 var HovercraftController = function(targetId, server){
   this.targetId = targetId;
   this.server = server;
@@ -25,7 +27,6 @@ var HovercraftController = function(targetId, server){
   this.left = false;
   this.right = false;
   this.jump = false;
-  this.enabled = true;
   
   var controller = this;
   setInterval(function() { controller.processInput(); }, 1000 / 30);
@@ -53,15 +54,15 @@ HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboa
 };
 
 HovercraftController.prototype.disable = function() {
-  this.enabled = false;
+  inputEnabled = false;
 };
 
 HovercraftController.prototype.enable = function() {
-  this.enabled = true;
+  inputEnabled = true;
 };
 
 HovercraftController.prototype.processInput = function(){
-  if(!this.enabled) return;
+  if(!inputEnabled) return;
 
   for(var code in this.keyboardMappings){
     var mapping = this.keyboardMappings[code];
@@ -80,13 +81,15 @@ HovercraftController.prototype.processInput = function(){
 };
 
 document.onkeydown = function(event) { 
-    KeyboardStates[event.keyCode] = true;
-    return false;
+  if(!inputEnabled) return;
+  KeyboardStates[event.keyCode] = true;
+  return false;
 
 };
 document.onkeyup = function(event) { 
-    KeyboardStates[event.keyCode] = false;
-    return false;
+  if(!inputEnabled) return;
+  KeyboardStates[event.keyCode] = false;
+  return false;
 };
 
 exports.HovercraftController = HovercraftController;

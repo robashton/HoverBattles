@@ -5,22 +5,117 @@ body {
   font-size: 18px;
 }
 
+#header-instructions {
+  font-size: 12px;
+}
+
 #gameContainer {
   float: left;
   margin-left: 10px;
   width: 800px;
-  height: 600px;
-  border: 5px solid #DDD;
+  height: 480px;
+  border: 1px solid #DDD;
 }
 
 #status {
+  margin: 0;
   float: left;
   width: 250px;
+  border-left: none;
+  border-top: 1px solid #AAA;
+  border-right: 1px solid #AAA;
+  border-bottom: 1px solid #AAA;
+  min-height: 480px;
 }
 
-p.guest {
-  font-size: 28px;
+#status .status-title {
+ margin: 0;
+ width: 100%;
+ background-color: #111133;
+ border-bottom: 1px solid #AAA;
+ font-size: 12px;
+}
 
+#status h3 {
+  margin: 0;
+  padding: none;
+  margin-left: 35px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+
+}
+
+#status ul {
+  margin-left: 10px;
+  padding: 0;
+}
+
+#status li {
+  list-style-type: none;
+  margin-left: 1px;
+}
+
+
+#chat {
+  margin-left: 10px;
+  float: none; 
+  clear: both;
+  width: 1051px;
+  height: 200px;
+  border-left: 1px solid #AAA;
+  border-top: none;
+  border-right: 1px solid #AAA;
+  border-bottom: 1px solid #AAA;
+}
+
+#chat-content {
+  height: 170px;
+  overflow: auto;
+}
+
+.chat-line {
+  clear: left;
+  float: left;
+  width: 800px;
+}
+
+.chat-line-author {
+  margin-left: 2px;
+  border-right: 1px dotted #AAA;
+}
+
+.chat-line-me {
+  color: #F55;
+}
+
+.chat-line-content {
+  margin-left: 5px;
+}
+
+#chat input[type=text] {
+  float: left;
+  margin: none;
+  padding: none;
+  width: 1000px;
+  height: 30px;
+  font-size: 24px;
+}
+
+
+#chat input[type=button] {
+  float: left;
+  margin: none; 
+  padding: none;
+  width: 50px;
+  height: 30px;
+  font-size: 10px;
+}
+
+#copyright {
+  margin-top: 5px;  
+  font-size: 12px;
+  clear: both;
+  float: none;
 }
 
 #game {
@@ -40,6 +135,10 @@ li.current-player {
 #header {
   width: 700px;
   margin-left: 20px;
+}
+
+#header h1 {
+  font-size: 16px;
 }
 
 h1 {
@@ -136,5 +235,11 @@ table.stats td {
   padding-right: 15px;
   padding-top: 1px;
   padding-bottom: 1px;
+}
+
+
+p.guest {
+  font-size: 28px;
+
 }
 

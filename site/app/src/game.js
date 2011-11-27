@@ -98,7 +98,38 @@ exports.Application.prototype.render = function(){
    this.rendering.render(this.context);
    this.overlay.render(this.context);
 };
-}, "client/clientgamereceiver": function(exports, require, module) {var Explosion = require('../entities/explosion').Explosion;
+}, "client/chatdisplay": function(exports, require, module) {exports.ChatDisplay = function(communication, scene, playerId, inputController) {
+  var self = this;
+  var playerNameMap = {};  
+  
+  GlobalChatModel.setInputcontroller(inputController);
+  
+  self.receiveMessageFromServer = function(data) {
+      GlobalChatModel.addMessage(
+        playerNameMap[data.id], data.text);
+  };
+  
+  var onPlayerNamed = function(data) {
+    if(data.id === playerId)
+      GlobalChatModel.setPlayerName(data.name);
+  };
+  
+  var onPlayerNamesUpdated = function(data) {
+    playerNameMap = data.names;
+  };
+  
+  var onMessageSent = function(text) {
+    communication.sendMessage('chatmessage', {
+      text: text
+    });
+  };
+  
+  GlobalChatModel.onMessage(onMessageSent);
+  
+  scene.on('playerNamed', onPlayerNamed);
+  scene.on('playerNamesUpdated', onPlayerNamesUpdated);
+};
+}, "client/chatreceiver": function(exports, require, module) {}, "client/clientgamereceiver": function(exports, require, module) {var Explosion = require('../entities/explosion').Explosion;
 var MissileFirer = require('../entities/missilefirer').MissileFirer;
 var MissileFactory = require('../entities/missilefactory').MissileFactory;
 var HovercraftSpawner = require('../entities/hovercraftspawner').HovercraftSpawner;
@@ -111,6 +142,7 @@ var ScoreDisplay = require('./scoredisplay').ScoreDisplay;
 var Hud = require('./hud').Hud;
 var Floor = require('./floor').Floor;
 var PlayerMessageListener = require('./playermessagelistener').PlayerMessageListener;
+var ChatDisplay = require('./chatdisplay').ChatDisplay;
 
 exports.ClientGameReceiver = function(app, server) {
   var self = this;
@@ -130,6 +162,7 @@ exports.ClientGameReceiver = function(app, server) {
   var trailsAndExplosions = null;
   var hud = null;
   var floor = null;
+  var chatDisplay = null;
   
   var playerMessageListener = new PlayerMessageListener(app);
 
@@ -148,6 +181,7 @@ exports.ClientGameReceiver = function(app, server) {
     controller = new HovercraftController(playerId, server);
     scoreDisplay.setPlayerId(playerId);
     playerMessageListener.setPlayerId(playerId);
+    chatDisplay = new ChatDisplay(server, app.scene, playerId, controller);    
   };
 
   var initializeHud = function() {
@@ -171,6 +205,10 @@ exports.ClientGameReceiver = function(app, server) {
       username: username,
       sign: sign
     });
+  };
+  
+  self._addchatmessage = function(data) {
+    chatDisplay.receiveMessageFromServer(data);
   };
 
   self._noauth = function(data) {
@@ -371,6 +409,8 @@ var floorTextureCoords =  [
 
 KeyboardStates = {};
 
+var inputEnabled = true;
+
 var HovercraftController = function(targetId, server){
   this.targetId = targetId;
   this.server = server;
@@ -380,7 +420,6 @@ var HovercraftController = function(targetId, server){
   this.left = false;
   this.right = false;
   this.jump = false;
-  this.enabled = true;
   
   var controller = this;
   setInterval(function() { controller.processInput(); }, 1000 / 30);
@@ -408,15 +447,15 @@ HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboa
 };
 
 HovercraftController.prototype.disable = function() {
-  this.enabled = false;
+  inputEnabled = false;
 };
 
 HovercraftController.prototype.enable = function() {
-  this.enabled = true;
+  inputEnabled = true;
 };
 
 HovercraftController.prototype.processInput = function(){
-  if(!this.enabled) return;
+  if(!inputEnabled) return;
 
   for(var code in this.keyboardMappings){
     var mapping = this.keyboardMappings[code];
@@ -435,13 +474,15 @@ HovercraftController.prototype.processInput = function(){
 };
 
 document.onkeydown = function(event) { 
-    KeyboardStates[event.keyCode] = true;
-    return false;
+  if(!inputEnabled) return;
+  KeyboardStates[event.keyCode] = true;
+  return false;
 
 };
 document.onkeyup = function(event) { 
-    KeyboardStates[event.keyCode] = false;
-    return false;
+  if(!inputEnabled) return;
+  KeyboardStates[event.keyCode] = false;
+  return false;
 };
 
 exports.HovercraftController = HovercraftController;
@@ -866,10 +907,10 @@ var OverlayItem = function(id, texture) {
   var self = this;
   var id = id;
   var texture = texture;
-  var width = 100;
-  var height = 100;
-  var top = 0;
-  var left = 0;
+  var width = 1;
+  var height = 1;
+  var top = -100;
+  var left = -1000;
   var rotation = 0;
   var visible = true;
 
@@ -886,19 +927,19 @@ var OverlayItem = function(id, texture) {
   };
 
   self.top = function(value) {
-    return top = value || top;
+    return top = value === undefined ? top : value;
   }; 
 
   self.left = function(value) {
-    return left = value || left;
+    return left = value === undefined ? left : value;
   };
 
   self.width = function(value) {
-    return width = value || width;
+    return width = value === undefined ? width : value;
   };
 
   self.height = function(value) {
-    return height = value || height;
+    return height = value === undefined ? height : value;
   };  
 
   self.isVisible = function() {
@@ -910,7 +951,7 @@ var OverlayItem = function(id, texture) {
   };
 
   self.rotation = function(value) {
-    return rotation = value || rotation;
+    return rotation = value === undefined ? rotation : value;
   };
 };
 
@@ -1061,10 +1102,6 @@ exports.Overlay = function(app) {
     playerId = id;
   };
 
-  var onPlayerNamed = function(data) {
-    playerNameMap[data.id] = data.name;
-  };
-
   var onCraftDestroyed = function(data) {
     if(data.sourceid === playerId)
       notifyPlayerHeKilledSomebody(data);
@@ -1075,6 +1112,10 @@ exports.Overlay = function(app) {
   var onLeftWorld = function(data) {
     if(this.getId() === playerId)
       notifyPlayerFellOffWorld();
+  };
+  
+  var onPlayerNamesUpdated= function(data) {
+    playerNameMap = data.names;
   };
 
   var notifyPlayerHeKilledSomebody = function(data) {
@@ -1110,9 +1151,9 @@ exports.Overlay = function(app) {
     }
   };
 
-  app.scene.on('playerNamed', onPlayerNamed);
+  app.scene.on('playerNamesUpdated', onPlayerNamesUpdated);
   app.scene.on('healthZeroed', onCraftDestroyed);
-  app.scene.on('leftWorld', onLeftWorld);
+ 
 };
 }, "client/scoredisplay": function(exports, require, module) {var ScoreKeeper = require('../entities/scorekeeper').ScoreKeeper;
 
@@ -3427,6 +3468,7 @@ exports.HovercraftSpawner = function(scene) {
       scene.withEntity(playerId, function(entity) {
         entity.displayName(playerNames[playerId]);
       });
+   self.raiseEvent('playerNamesUpdated', { names: playerNames });
   };
 
   var onEntityDestroyed = function() {
@@ -4301,9 +4343,16 @@ var Smoother = function() {
 		var networkrotationDelta = self.networkrotationY - self.rotationY;
 		networkrotationDelta *= 0.1;
 		self.rotationY += networkrotationDelta;
+
+    // If we nearly fall off the edge of the world and the client thinks we survived
+    // The terrain clipping behaviour will get in the way of smoothing, so let's force it
+    if(self.position[1] - self.networkposition[1] > 5 && self.networkposition[1] < -5)
+      self.position[1] = self.networkposition[1];
 		
 		self.oldposition = self.position;
 		self.oldrotationy = self.rotationY; 
+
+
 		
 	};
 
@@ -4347,6 +4396,25 @@ ServerApp.stop = function(){
 };
 
 exports.ServerApp = ServerApp;
+}, "server/chatreceiver": function(exports, require, module) {exports.ChatReceiver = function(app, communication) {
+  var self = this;
+  
+  self._chatmessage = function(data) {
+		sendMessageToOtherClients(data);
+		storeMessageInPersistence(data);				
+  };
+  
+  var sendMessageToOtherClients = function(data) {
+    communication.broadcast('addchatmessage', { 
+		  text: data.text,
+		  id: data.source
+		}, data.source);
+  };
+  
+  var storeMessageInPersistence = function(data) {
+        
+  };  
+};
 }, "server/communication": function(exports, require, module) {io = require('socket.io');
 
 MessageDispatcher = require('../core/messagedispatcher').MessageDispatcher;
@@ -4354,7 +4422,7 @@ EntityReceiver = require('../core/entityreceiver').EntityReceiver;
 EventReceiver = require('./eventreceiver').EventReceiver;
 ProxyReceiver = require('./proxyreceiver').ProxyReceiver;
 ServerGameReceiver = require('./servergamereceiver').ServerGameReceiver;
-
+ChatReceiver = require('./chatreceiver').ChatReceiver;
 
 ServerCommunication = function(app, server){
   var self = this;
@@ -4374,7 +4442,8 @@ ServerCommunication = function(app, server){
   this.dispatcher.addReceiver(new EventReceiver(this.app, this));
   this.dispatcher.addReceiver(new EntityReceiver(this.app));
   this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
-
+  this.dispatcher.addReceiver(new ChatReceiver(this.app, this));
+  
   this.game = new ServerGameReceiver(this.app, this);
   this.dispatcher.addReceiver(this.game); 
   this.socket.on('connection', function(socket) { self.onConnection(socket); });
@@ -4458,9 +4527,9 @@ ServerCommunication.prototype.syncPlayer = function(id, force) {
   if(!sync) return;
 
   this.broadcast('sync', {
-       id: id,
-       sync: sync,
-       force : force || false
+     id: id,
+     sync: sync,
+     force : force || false
    });
 };
 

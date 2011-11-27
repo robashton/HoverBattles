@@ -5,7 +5,7 @@ EntityReceiver = require('../core/entityreceiver').EntityReceiver;
 EventReceiver = require('./eventreceiver').EventReceiver;
 ProxyReceiver = require('./proxyreceiver').ProxyReceiver;
 ServerGameReceiver = require('./servergamereceiver').ServerGameReceiver;
-
+ChatReceiver = require('./chatreceiver').ChatReceiver;
 
 ServerCommunication = function(app, server){
   var self = this;
@@ -25,7 +25,8 @@ ServerCommunication = function(app, server){
   this.dispatcher.addReceiver(new EventReceiver(this.app, this));
   this.dispatcher.addReceiver(new EntityReceiver(this.app));
   this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
-
+  this.dispatcher.addReceiver(new ChatReceiver(this.app, this));
+  
   this.game = new ServerGameReceiver(this.app, this);
   this.dispatcher.addReceiver(this.game); 
   this.socket.on('connection', function(socket) { self.onConnection(socket); });
@@ -109,9 +110,9 @@ ServerCommunication.prototype.syncPlayer = function(id, force) {
   if(!sync) return;
 
   this.broadcast('sync', {
-       id: id,
-       sync: sync,
-       force : force || false
+     id: id,
+     sync: sync,
+     force : force || false
    });
 };
 

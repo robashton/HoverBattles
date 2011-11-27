@@ -10,6 +10,7 @@
       <script src="/src/jquery.cookie.js"></script>
 
       <script src="/src/hb.ui.js"></script>
+      <script src="/src/hb.chat.js"></script>
       <script src="/src/game.js"></script>
       <script src="/src/shaders.js"></script>
       <script src="/socket.io/socket.io.js"></script>
@@ -31,11 +32,11 @@
             var backdrop = app.overlay.addItem('loading-backdrop', '/data/textures/splashscreenbackground.jpg');
             var backdropspinner = app.overlay.addItem('loading-spinner', '/data/textures/locked.png');
 
-            backdrop.left(0); backdrop.width(800);
-            backdrop.top(0);backdrop.height(600);  
+            backdrop.left(0); backdrop.width(640);
+            backdrop.top(0); backdrop.height(480);  
 
-            backdropspinner.left(280); backdropspinner.width(100);
-            backdropspinner.top(240);backdropspinner.height(100);   
+            backdropspinner.left(225); backdropspinner.width(100);
+            backdropspinner.top(190);backdropspinner.height(100);   
 
             var spinnerInterval = setInterval(
               function() {    
@@ -64,12 +65,11 @@
 	</head>
 	<body>		
     <div id="header">
-		  <div id="header-title"><h1>Hoverbattles</h1><p>(A muckaround project by <a href="http://twitter.com/robashton">@robashton</a> : <a href="https://github.com/robashton/HoverBattles">https://github.com/robashton/HoverBattles</a>)</p></div>
+      <h1>Hoverbattles</h1>
 		  <div id="header-instructions"><p><strong>ARROW KEYS</strong> to move around, <strong>SPACE</strong> to jump, <strong>X</strong> to fire once locked on</p></div>
     </div>
-
     <div id="gameContainer">
-		  <canvas id="game"  width="800"  height="600" >
+		  <canvas id="game"  width="800"  height="480" >
         <blink>Loading...</blink>
 		  </canvas>
       <canvas id="scratch" style="display: none;" width="512" height="512">
@@ -77,20 +77,22 @@
       </canvas>
     </div>
     
-        <div id="status" style="float: left;">
-            <div id="targettingStatus">
-              
-            </div>
-            <div id="targettedStatus">
-
-            </div>
-            <h4>Scores (<a href="scores.html" target="_blank">high scores</a>)</h4>
-            <div id="scores">
-                
-            </div>
-        </div>     
-        
-        
-        
+    <div id="status" style="float: left;">
+      <div class="status-title">
+        <h3>Scores (<a href="scores.html" target="_blank">high scores</a>)</h3>
+      </div>
+        <div id="scores">
+            
+        </div>
+    </div>   
+    <div id="chat">
+      <div id="chat-content">
+      </div>
+      <input type="text" id="chat-input" name="chat-input"></input><input type="button" value="Shout" id="btn-shout"></input>
+    </div>   
+    <div id="copyright">
+		  <div id="header-title"><p>Pull requests accepted : <a href="https://github.com/robashton/HoverBattles">https://github.com/robashton/HoverBattles</a>)</p></div>
+      Copyright 2011 Rob Ashton ( @robashton )
+    </div>      
     </body>
 </html>

@@ -10,10 +10,6 @@ exports.PlayerMessageListener = function(app) {
     playerId = id;
   };
 
-  var onPlayerNamed = function(data) {
-    playerNameMap[data.id] = data.name;
-  };
-
   var onCraftDestroyed = function(data) {
     if(data.sourceid === playerId)
       notifyPlayerHeKilledSomebody(data);
@@ -24,6 +20,10 @@ exports.PlayerMessageListener = function(app) {
   var onLeftWorld = function(data) {
     if(this.getId() === playerId)
       notifyPlayerFellOffWorld();
+  };
+  
+  var onPlayerNamesUpdated= function(data) {
+    playerNameMap = data.names;
   };
 
   var notifyPlayerHeKilledSomebody = function(data) {
@@ -59,7 +59,7 @@ exports.PlayerMessageListener = function(app) {
     }
   };
 
-  app.scene.on('playerNamed', onPlayerNamed);
+  app.scene.on('playerNamesUpdated', onPlayerNamesUpdated);
   app.scene.on('healthZeroed', onCraftDestroyed);
-  app.scene.on('leftWorld', onLeftWorld);
+ 
 };

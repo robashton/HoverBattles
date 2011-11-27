@@ -4,10 +4,10 @@ var OverlayItem = function(id, texture) {
   var self = this;
   var id = id;
   var texture = texture;
-  var width = 100;
-  var height = 100;
-  var top = 0;
-  var left = 0;
+  var width = 1;
+  var height = 1;
+  var top = -100;
+  var left = -1000;
   var rotation = 0;
   var visible = true;
 
@@ -24,19 +24,19 @@ var OverlayItem = function(id, texture) {
   };
 
   self.top = function(value) {
-    return top = value || top;
+    return top = value === undefined ? top : value;
   }; 
 
   self.left = function(value) {
-    return left = value || left;
+    return left = value === undefined ? left : value;
   };
 
   self.width = function(value) {
-    return width = value || width;
+    return width = value === undefined ? width : value;
   };
 
   self.height = function(value) {
-    return height = value || height;
+    return height = value === undefined ? height : value;
   };  
 
   self.isVisible = function() {
@@ -48,7 +48,7 @@ var OverlayItem = function(id, texture) {
   };
 
   self.rotation = function(value) {
-    return rotation = value || rotation;
+    return rotation = value === undefined ? rotation : value;
   };
 };
 
