@@ -109,6 +109,7 @@ var HovercraftController = require('./hovercraftcontroller').HovercraftControlle
 var TrailsAndExplosions = require('./trailsandexplosions').TrailsAndExplosions;
 var ScoreDisplay = require('./scoredisplay').ScoreDisplay;
 var Hud = require('./hud').Hud;
+var Floor = require('./floor').Floor;
 var PlayerMessageListener = require('./playermessagelistener').PlayerMessageListener;
 
 exports.ClientGameReceiver = function(app, server) {
@@ -128,6 +129,8 @@ exports.ClientGameReceiver = function(app, server) {
   var missileFirer = null;
   var trailsAndExplosions = null;
   var hud = null;
+  var floor = null;
+  
   var playerMessageListener = new PlayerMessageListener(app);
 
   self._init = function(data) {
@@ -135,11 +138,12 @@ exports.ClientGameReceiver = function(app, server) {
     createGameComponents();
     initializeHud();
     waitForAssetsToLoad();   
-  };
+  }; 
   
   var createGameComponents = function() {
     missileFirer = new MissileFirer(app, new MissileFactory());
     trailsAndExplosions = new TrailsAndExplosions(app);
+    floor = Floor.Create(app);
     chaseCamera = ChaseCamera.Create(app.scene, playerId);
     controller = new HovercraftController(playerId, server);
     scoreDisplay.setPlayerId(playerId);
@@ -275,6 +279,80 @@ exports.ClientCommunication = ClientCommunication;
     });
   };
 };
+}, "client/floor": function(exports, require, module) {exports.Floor = function() {
+    
+};
+
+var FloorModel = function(app) {
+  var self = this;
+
+  var texture = app.resources.getTexture("/data/textures/grid.png");
+  var vertexBuffer = null;
+  var textureBuffer = null;
+
+  self.activate = function(context) {
+    var gl = context.gl;
+
+   	vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(floorVertices), gl.STATIC_DRAW);
+
+	  textureBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(floorTextureCoords), gl.STATIC_DRAW); 
+  };
+
+  self.getProgram = function() { return 'floor'; }
+
+  self.upload = function(context) {
+	  var gl = context.gl;
+	  var program = context.program;
+
+	  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+	  gl.vertexAttribPointer(gl.getAttribLocation(program, 'aVertexPosition'), 3, gl.FLOAT, false, 0, 0);
+	  gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aVertexPosition'));
+      
+  	gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+  	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTextureCoord'), 2, gl.FLOAT, false, 0, 0);
+  	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTextureCoord'));
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture.get());
+    gl.uniform1i(gl.getUniformLocation(program, 'uSampler'), 0);      
+ 
+  };
+
+  self.render = function(context) {
+    var gl = context.gl;
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  };
+
+};
+
+exports.Floor.Create = function(app) {
+  var entity = new Entity('floor');
+
+  var floorModel = new FloorModel(app);
+  entity.setModel(floorModel);
+  floorModel.activate(app.context);
+  app.scene.addEntity(entity);    
+
+  return entity;
+};
+
+var floorVertices =  [
+   -2560.0,  -90.0,  -2560.0,
+   2560.0,  -90.0,  -2560.0,
+   -2560.0,  -90.0,  2560.0,
+   2560.0,  -90.0,  2560.0
+];
+
+var floorTextureCoords =  [
+   0.0,  0.0, 
+   1.0,  0.0,
+   0.0,  1.0,
+   1.0,  1.0,
+];
 }, "client/hovercraftcontroller": function(exports, require, module) {var KeyCodes = {
     S:83,
     X:88, 
@@ -4716,14 +4794,19 @@ exports.LandLoader = function() {
       vertexWidth: width,
       min: [ minX, minZ ],
       max: [ maxX, maxZ ],
-      shared: getChunk(width, breadth, 0, 0, scale, maxHeight),
+      shared: getSharedChunkData(width, breadth, scale, maxHeight),
       chunks: chunks
     };
   };
 
+  var getSharedChunkData = function(width, breadth, scale, maxHeight) {
+    var generator = new LandscapeGeneration(width, breadth, 0, 0, scale, maxHeight);
+    return generator.generateSharedRenderingInfo();
+  };
+
   var getChunk = function(width, breadth, x, z, scale, maxHeight) {
     var generator = new LandscapeGeneration(width, breadth, x, z, scale, maxHeight);
-    return generator.create();
+    return generator.generateChunk();
   };
 }
 }, "server/landscapegeneration": function(exports, require, module) {exports.LandscapeGeneration = function(width, height, startX, startY, scale, maxHeight) {
@@ -4737,19 +4820,15 @@ exports.LandLoader = function() {
 		}
 	}
 
-  self.create = function() {
-    var data = generateTerrainData();
+  self.generateChunk = function() {
     return {
 		  heights: heightMap,
-      vertices: data.vertices,
-      indices: data.indices,
-      texturecoords: data.texturecoords,
       x: startX * scale,
       y: startY * scale
     };
   };
 
-  var generateTerrainData = function() {
+  self.generateSharedRenderingInfo = function() {
   
     var indexCount = (height - 1) * width * 2;
     var vertices = new Array(width* height * 2);
@@ -4757,17 +4836,17 @@ exports.LandLoader = function() {
     var indices = new Array(indexCount);
      
     for(var y = 0 ; y < height ; y++ ) {
-        for(var x = 0 ; x < width ; x++ ) {
-        	var index = (x + y * width);
+      for(var x = 0 ; x < width ; x++ ) {
+      	var index = (x + y * width);
+  
+    		var vertexIndex = index * 2;
+    		var texcoordsIndex = index * 2;    
+        	    		
+    		vertices[vertexIndex] = (x) * scale;
+    		vertices[vertexIndex+1] = (y) * scale;
     
-      		var vertexIndex = index * 2;
-      		var texcoordsIndex = index * 2;    
-          	    		
-      		vertices[vertexIndex] = (x) * scale;
-      		vertices[vertexIndex+1] = (y) * scale;
-      
-      		texturecoords[texcoordsIndex] = x / width;
-      		texturecoords[texcoordsIndex+1] = y / height;
+    		texturecoords[texcoordsIndex] = x / width;
+    		texturecoords[texcoordsIndex+1] = y / height;
     	}
     }
     

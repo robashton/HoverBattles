@@ -9,19 +9,15 @@ exports.LandscapeGeneration = function(width, height, startX, startY, scale, max
 		}
 	}
 
-  self.create = function() {
-    var data = generateTerrainData();
+  self.generateChunk = function() {
     return {
 		  heights: heightMap,
-      vertices: data.vertices,
-      indices: data.indices,
-      texturecoords: data.texturecoords,
       x: startX * scale,
       y: startY * scale
     };
   };
 
-  var generateTerrainData = function() {
+  self.generateSharedRenderingInfo = function() {
   
     var indexCount = (height - 1) * width * 2;
     var vertices = new Array(width* height * 2);
@@ -29,17 +25,17 @@ exports.LandscapeGeneration = function(width, height, startX, startY, scale, max
     var indices = new Array(indexCount);
      
     for(var y = 0 ; y < height ; y++ ) {
-        for(var x = 0 ; x < width ; x++ ) {
-        	var index = (x + y * width);
+      for(var x = 0 ; x < width ; x++ ) {
+      	var index = (x + y * width);
+  
+    		var vertexIndex = index * 2;
+    		var texcoordsIndex = index * 2;    
+        	    		
+    		vertices[vertexIndex] = (x) * scale;
+    		vertices[vertexIndex+1] = (y) * scale;
     
-      		var vertexIndex = index * 2;
-      		var texcoordsIndex = index * 2;    
-          	    		
-      		vertices[vertexIndex] = (x) * scale;
-      		vertices[vertexIndex+1] = (y) * scale;
-      
-      		texturecoords[texcoordsIndex] = x / width;
-      		texturecoords[texcoordsIndex+1] = y / height;
+    		texturecoords[texcoordsIndex] = x / width;
+    		texturecoords[texcoordsIndex+1] = y / height;
     	}
     }
     

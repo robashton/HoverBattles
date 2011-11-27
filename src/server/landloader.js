@@ -30,13 +30,18 @@ exports.LandLoader = function() {
       vertexWidth: width,
       min: [ minX, minZ ],
       max: [ maxX, maxZ ],
-      shared: getChunk(width, breadth, 0, 0, scale, maxHeight),
+      shared: getSharedChunkData(width, breadth, scale, maxHeight),
       chunks: chunks
     };
   };
 
+  var getSharedChunkData = function(width, breadth, scale, maxHeight) {
+    var generator = new LandscapeGeneration(width, breadth, 0, 0, scale, maxHeight);
+    return generator.generateSharedRenderingInfo();
+  };
+
   var getChunk = function(width, breadth, x, z, scale, maxHeight) {
     var generator = new LandscapeGeneration(width, breadth, x, z, scale, maxHeight);
-    return generator.create();
+    return generator.generateChunk();
   };
 }
