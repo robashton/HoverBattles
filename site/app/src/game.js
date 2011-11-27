@@ -1126,6 +1126,7 @@ exports.Overlay = function(app) {
   
   var onPlayerNamesUpdated= function(data) {
     playerNameMap = data.names;
+    console.log(playerNameMap);
   };
 
   var notifyPlayerHeKilledSomebody = function(data) {
@@ -3557,6 +3558,7 @@ exports.HovercraftSpawner = function(scene) {
   };
   
   var raiseNamesChangedEvent = function() {
+     console.log(playerNames);
      self.raiseEvent('playerNamesUpdated', { names: playerNames });
   };
 
@@ -3578,8 +3580,10 @@ exports.HovercraftSpawner = function(scene) {
   };  
 
   var onPlayerLeft = function(data) {
-    var craft = scene.getEntity(data.id);
-    scene.removeEntity(craft);
+    scene.withEntity(data.id, function(entity) {
+        scene.removeEntity(entity);    
+    });
+    delete playerNames[data.id];
     raiseNamesChangedEvent();
   };
 
