@@ -29,6 +29,13 @@
      contentContainer.append(line);
     };
     
+    self.addEvent = function(message) {
+      var line = $('<div/>').addClass('chat-line')
+                  .append(
+                      $('<span/>').addClass('chat-event').text(message));         
+      contentContainer.append(line);
+    };
+    
     self.onMessage = function(callback) {
       messageCallback = callback;
     };

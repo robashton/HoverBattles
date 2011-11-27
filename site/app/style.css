@@ -73,15 +73,24 @@ body {
   overflow: auto;
 }
 
+.chat-event {
+  font-size: 10px;
+  color: #55F;
+  text-decoration: italic;
+  margin-left: 2px;
+}
+
 .chat-line {
   clear: left;
   float: left;
   width: 800px;
+ font-size: 12px;
 }
 
 .chat-line-author {
   margin-left: 2px;
   border-right: 1px dotted #AAA;
+  padding-right: 2px;
 }
 
 .chat-line-me {

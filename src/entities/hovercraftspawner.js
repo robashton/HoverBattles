@@ -62,7 +62,11 @@ exports.HovercraftSpawner = function(scene) {
       scene.withEntity(playerId, function(entity) {
         entity.displayName(playerNames[playerId]);
       });
-   self.raiseEvent('playerNamesUpdated', { names: playerNames });
+    raiseNamesChangedEvent();
+  };
+  
+  var raiseNamesChangedEvent = function() {
+     self.raiseEvent('playerNamesUpdated', { names: playerNames });
   };
 
   var onEntityDestroyed = function() {
@@ -85,6 +89,8 @@ exports.HovercraftSpawner = function(scene) {
   var onPlayerLeft = function(data) {
     var craft = scene.getEntity(data.id);
     scene.removeEntity(craft);
+    delete playerNames[data.id];
+    raiseNamesChangedEvent();
   };
 
   var onEntitySpawned = function(data) {
@@ -95,6 +101,7 @@ exports.HovercraftSpawner = function(scene) {
 
   var onPlayerNamed = function(data) {
     playerNames[data.id] = data.name;
+    raiseNamesChangedEvent();
   };
 
   var onPlayerJoined = function(data) {

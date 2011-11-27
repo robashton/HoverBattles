@@ -45,7 +45,7 @@ exports.PlayerMessageListener = function(app) {
     removeCurrentMessage();   
 
     currentMessage = app.overlay.addTextItem('player-message', msg, 450, 50, 'red', 'bold 24px verdana'); 
-    currentMessage.top(200);
+    currentMessage.top(100);
     currentMessage.left(300);
     currentMessageTimer = setTimeout(removeCurrentMessage, 3000); 
   };

@@ -124,12 +124,22 @@ exports.Application.prototype.render = function(){
     });
   };
   
+  var onPlayerKilled = function(data) {
+    GlobalChatModel.addEvent(playerNameMap[data.sourceid] + ' killed ' + playerNameMap[data.targetid]);
+  };
+  
+  var onPlayerFellOffWorld = function(data) {
+    GlobalChatModel.addEvent(playerNameMap[this.getId()] + ' fell off the world');
+  };
+  
   GlobalChatModel.onMessage(onMessageSent);
   
   scene.on('playerNamed', onPlayerNamed);
   scene.on('playerNamesUpdated', onPlayerNamesUpdated);
+  scene.on('healthZeroed', onPlayerKilled);
+  scene.on('leftWorld', onPlayerFellOffWorld);
 };
-}, "client/chatreceiver": function(exports, require, module) {}, "client/clientgamereceiver": function(exports, require, module) {var Explosion = require('../entities/explosion').Explosion;
+}, "client/clientgamereceiver": function(exports, require, module) {var Explosion = require('../entities/explosion').Explosion;
 var MissileFirer = require('../entities/missilefirer').MissileFirer;
 var MissileFactory = require('../entities/missilefactory').MissileFactory;
 var HovercraftSpawner = require('../entities/hovercraftspawner').HovercraftSpawner;
@@ -1137,7 +1147,7 @@ exports.Overlay = function(app) {
     removeCurrentMessage();   
 
     currentMessage = app.overlay.addTextItem('player-message', msg, 450, 50, 'red', 'bold 24px verdana'); 
-    currentMessage.top(200);
+    currentMessage.top(100);
     currentMessage.left(300);
     currentMessageTimer = setTimeout(removeCurrentMessage, 3000); 
   };
@@ -2797,6 +2807,81 @@ exports.Targeting = function(){
 		}	
 	};
 };
+}, "entities/bot": function(exports, require, module) {exports.Bot = function() {
+  var self = this;
+  
+  
+  self.doLogic = function() {
+    
+  };
+  
+  
+};
+}, "entities/botfactory": function(exports, require, module) {var DESIRED_PLAYER_COUNT = 8;
+
+exports.BotFactory = function(scene, spawner) {
+  var self = this;
+  
+  var playerCount = 0;
+  var updatingBots = false;
+  
+  var botCount = 0;
+  var bots = [];
+  var currentBotIndex = 0;
+    
+  var onPlayerJoined = function() {
+    playerCount++;
+    updateBotCountIfNecessary();
+  };
+  
+  var onPlayerLeft = function() {
+    playerCount--;
+    updateBotCountIfNecessary();
+  };
+    
+  var updateBotCountIfNecessary = function() {
+    if(updatingBots) return;
+    updatingBots = true;
+    
+    if(playerCount < DESIRED_PLAYER_COUNT) {
+      createBots(DESIRED_PLAYER_COUNT - playerCount);
+    } else if (playerCount > DESIRED_PLAYER_COUNT) {
+      cullBots(playerCount - DESIRED_PLAYER_COUNT);
+    }
+    updatingBots = false;
+  };  
+  
+  var createBots = function(number) {
+    while(number-- > 0) {
+      addBotToScene();        
+    }
+  };
+  
+  var cullBots = function(number) {
+    while(botCount > 0 && number > 0) {
+      number--;
+      removeBotFromScene();
+    }
+  };
+  
+  var addBotToScene = function() {
+    botCount++;
+    var botId = 'bot-' + (currentBotIndex + bots.length);
+    bots.push(botId);
+    spawner.createPlayer(botId);
+    spawner.namePlayer(botId, botId);
+  };
+  
+  var removeBotFromScene = function() {
+    botCount--;
+    var botId = bots[currentBotIndex];
+    delete bots[currentBotIndex++];
+    spawner.removePlayer(botId);
+  };
+  
+  scene.on('playerJoined', onPlayerJoined);
+  scene.on('playerLeft', onPlayerLeft);  
+};
 }, "entities/chasecamera": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 var mat4 = require('../thirdparty/glmatrix').mat4;
 
@@ -3468,7 +3553,11 @@ exports.HovercraftSpawner = function(scene) {
       scene.withEntity(playerId, function(entity) {
         entity.displayName(playerNames[playerId]);
       });
-   self.raiseEvent('playerNamesUpdated', { names: playerNames });
+    raiseNamesChangedEvent();
+  };
+  
+  var raiseNamesChangedEvent = function() {
+     self.raiseEvent('playerNamesUpdated', { names: playerNames });
   };
 
   var onEntityDestroyed = function() {
@@ -3491,6 +3580,7 @@ exports.HovercraftSpawner = function(scene) {
   var onPlayerLeft = function(data) {
     var craft = scene.getEntity(data.id);
     scene.removeEntity(craft);
+    raiseNamesChangedEvent();
   };
 
   var onEntitySpawned = function(data) {
@@ -3501,6 +3591,7 @@ exports.HovercraftSpawner = function(scene) {
 
   var onPlayerNamed = function(data) {
     playerNames[data.id] = data.name;
+    raiseNamesChangedEvent();
   };
 
   var onPlayerJoined = function(data) {
@@ -5143,6 +5234,7 @@ MissileFirer = require('../entities/missilefirer').MissileFirer;
 Hovercraft = require('../entities/hovercraft').Hovercraft;
 HovercraftSpawner = require('../entities/hovercraftspawner').HovercraftSpawner;
 ScoreKeeper = require('../entities/scorekeeper').ScoreKeeper;
+BotFactory = require('../entities/botfactory').BotFactory;
 PersistenceListener = require('./persistencelistener').PersistenceListener;
 Identity = require('./identity').Identity;
 
@@ -5153,6 +5245,7 @@ exports.ServerGameReceiver = function(app, communication) {
   var spawner = HovercraftSpawner.Create(app.scene);
   var scoreKeeper = ScoreKeeper.Create(app.scene);
   var persistenceListener = new PersistenceListener(app.scene);
+  var botFactory = new BotFactory(app.scene, spawner);
 
   self.removePlayer = function(id) {
     spawner.removePlayer(id);
