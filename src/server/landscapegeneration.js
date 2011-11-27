@@ -1,15 +1,23 @@
-exports.LandscapeGeneration = function(width, height, startX, startY, scale, maxHeight) {
+exports.LandscapeGeneration = function(minX, minZ, maxX, maxZ, scale, maxHeight) {
   var self = this;
-  var heightMap = new Array(width * height);
 
-  for(var x = 0; x < width ; x++){
-		for(var y = 0; y < height; y++) {
-			var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
-			heightMap[x + (y * width)] = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;			
-		}
-	}
+  self.generateChunk = function(startX, startY, width, breadth) {
+    var heightMap = new Array(width * breadth);
 
-  self.generateChunk = function() {
+    for(var x = 0; x < width ; x++){
+		  for(var y = 0; y < breadth; y++) {
+        var realX = x + startX;
+        var realY = y + startY;
+      
+			  var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
+        terrainHeight = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;		
+
+        if(realX === minX || realX === maxX || realY === minZ || realY === maxZ)
+          terrainHeight -= 10;
+
+			  heightMap[x + (y * width)] = terrainHeight;	
+		  }
+	  }
     return {
 		  heights: heightMap,
       x: startX * scale,
@@ -17,7 +25,7 @@ exports.LandscapeGeneration = function(width, height, startX, startY, scale, max
     };
   };
 
-  self.generateSharedRenderingInfo = function() {
+  self.generateSharedRenderingInfo = function(width, height) {
   
     var indexCount = (height - 1) * width * 2;
     var vertices = new Array(width* height * 2);

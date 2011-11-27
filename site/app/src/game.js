@@ -4766,24 +4766,26 @@ var self = exports.Identity;
 
 exports.LandLoader = function() {
   var self = this;
+
+  var chunkWidth = 128;
+  var scale = 5;
+  var maxHeight = 100;   
+  var minX = 0 - (chunkWidth);
+  var minZ = 0 - (chunkWidth);
+  var maxX = 0 + (chunkWidth);
+  var maxZ = 0 + (chunkWidth);
+  var width = chunkWidth + 1;
+  var breadth = chunkWidth + 1;
+
+  var generator = new LandscapeGeneration(minX, minZ, maxX + chunkWidth, maxZ + chunkWidth, scale, maxHeight);
   
   self.getLand = function(landid) {
-    var chunkWidth = 128;
-    var scale = 5;
-    var maxHeight = 100;   
-    var minX = 0 - (chunkWidth);
-    var minZ = 0 - (chunkWidth);
-    var maxX = 0 + (chunkWidth);
-    var maxZ = 0 + (chunkWidth);
+
     var chunks = [];
-
-    var width = chunkWidth + 1;
-    var breadth = chunkWidth + 1;
-
     for(var x = minX; x <= maxX ; x += chunkWidth) {
 	    for(var z = minZ; z <= maxZ ; z += chunkWidth) {
 		    var key = x + '_' + z;
-        var chunk = getChunk(width, breadth, x, z, scale, maxHeight);
+        var chunk = getChunk(x, z, width, breadth);
         chunks.push(chunk); 
 	    }
     }
@@ -4794,33 +4796,39 @@ exports.LandLoader = function() {
       vertexWidth: width,
       min: [ minX, minZ ],
       max: [ maxX, maxZ ],
-      shared: getSharedChunkData(width, breadth, scale, maxHeight),
+      shared: getSharedChunkData(),
       chunks: chunks
     };
   };
 
-  var getSharedChunkData = function(width, breadth, scale, maxHeight) {
-    var generator = new LandscapeGeneration(width, breadth, 0, 0, scale, maxHeight);
-    return generator.generateSharedRenderingInfo();
+  var getSharedChunkData = function() {
+    return generator.generateSharedRenderingInfo(width, breadth);
   };
 
-  var getChunk = function(width, breadth, x, z, scale, maxHeight) {
-    var generator = new LandscapeGeneration(width, breadth, x, z, scale, maxHeight);
-    return generator.generateChunk();
+  var getChunk = function(x, z, width, breadth) {
+    return generator.generateChunk(x, z, width, breadth);
   };
 }
-}, "server/landscapegeneration": function(exports, require, module) {exports.LandscapeGeneration = function(width, height, startX, startY, scale, maxHeight) {
+}, "server/landscapegeneration": function(exports, require, module) {exports.LandscapeGeneration = function(minX, minZ, maxX, maxZ, scale, maxHeight) {
   var self = this;
-  var heightMap = new Array(width * height);
 
-  for(var x = 0; x < width ; x++){
-		for(var y = 0; y < height; y++) {
-			var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
-			heightMap[x + (y * width)] = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;			
-		}
-	}
+  self.generateChunk = function(startX, startY, width, breadth) {
+    var heightMap = new Array(width * breadth);
 
-  self.generateChunk = function() {
+    for(var x = 0; x < width ; x++){
+		  for(var y = 0; y < breadth; y++) {
+        var realX = x + startX;
+        var realY = y + startY;
+      
+			  var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
+        terrainHeight = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;		
+
+        if(realX === minX || realX === maxX || realY === minZ || realY === maxZ)
+          terrainHeight -= 10;
+
+			  heightMap[x + (y * width)] = terrainHeight;	
+		  }
+	  }
     return {
 		  heights: heightMap,
       x: startX * scale,
@@ -4828,7 +4836,7 @@ exports.LandLoader = function() {
     };
   };
 
-  self.generateSharedRenderingInfo = function() {
+  self.generateSharedRenderingInfo = function(width, height) {
   
     var indexCount = (height - 1) * width * 2;
     var vertices = new Array(width* height * 2);
