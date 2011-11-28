@@ -13,10 +13,8 @@ var Smoother = function() {
 	
 		var networkpositionDelta = vec3.create([0,0,0]);
 		vec3.subtract(self.networkposition, self.position, networkpositionDelta);
-		vec3.scale(networkpositionDelta, 0.0001);
+		vec3.scale(networkpositionDelta, 0.001);
 		
-		
-			
 		var oldrotationDelta = self.rotationY - self.oldrotationy;	
 		self.networkrotationY += oldrotationDelta;
 			
@@ -28,8 +26,13 @@ var Smoother = function() {
     
     // If we nearly fall off the edge of the world and the client thinks we survived
     // The terrain clipping behaviour will get in the way of smoothing, so let's force it
-    if(self.position[1] - self.networkposition[1] > 5 && self.networkposition[1] < -5)
+    
+    var differenceBetweenVerticals = self.position[1] - self.networkposition[1];
+    
+    if(differenceBetweenVerticals > 5 && self.networkposition[1] < -5)
       self.position[1] = self.networkposition[1];
+ 
+    console.log(self.networkposition[1]);
 		
 		self.oldposition = self.position;
 		self.oldrotationy = self.rotationY;		

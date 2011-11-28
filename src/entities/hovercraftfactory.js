@@ -19,17 +19,18 @@ HovercraftFactory.prototype.create = function(id) {
   var entity = new Entity(id);
   
   entity.setModel(model); 
+  if(this._app.isClient) {
+    entity.attach(Explodable);
+    entity.attach(Smoother);
+  }
+  
+  entity.attach(Destructable);
   entity.attach(Hovercraft);
   entity.attach(Tracking);
   entity.attach(Targeting);
   entity.attach(NamedItem);
   entity.attach(FiringController);
-  entity.attach(Destructable);
 
-  if(this._app.isClient) {
-    entity.attach(Explodable);
-    entity.attach(Smoother);
-  }
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);

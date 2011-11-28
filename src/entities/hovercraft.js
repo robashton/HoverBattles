@@ -141,21 +141,25 @@ var Hovercraft = function() {
   };
  
   var interactWithTerrain = function() {
-    if(heightDelta < -5.0) return;
-    if(heightDelta < 0.5)
-      bounceCraftOffTerrain();     
-    clipCraftToTerrain();
+    if(heightDelta < -10.0) return;
+    if(heightDelta < 1.0) {
+      bounceCraftOffTerrain();
+      console.log('bounce, bitches');
+    }     
+    pushCraftFromTerrain();
   };
 
-  var clipCraftToTerrain = function() {
+  var pushCraftFromTerrain = function() {
     if(heightDelta < 5.0)
        self._velocity[1] += (5.0 - heightDelta) * 0.03;
   };
 
   var bounceCraftOffTerrain = function() {
-    self.position[1] = terrainHeight + (0.5 - heightDelta);
-    if(self._velocity[1] < 0)
+    if(self._velocity[1] < 0) {
+
       self._velocity[1] = -self._velocity[1] * 0.25;
+      self.position[1] = terrainHeight + (1.1 - heightDelta);
+    }
   };
   
   self.updateSync = function(sync) {

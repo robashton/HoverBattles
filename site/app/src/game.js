@@ -3020,7 +3020,7 @@ exports.Bot = function(communication) {
 
 
 }, "entities/botfactory": function(exports, require, module) {var Bot = require('./bot').Bot;
-var DESIRED_PLAYER_COUNT = 4;
+var DESIRED_PLAYER_COUNT = 0;
 
 
 exports.BotFactory = function(communication, scene, spawner) {
@@ -3632,21 +3632,25 @@ var Hovercraft = function() {
   };
  
   var interactWithTerrain = function() {
-    if(heightDelta < -5.0) return;
-    if(heightDelta < 0.5)
-      bounceCraftOffTerrain();     
-    clipCraftToTerrain();
+    if(heightDelta < -10.0) return;
+    if(heightDelta < 1.0) {
+      bounceCraftOffTerrain();
+      console.log('bounce, bitches');
+    }     
+    pushCraftFromTerrain();
   };
 
-  var clipCraftToTerrain = function() {
+  var pushCraftFromTerrain = function() {
     if(heightDelta < 5.0)
        self._velocity[1] += (5.0 - heightDelta) * 0.03;
   };
 
   var bounceCraftOffTerrain = function() {
-    self.position[1] = terrainHeight + (0.5 - heightDelta);
-    if(self._velocity[1] < 0)
+    if(self._velocity[1] < 0) {
+
       self._velocity[1] = -self._velocity[1] * 0.25;
+      self.position[1] = terrainHeight + (1.1 - heightDelta);
+    }
   };
   
   self.updateSync = function(sync) {
@@ -3687,17 +3691,18 @@ HovercraftFactory.prototype.create = function(id) {
   var entity = new Entity(id);
   
   entity.setModel(model); 
+  if(this._app.isClient) {
+    entity.attach(Explodable);
+    entity.attach(Smoother);
+  }
+  
+  entity.attach(Destructable);
   entity.attach(Hovercraft);
   entity.attach(Tracking);
   entity.attach(Targeting);
   entity.attach(NamedItem);
   entity.attach(FiringController);
-  entity.attach(Destructable);
 
-  if(this._app.isClient) {
-    entity.attach(Explodable);
-    entity.attach(Smoother);
-  }
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
@@ -4644,7 +4649,7 @@ var Smoother = function() {
 	
 		var networkpositionDelta = vec3.create([0,0,0]);
 		vec3.subtract(self.networkposition, self.position, networkpositionDelta);
-		vec3.scale(networkpositionDelta, 0.0001);
+		vec3.scale(networkpositionDelta, 0.001);
 		
 		
 			
@@ -4659,8 +4664,13 @@ var Smoother = function() {
     
     // If we nearly fall off the edge of the world and the client thinks we survived
     // The terrain clipping behaviour will get in the way of smoothing, so let's force it
-    if(self.position[1] - self.networkposition[1] > 5 && self.networkposition[1] < -5)
+    
+    var differenceBetweenVerticals = self.position[1] - self.networkposition[1];
+    
+    if(differenceBetweenVerticals > 5 && self.networkposition[1] < -5)
       self.position[1] = self.networkposition[1];
+ 
+    console.log(self.networkposition[1]);
 		
 		self.oldposition = self.position;
 		self.oldrotationy = self.rotationY;		
@@ -5154,7 +5164,7 @@ exports.LandLoader = function() {
 
   var chunkWidth = 128;
   var scale = 5;
-  var maxHeight = 100;   
+  var maxHeight = 125;   
   var minX = 0 - (chunkWidth);
   var minZ = 0 - (chunkWidth);
   var maxX = 0 + (chunkWidth);
@@ -5205,7 +5215,7 @@ exports.LandLoader = function() {
         var realX = x + startX;
         var realY = y + startY;
       
-			  var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
+			  var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32)) + 1.0;
         terrainHeight = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;		
 
         if(realX === minX || realX === maxX || realY === minZ || realY === maxZ)
