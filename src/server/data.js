@@ -23,7 +23,7 @@ var Data = function() {
   };
 
   self.userExists = function(username, callback) {
-   self.getUser(username, function(user) {
+   self.getUserByName(username, function(user) {
       if(user)
         callback(true);
       else
