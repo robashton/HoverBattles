@@ -27,7 +27,7 @@ var Data = function() {
       if(user)
         callback(true);
       else
-        callback(true);
+        callback(false);
    });
   };
 
