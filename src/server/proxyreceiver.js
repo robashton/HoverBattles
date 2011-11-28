@@ -19,7 +19,8 @@ var proxiedMessages = [
 
 ProxyReceiver.setupProxyMessageHandler = function(msgName) {
 	ProxyReceiver.prototype[msgName] = function(data){
-		this.communication.broadcast(msgName.substr(1), data, data.source);
+	  if(data.source)
+		  this.communication.broadcast(msgName.substr(1), data, data.source);
 	}	
 }
 

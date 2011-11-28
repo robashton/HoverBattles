@@ -15,7 +15,7 @@ exports.ServerGameReceiver = function(app, communication) {
   var spawner = HovercraftSpawner.Create(app.scene);
   var scoreKeeper = ScoreKeeper.Create(app.scene);
   var persistenceListener = new PersistenceListener(app.scene);
-  var botFactory = new BotFactory(app.scene, spawner);
+  var botFactory = new BotFactory(communication, app.scene, spawner);
 
   self.removePlayer = function(id) {
     spawner.removePlayer(id);

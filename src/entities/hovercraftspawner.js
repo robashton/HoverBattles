@@ -66,7 +66,6 @@ exports.HovercraftSpawner = function(scene) {
   };
   
   var raiseNamesChangedEvent = function() {
-     console.log(playerNames);
      self.raiseEvent('playerNamesUpdated', { names: playerNames });
   };
 

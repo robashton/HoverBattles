@@ -24,7 +24,6 @@ exports.PlayerMessageListener = function(app) {
   
   var onPlayerNamesUpdated= function(data) {
     playerNameMap = data.names;
-    console.log(playerNameMap);
   };
 
   var notifyPlayerHeKilledSomebody = function(data) {

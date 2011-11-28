@@ -57,9 +57,9 @@ EntityReceiver.prototype._cancelLeft = function(data) {
  };
 
 EntityReceiver.prototype._startRight = function(data) {
-    this.withEntity(data.id, function(entity) {
-      entity.startRight();
-    });
+  this.withEntity(data.id, function(entity) {
+    entity.startRight();
+  });
 };
 
 EntityReceiver.prototype._cancelRight = function(data) {

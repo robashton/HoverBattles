@@ -1,8 +1,8 @@
 var Bot = require('./bot').Bot;
-var DESIRED_PLAYER_COUNT = 0;
+var DESIRED_PLAYER_COUNT = 4;
 
 
-exports.BotFactory = function(scene, spawner) {
+exports.BotFactory = function(communication, scene, spawner) {
   var self = this;
   
   var playerCount = 0;
@@ -65,7 +65,7 @@ exports.BotFactory = function(scene, spawner) {
   var onEntitySpawned = function(data) {
     if(data.id.indexOf('bot-') !== 0) return;
     scene.withEntity(data.id, function(craft) {
-      craft.attach(Bot);
+      craft.attach(Bot, [communication]);
     });
   };
   

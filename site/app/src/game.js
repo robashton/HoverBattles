@@ -1126,7 +1126,6 @@ exports.Overlay = function(app) {
   
   var onPlayerNamesUpdated= function(data) {
     playerNameMap = data.names;
-    console.log(playerNameMap);
   };
 
   var notifyPlayerHeKilledSomebody = function(data) {
@@ -2856,15 +2855,31 @@ exports.Bot = function() {
     difference[1] = 0;
     var distance = vec3.length(difference);
     
-    if(self.getId() === 'bot-0')
-       console.log(distance);
-    
     if(distance < 10)
       currentTarget = createRandomTargetWithinWorld();
   };
   
   var updateInputTowardsCurrentTarget = function() {
+    var desiredRotationY =  calculateRotationTowardsTarget() - Math.PI;
     
+    var difference = desiredRotationY - self.rotationY;
+    if(difference > 0.05) {
+      self.startLeft();
+      self.cancelRight();
+      self.cancelForward();
+    } else if (difference < -0.05) {
+      self.cancelLeft();
+      self.startRight();
+      self.cancelForward();
+    } else {
+      self.cancelLeft();
+      self.cancelRight();
+      self.startForward();
+    }
+  };
+  
+  var calculateRotationTowardsTarget = function() {
+    return Math.atan2(currentTarget[0] - self.position[0], currentTarget[2] - self.position[2]);
   };
 };
 
@@ -2878,7 +2893,7 @@ exports.Bot = function() {
 
 
 }, "entities/botfactory": function(exports, require, module) {var Bot = require('./bot').Bot;
-var DESIRED_PLAYER_COUNT = 0;
+var DESIRED_PLAYER_COUNT = 20;
 
 
 exports.BotFactory = function(scene, spawner) {
@@ -3627,7 +3642,6 @@ exports.HovercraftSpawner = function(scene) {
   };
   
   var raiseNamesChangedEvent = function() {
-     console.log(playerNames);
      self.raiseEvent('playerNamesUpdated', { names: playerNames });
   };
 
@@ -4731,11 +4745,11 @@ var Data = function() {
   };
 
   self.userExists = function(username, callback) {
-   self.getUser(username, function(user) {
+   self.getUserByName(username, function(user) {
       if(user)
         callback(true);
       else
-        callback(true);
+        callback(false);
    });
   };
 
