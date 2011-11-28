@@ -1,4 +1,6 @@
-var DESIRED_PLAYER_COUNT = 8;
+var Bot = require('./bot').Bot;
+var DESIRED_PLAYER_COUNT = 0;
+
 
 exports.BotFactory = function(scene, spawner) {
   var self = this;
@@ -60,6 +62,14 @@ exports.BotFactory = function(scene, spawner) {
     spawner.removePlayer(botId);
   };
   
+  var onEntitySpawned = function(data) {
+    if(data.id.indexOf('bot-') !== 0) return;
+    scene.withEntity(data.id, function(craft) {
+      craft.attach(Bot);
+    });
+  };
+  
   scene.on('playerJoined', onPlayerJoined);
   scene.on('playerLeft', onPlayerLeft);  
+  scene.on('entitySpawned', onEntitySpawned);  
 };

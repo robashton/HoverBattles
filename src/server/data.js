@@ -123,6 +123,10 @@ var Data = function() {
       if(err) console.trace(err);
     });
   };
+  
+  self.save = function(doc) {
+    db.save(doc);
+  };
 };
 
 

@@ -38,8 +38,9 @@ ServerCommunication.prototype.onConnection = function(socket) {
 };
 
 ServerCommunication.prototype.synchronise = function(){
+  var sceneData = this.game.getSceneState();
    for(i in this.clients){
-		this.syncPlayer(i);
+    this.sendMessageToClient(this.clients[i], 'syncscene', sceneData);
    }
 };
 
@@ -61,8 +62,8 @@ ServerCommunication.prototype.initializeClient = function(socket) {
 };
 
 ServerCommunication.prototype.unhookClient = function(socket) {
-    this.game.removePlayer(socket.id);    
     delete this.clients[socket.id];  
+    this.game.removePlayer(socket.id);    
 };
 
 ServerCommunication.prototype.dispatchMessage = function(socket, msg) {

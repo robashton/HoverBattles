@@ -124,9 +124,9 @@ exports.ChaseCamera  = function(scene, playerId) {
 
   var tweenBetweenCompetingLocations = function() {
     if(includedTargetId && percentageTowardsTarget < 1.0)
-      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.015);
+      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.01);
     else if(percentageTowardsTarget > 0.0)
-      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.015);
+      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.01);
 
     var targetComponent = vec3.create([0,0,0]);
     var chaseComponent = vec3.create([0,0,0]);

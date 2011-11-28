@@ -1832,6 +1832,7 @@ quat4.str = function(quat) {
 	return '[' + quat[0] + ', ' + quat[1] + ', ' + quat[2] + ', ' + quat[3] + ']'; 
 }
 
+// NOTE: This is modified :-)
 exports.glMatrixArrayType = glMatrixArrayType;
 exports.vec3 = vec3;
 exports.quat4 = quat4;

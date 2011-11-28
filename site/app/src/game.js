@@ -2808,17 +2808,78 @@ exports.Targeting = function(){
 		}	
 	};
 };
-}, "entities/bot": function(exports, require, module) {exports.Bot = function() {
+}, "entities/bot": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
+
+exports.Bot = function() {
   var self = this;
-  
+  var state = 'none';
+  var currentTarget = vec3.create([0,0,0]);
   
   self.doLogic = function() {
-    
+    determineState();
+    stateHandlers[state]();    
+  };  
+  
+  var cancelAllInput = function() {
+    self.cancelLeft();
+    self.cancelRight();
+    self.cancelForward();
+    self.cancelBackward();
+    self.cancelUp();  
   };
   
+  var determineState = function() {
+    if(state === 'none')
+      switchToAimlessState();
+  };
   
+  var switchToAimlessState = function() {
+    state = 'aimless';
+    currentTarget = createRandomTargetWithinWorld();
+    cancelAllInput();
+  };
+  
+  var createRandomTargetWithinWorld = function() {
+    return vec3.create([Math.random() * 1280.0 - 640.0, 0, Math.random() * 1280.0 - 640.0]);
+  };
+    
+  var stateHandlers = {
+    aimless: function() {
+      adjustAimlessTargetIfNecessary();
+      updateInputTowardsCurrentTarget();
+    }
+  };    
+  
+  var adjustAimlessTargetIfNecessary = function() {
+    var difference = vec3.create([0,0,0]);
+    vec3.subtract(currentTarget, self.position, difference);
+    difference[1] = 0;
+    var distance = vec3.length(difference);
+    
+    if(self.getId() === 'bot-0')
+       console.log(distance);
+    
+    if(distance < 10)
+      currentTarget = createRandomTargetWithinWorld();
+  };
+  
+  var updateInputTowardsCurrentTarget = function() {
+    
+  };
 };
-}, "entities/botfactory": function(exports, require, module) {var DESIRED_PLAYER_COUNT = 8;
+
+
+
+
+
+
+
+
+
+
+}, "entities/botfactory": function(exports, require, module) {var Bot = require('./bot').Bot;
+var DESIRED_PLAYER_COUNT = 0;
+
 
 exports.BotFactory = function(scene, spawner) {
   var self = this;
@@ -2880,8 +2941,16 @@ exports.BotFactory = function(scene, spawner) {
     spawner.removePlayer(botId);
   };
   
+  var onEntitySpawned = function(data) {
+    if(data.id.indexOf('bot-') !== 0) return;
+    scene.withEntity(data.id, function(craft) {
+      craft.attach(Bot);
+    });
+  };
+  
   scene.on('playerJoined', onPlayerJoined);
   scene.on('playerLeft', onPlayerLeft);  
+  scene.on('entitySpawned', onEntitySpawned);  
 };
 }, "entities/chasecamera": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 var mat4 = require('../thirdparty/glmatrix').mat4;
@@ -3009,9 +3078,9 @@ exports.ChaseCamera  = function(scene, playerId) {
 
   var tweenBetweenCompetingLocations = function() {
     if(includedTargetId && percentageTowardsTarget < 1.0)
-      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.015);
+      percentageTowardsTarget = Math.min(1.0, percentageTowardsTarget + 0.01);
     else if(percentageTowardsTarget > 0.0)
-      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.015);
+      percentageTowardsTarget = Math.max(0.0, percentageTowardsTarget - 0.01);
 
     var targetComponent = vec3.create([0,0,0]);
     var chaseComponent = vec3.create([0,0,0]);
@@ -4550,8 +4619,9 @@ ServerCommunication.prototype.onConnection = function(socket) {
 };
 
 ServerCommunication.prototype.synchronise = function(){
+  var sceneData = this.game.getSceneState();
    for(i in this.clients){
-		this.syncPlayer(i);
+    this.sendMessageToClient(this.clients[i], 'syncscene', sceneData);
    }
 };
 
@@ -4573,8 +4643,8 @@ ServerCommunication.prototype.initializeClient = function(socket) {
 };
 
 ServerCommunication.prototype.unhookClient = function(socket) {
-    this.game.removePlayer(socket.id);    
     delete this.clients[socket.id];  
+    this.game.removePlayer(socket.id);    
 };
 
 ServerCommunication.prototype.dispatchMessage = function(socket, msg) {
@@ -4760,6 +4830,10 @@ var Data = function() {
     function(err, data) {
       if(err) console.trace(err);
     });
+  };
+  
+  self.save = function(doc) {
+    db.save(doc);
   };
 };
 
@@ -7362,6 +7436,7 @@ quat4.str = function(quat) {
 	return '[' + quat[0] + ', ' + quat[1] + ', ' + quat[2] + ', ' + quat[3] + ']'; 
 }
 
+// NOTE: This is modified :-)
 exports.glMatrixArrayType = glMatrixArrayType;
 exports.vec3 = vec3;
 exports.quat4 = quat4;

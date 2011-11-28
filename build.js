@@ -1,6 +1,22 @@
+startup = require('./startup');
+
+DB_CONFIG_FILE = "config/db.json"
+KEYS_CONFIG_FILE = "config/keys.json"
+ENV = startup.get_env();
+
+paperboy = require('paperboy');
+
+Services = require('./src/server/services').Services;
+LandscapeHandler = require('./src/server/landscapehandler').LandscapeHandler;
+
+startup.check_config_exists(DB_CONFIG_FILE);
+startup.check_config_exists(KEYS_CONFIG_FILE);
+
 var stitch  = require('stitch');
 var fs = require('fs');
 var ShaderGeneration = require('./src/server/shadergeneration').ShaderGeneration;
+var data = require('./src/server/data').Data;
+var views = require('./relax').Views;
 
 var pkg = stitch.createPackage({
   paths: ['./src']
@@ -12,6 +28,10 @@ pkg.compile(function (err, source){
     if (err) throw err;
   })
 });
+
+// Update the database
+for(var i in views)
+  data.save(views[i]);
 
 // Generate landscape geometry from inputs
 
