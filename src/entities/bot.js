@@ -3,6 +3,8 @@ var vec3 = require('../thirdparty/glmatrix').vec3;
 exports.Bot = function(communication) {
   var self = this;
   var state = 'none';
+  
+  var currentTargetId = null;
   var currentTarget = vec3.create([0,0,0]);
   
   var inputStates = {};
@@ -13,8 +15,10 @@ exports.Bot = function(communication) {
   };  
   
   var determineState = function() {
-    if(state === 'none')
+    if(state === 'none') {
       switchToAimlessState();
+      return;
+     }
   };
   
   var switchToAimlessState = function() {
@@ -22,6 +26,10 @@ exports.Bot = function(communication) {
     currentTarget = createRandomTargetWithinWorld();
     cancelAllInput();
   };
+  
+  var switchToFollowingTargetState = function() {
+    state = 'followingtarget';
+  }; 
   
   var createRandomTargetWithinWorld = function() {
     return vec3.create([Math.random() * 1280.0 - 640.0, 0, Math.random() * 1280.0 - 640.0]);
@@ -31,36 +39,79 @@ exports.Bot = function(communication) {
     aimless: function() {
       adjustAimlessTargetIfNecessary();
       updateInputTowardsCurrentTarget();
+    },
+    followingtarget: function() {
+      adjustAimedTarget();
+      updateInputTowardsCurrentTarget();
     }
   };    
   
-  var adjustAimlessTargetIfNecessary = function() {
+  var adjustAimedTarget = function() {
+    self._scene.withEntity(currentTargetId, function(target) {
+      currentTarget = target.position;
+    });
+  };
+  
+  var adjustAimlessTargetIfNecessary = function() {  
+    var distanceToCurrentTarget = calculateDistanceToCurrentTarget();
+        
+    if(distanceToCurrentTarget > 10) return;
+    if(tryToAllocateAppropriateTargetInSight()) return;
+    
+    currentTarget = createRandomTargetWithinWorld();
+  };
+  
+  var tryToAllocateAppropriateTargetInSight = function() {
+   var found = false;
+   self.lookForCraftInVision(0.75, 1000,
+      function(foundEntity) {
+        found = true;
+        currentTarget = foundEntity.position;
+        return false;
+      },
+      function(notFoundEntity) {
+        // Don't care
+      });
+  };
+  
+  var calculateDistanceToCurrentTarget = function() {
     var difference = vec3.create([0,0,0]);
     vec3.subtract(currentTarget, self.position, difference);
     difference[1] = 0;
-    var distance = vec3.length(difference);
-    
-    if(distance < 10)
-      currentTarget = createRandomTargetWithinWorld();
+    return vec3.length(difference);
   };
   
   var updateInputTowardsCurrentTarget = function() {
     var desiredRotationY =  calculateRotationTowardsTarget() - Math.PI;
     
-    var difference = desiredRotationY - self.rotationY;
-    if(difference > 0.05) {
-      startLeft();
-      cancelRight();
-      cancelForward();
-    } else if (difference < -0.05) {
-      cancelLeft();
-      startRight();
-      cancelForward();
-    } else {
+    var difference = normalizeRotation(desiredRotationY - self.rotationY);
+      
+    if(Math.abs(difference) < 0.05) {
       cancelLeft();
       cancelRight();
       startForward();
+      return;
     }
+        
+    if(difference > 0) {
+      startLeft();
+      cancelRight();
+      cancelForward();
+    } 
+    else if (difference < 0) {
+      cancelLeft();
+      startRight();
+      cancelForward();
+    }
+  };
+  
+  var PI2 = Math.PI * 2.0;
+  var normalizeRotation = function(rotation) {
+    while(rotation < -Math.PI)
+      rotation += PI2;
+    while(rotation > Math.PI)
+      rotation -= PI2;
+    return rotation;   
   };
   
   var calculateRotationTowardsTarget = function() {
@@ -127,6 +178,31 @@ exports.Bot = function(communication) {
         communication.sendMessage('cancel' + state, { id: self.getId() });    
     }
   };
+  
+  var onTrackingTarget = function(data) {
+    startFollowingTarget(data.target.getId());
+  };
+  
+  var onCancelledTrackingTarget = function(data) {
+    switchToAimlessState();
+  };
+  
+  var onMissileLock = function(data) {
+    fireMissileAtTarget();
+  };
+  
+  var startFollowingTarget = function(targetid) {
+    currentTargetId = targetid;
+    switchToFollowingTargetState();
+  };
+  
+  var fireMissileAtTarget = function() {
+    self.tryFireMissile();
+  };        
+  
+  self.addEventHandler('missileLock', onMissileLock);
+  self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
+  self.addEventHandler('trackingTarget', onTrackingTarget);  
 };
 
 

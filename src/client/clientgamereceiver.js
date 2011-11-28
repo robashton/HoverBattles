@@ -120,7 +120,7 @@ exports.ClientGameReceiver = function(app, server) {
 
   var addHovercraftToScene = function(id, sync) {
       var craftToAdd = hovercraftFactory.create(id);
-      craftToAdd.setSync(sync);
+      craftToAdd.setSync(sync);        
       app.scene.addEntity(craftToAdd);
 	    return craftToAdd;
   };

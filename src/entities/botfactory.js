@@ -1,5 +1,5 @@
 var Bot = require('./bot').Bot;
-var DESIRED_PLAYER_COUNT = 4;
+var DESIRED_PLAYER_COUNT = 0;
 
 
 exports.BotFactory = function(communication, scene, spawner) {

@@ -2,6 +2,7 @@ var vec3 = require('../thirdparty/glmatrix').vec3;
 var mat4 = require('../thirdparty/glmatrix').mat4;
 var Frustum = require('../core/frustum').Frustum;
 var MissileFactory = require('./missilefactory').MissileFactory;
+var Hovercraft = require('./hovercraft').Hovercraft;
 
 exports.Tracking = function() {
   var self = this;
@@ -9,13 +10,14 @@ exports.Tracking = function() {
 	self.targetsInSight = {};
 
 	self.doLogic = function() {		
-
    self.tidyUpFirst();
-
-   for(var i in self._scene._entities){
-      var entity = self._scene._entities[i];
-      if(entity === this) continue;
-      if(!entity.getOldestTrackedObject) continue;
+   self.lookForCraftInVision(0.75, 250,  self.notifyAimingAt,  self.notifyNotAimingAt);
+	};
+	
+	self.lookForCraftInVision = function(fieldOfVision, allowedDistance, canSeeCraft, cannotSeeCraft) {
+	  self._scene.forEachEntity(function(entity) {
+	    if(entity === this) return;
+      if(!entity.is(Hovercraft)) return;
 
       // Get a vector to the other entity
       var vectorToOtherEntity = vec3.create([0,0,0]);
@@ -24,24 +26,16 @@ exports.Tracking = function() {
       vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
 
       // Get the direction we're aiming in
-      var vectorOfAim = [0,0,-1,1];
-      var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
-      mat4.identity(lookAtTransform);
-      mat4.rotateY(lookAtTransform, self.rotationY);
-      mat4.multiplyVec4(lookAtTransform, vectorOfAim);
-
-      // We must both be within a certain angle of the other entity
-      // and within a certain distance
+      var x = 0 - Math.sin(self.rotationY);
+      var z = 0 - Math.cos(self.rotationY);         
+      var vectorOfAim = [x,0,z,1];
+      
       var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
-      if(quotient > 0.75 && distanceToOtherEntity < 250) 
-      {
-          self.notifyAimingAt(entity);
-      }
-      else  
-      {
-          self.notifyNotAimingAt(entity);
-      }
-    }		
+      if(quotient > fieldOfVision && distanceToOtherEntity < allowedDistance)
+        return canSeeCraft(entity);
+      else
+        return cannotSeeCraft(entity);   
+	  });
 	};
 
   self.tidyUpFirst = function() {

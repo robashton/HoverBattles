@@ -261,7 +261,7 @@ exports.ClientGameReceiver = function(app, server) {
 
   var addHovercraftToScene = function(id, sync) {
       var craftToAdd = hovercraftFactory.create(id);
-      craftToAdd.setSync(sync);
+      craftToAdd.setSync(sync);        
       app.scene.addEntity(craftToAdd);
 	    return craftToAdd;
   };
@@ -1771,9 +1771,9 @@ EntityReceiver.prototype._cancelLeft = function(data) {
  };
 
 EntityReceiver.prototype._startRight = function(data) {
-    this.withEntity(data.id, function(entity) {
-      entity.startRight();
-    });
+  this.withEntity(data.id, function(entity) {
+    entity.startRight();
+  });
 };
 
 EntityReceiver.prototype._cancelRight = function(data) {
@@ -1958,7 +1958,8 @@ MessageDispatcher.prototype.dispatch = function(message) {
   }
 };
 
-exports.MessageDispatcher = MessageDispatcher;}, "core/model": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
+exports.MessageDispatcher = MessageDispatcher;
+}, "core/model": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 var mat4 = require('../thirdparty/glmatrix').mat4;
 var bounding = require('./bounding');
 
@@ -2585,7 +2586,8 @@ Scene.prototype.doLogic = function() {
 
 Scene.prototype.forEachEntity = function(callback) {
   for(var i in this._entities)
-    callback(this._entities[i]);
+    if(callback(this._entities[i]) === false)
+      return;
 };
 
 Scene.prototype.broadcastEvent = function(source, eventName, data) {
@@ -2674,6 +2676,7 @@ exports.Texture = Texture;
 var mat4 = require('../thirdparty/glmatrix').mat4;
 var Frustum = require('../core/frustum').Frustum;
 var MissileFactory = require('./missilefactory').MissileFactory;
+var Hovercraft = require('./hovercraft').Hovercraft;
 
 exports.Tracking = function() {
   var self = this;
@@ -2681,13 +2684,14 @@ exports.Tracking = function() {
 	self.targetsInSight = {};
 
 	self.doLogic = function() {		
-
    self.tidyUpFirst();
-
-   for(var i in self._scene._entities){
-      var entity = self._scene._entities[i];
-      if(entity === this) continue;
-      if(!entity.getOldestTrackedObject) continue;
+   self.lookForCraftInVision(0.75, 250,  self.notifyAimingAt,  self.notifyNotAimingAt);
+	};
+	
+	self.lookForCraftInVision = function(fieldOfVision, allowedDistance, canSeeCraft, cannotSeeCraft) {
+	  self._scene.forEachEntity(function(entity) {
+	    if(entity === this) return;
+      if(!entity.is(Hovercraft)) return;
 
       // Get a vector to the other entity
       var vectorToOtherEntity = vec3.create([0,0,0]);
@@ -2696,24 +2700,16 @@ exports.Tracking = function() {
       vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
 
       // Get the direction we're aiming in
-      var vectorOfAim = [0,0,-1,1];
-      var lookAtTransform = mat4.create([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]);
-      mat4.identity(lookAtTransform);
-      mat4.rotateY(lookAtTransform, self.rotationY);
-      mat4.multiplyVec4(lookAtTransform, vectorOfAim);
-
-      // We must both be within a certain angle of the other entity
-      // and within a certain distance
+      var x = 0 - Math.sin(self.rotationY);
+      var z = 0 - Math.cos(self.rotationY);         
+      var vectorOfAim = [x,0,z,1];
+      
       var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
-      if(quotient > 0.75 && distanceToOtherEntity < 250) 
-      {
-          self.notifyAimingAt(entity);
-      }
-      else  
-      {
-          self.notifyNotAimingAt(entity);
-      }
-    }		
+      if(quotient > fieldOfVision && distanceToOtherEntity < allowedDistance)
+        return canSeeCraft(entity);
+      else
+        return cannotSeeCraft(entity);   
+	  });
 	};
 
   self.tidyUpFirst = function() {
@@ -2809,27 +2805,25 @@ exports.Targeting = function(){
 };
 }, "entities/bot": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 
-exports.Bot = function() {
+exports.Bot = function(communication) {
   var self = this;
   var state = 'none';
+  
+  var currentTargetId = null;
   var currentTarget = vec3.create([0,0,0]);
+  
+  var inputStates = {};
   
   self.doLogic = function() {
     determineState();
     stateHandlers[state]();    
   };  
   
-  var cancelAllInput = function() {
-    self.cancelLeft();
-    self.cancelRight();
-    self.cancelForward();
-    self.cancelBackward();
-    self.cancelUp();  
-  };
-  
   var determineState = function() {
-    if(state === 'none')
+    if(state === 'none') {
       switchToAimlessState();
+      return;
+     }
   };
   
   var switchToAimlessState = function() {
@@ -2837,6 +2831,10 @@ exports.Bot = function() {
     currentTarget = createRandomTargetWithinWorld();
     cancelAllInput();
   };
+  
+  var switchToFollowingTargetState = function() {
+    state = 'followingtarget';
+  }; 
   
   var createRandomTargetWithinWorld = function() {
     return vec3.create([Math.random() * 1280.0 - 640.0, 0, Math.random() * 1280.0 - 640.0]);
@@ -2846,41 +2844,170 @@ exports.Bot = function() {
     aimless: function() {
       adjustAimlessTargetIfNecessary();
       updateInputTowardsCurrentTarget();
+    },
+    followingtarget: function() {
+      adjustAimedTarget();
+      updateInputTowardsCurrentTarget();
     }
   };    
   
-  var adjustAimlessTargetIfNecessary = function() {
+  var adjustAimedTarget = function() {
+    self._scene.withEntity(currentTargetId, function(target) {
+      currentTarget = target.position;
+    });
+  };
+  
+  var adjustAimlessTargetIfNecessary = function() {  
+    var distanceToCurrentTarget = calculateDistanceToCurrentTarget();
+        
+    if(distanceToCurrentTarget > 10) return;
+    if(tryToAllocateAppropriateTargetInSight()) return;
+    
+    currentTarget = createRandomTargetWithinWorld();
+  };
+  
+  var tryToAllocateAppropriateTargetInSight = function() {
+   var found = false;
+   self.lookForCraftInVision(0.75, 1000,
+      function(foundEntity) {
+        found = true;
+        currentTarget = foundEntity.position;
+        return false;
+      },
+      function(notFoundEntity) {
+        // Don't care
+      });
+  };
+  
+  var calculateDistanceToCurrentTarget = function() {
     var difference = vec3.create([0,0,0]);
     vec3.subtract(currentTarget, self.position, difference);
     difference[1] = 0;
-    var distance = vec3.length(difference);
-    
-    if(distance < 10)
-      currentTarget = createRandomTargetWithinWorld();
+    return vec3.length(difference);
   };
   
   var updateInputTowardsCurrentTarget = function() {
     var desiredRotationY =  calculateRotationTowardsTarget() - Math.PI;
     
-    var difference = desiredRotationY - self.rotationY;
-    if(difference > 0.05) {
-      self.startLeft();
-      self.cancelRight();
-      self.cancelForward();
-    } else if (difference < -0.05) {
-      self.cancelLeft();
-      self.startRight();
-      self.cancelForward();
-    } else {
-      self.cancelLeft();
-      self.cancelRight();
-      self.startForward();
+    var difference = normalizeRotation(desiredRotationY - self.rotationY);
+      
+    if(Math.abs(difference) < 0.05) {
+      cancelLeft();
+      cancelRight();
+      startForward();
+      return;
     }
+        
+    if(difference > 0) {
+      startLeft();
+      cancelRight();
+      cancelForward();
+    } 
+    else if (difference < 0) {
+      cancelLeft();
+      startRight();
+      cancelForward();
+    }
+  };
+  
+  var PI2 = Math.PI * 2.0;
+  var normalizeRotation = function(rotation) {
+    while(rotation < -Math.PI)
+      rotation += PI2;
+    while(rotation > Math.PI)
+      rotation -= PI2;
+    return rotation;   
   };
   
   var calculateRotationTowardsTarget = function() {
     return Math.atan2(currentTarget[0] - self.position[0], currentTarget[2] - self.position[2]);
   };
+ 
+  var cancelAllInput = function() {
+    cancelLeft();
+    cancelRight();
+    cancelForward();
+    cancelBackward();
+    cancelUp();  
+  };
+   
+   var startLeft = function() {
+    changeInputState('Left', true);
+  }; 
+  
+  var cancelLeft = function() {
+    changeInputState('Left', false);
+  };
+  
+  var startRight = function() {
+    changeInputState('Right', true);
+  };
+  
+  var cancelRight = function() {
+    changeInputState('Right', false);
+  };
+  
+  var startUp = function() {
+    changeInputState('Up', true);
+  };
+  
+  var cancelUp = function() {
+    changeInputState('Up', false);
+  };
+      
+  var startForward = function() {
+    changeInputState('Forward', true);
+  };  
+  
+  var cancelForward = function() {
+    changeInputState('Forward', false);
+  };
+
+  var startBackward = function() {
+    changeInputState('Forward', true);
+  };
+  
+  var cancelBackward = function() {
+    changeInputState('Backward', false);
+  };
+  
+  var changeInputState = function(state, value) {
+
+    var oldValue = inputStates[state];
+    inputStates[state] = value;
+      
+    if(oldValue !== value) {
+      if(value)
+        communication.sendMessage('start' + state, { id: self.getId() });
+      else
+        communication.sendMessage('cancel' + state, { id: self.getId() });    
+    }
+  };
+  
+  var onTrackingTarget = function(data) {
+    startFollowingTarget(data.target.getId());
+  };
+  
+  var onCancelledTrackingTarget = function(data) {
+    switchToAimlessState();
+  };
+  
+  var onMissileLock = function(data) {
+    fireMissileAtTarget();
+  };
+  
+  var startFollowingTarget = function(targetid) {
+    currentTargetId = targetid;
+    switchToFollowingTargetState();
+  };
+  
+  var fireMissileAtTarget = function() {
+    self.tryFireMissile();
+  };        
+  
+  self.addEventHandler('missileLock', onMissileLock);
+  self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
+  self.addEventHandler('trackingTarget', onTrackingTarget);  
 };
 
 
@@ -2893,10 +3020,10 @@ exports.Bot = function() {
 
 
 }, "entities/botfactory": function(exports, require, module) {var Bot = require('./bot').Bot;
-var DESIRED_PLAYER_COUNT = 20;
+var DESIRED_PLAYER_COUNT = 4;
 
 
-exports.BotFactory = function(scene, spawner) {
+exports.BotFactory = function(communication, scene, spawner) {
   var self = this;
   
   var playerCount = 0;
@@ -2959,7 +3086,7 @@ exports.BotFactory = function(scene, spawner) {
   var onEntitySpawned = function(data) {
     if(data.id.indexOf('bot-') !== 0) return;
     scene.withEntity(data.id, function(craft) {
-      craft.attach(Bot);
+      craft.attach(Bot, [communication]);
     });
   };
   
@@ -3035,6 +3162,10 @@ exports.ChaseCamera  = function(scene, playerId) {
   };
 
   var onEntityCancelledTrackingTarget = function(data) {
+    stopTrackingTarget();
+  };
+  
+  var stopTrackingTarget = function() {
     includedTargetId = null;
     vec3.subtract(desiredCameraLocationIncludingTarget, desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting);
   };
@@ -3042,7 +3173,7 @@ exports.ChaseCamera  = function(scene, playerId) {
   var onPlayerHealthZeroed = function(data) {
     movementDelta = 0.03;
     lookAtDelta = 0.03;
-
+    includedTargetId = null;
     var deathPosition = entity.position;
 
     fixLocationAt([deathPosition[0], deathPosition[1] + 100, deathPosition[1]]);
@@ -3073,13 +3204,13 @@ exports.ChaseCamera  = function(scene, playerId) {
     if(!includedTargetId) {
        vec3.add(desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting, desiredCameraLocationIncludingTarget);
     } else {
-      var vectorFromTarget = vec3.create([0,0,0]);   
       scene.withEntity(includedTargetId, function(target) {
+        var vectorFromTarget = vec3.create([0,0,0]);   
         vec3.subtract(entity.position, target.position, vectorFromTarget);
         vec3.normalize(vectorFromTarget);
-        vec3.scale(vectorFromTarget, distanceBack);        
-      });
-      vec3.add(entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);
+        vec3.scale(vectorFromTarget, distanceBack); 
+        vec3.add(entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);       
+      });      
     }
   };
 
@@ -3938,12 +4069,14 @@ var Missile = function() {
 
 	self.setSource = function(sourceid, position) {
 		self.sourceid = sourceid;
-		self.position = vec3.create(position);	
+		self.position = vec3.create(position);
 	};
+	
   self.setTarget = function(targetid) {
     self.targetid = targetid;
     isTrackingTarget = true;
   };
+  
   self.clearTarget = function() {
     self.targetid = null;
     isTrackingTarget = false;
@@ -4511,40 +4644,40 @@ var Smoother = function() {
 	
 		var networkpositionDelta = vec3.create([0,0,0]);
 		vec3.subtract(self.networkposition, self.position, networkpositionDelta);
-		vec3.scale(networkpositionDelta, 0.01);
-	
-		vec3.add(self.position, networkpositionDelta);
+		vec3.scale(networkpositionDelta, 0.0001);
+		
+		
 			
 		var oldrotationDelta = self.rotationY - self.oldrotationy;	
 		self.networkrotationY += oldrotationDelta;
 			
 		var networkrotationDelta = self.networkrotationY - self.rotationY;
-		networkrotationDelta *= 0.1;
+		networkrotationDelta *= 0.025;
+		
 		self.rotationY += networkrotationDelta;
-
+    vec3.add(self.position, networkpositionDelta);
+    
     // If we nearly fall off the edge of the world and the client thinks we survived
     // The terrain clipping behaviour will get in the way of smoothing, so let's force it
     if(self.position[1] - self.networkposition[1] > 5 && self.networkposition[1] < -5)
       self.position[1] = self.networkposition[1];
 		
 		self.oldposition = self.position;
-		self.oldrotationy = self.rotationY; 
-
-
-		
+		self.oldrotationy = self.rotationY;		
 	};
 
 	self.setSync = function(sync) {
     if(!self.hasInitialState || sync.force) {
 	  		self.position = sync.position;
 	  		self.rotationY = sync.rotationY;
+	  	  self.oldposition = self.position;
+	      self.oldrotationy = self.rotationY; 
 			  self.hasInitialState = true;
 		}
 
 	  self.networkposition = sync.position;
 	  self.networkrotationY = sync.rotationY; 
-	  self.oldposition = self.position;
-	  self.oldrotationy = self.rotationY; 
+
 
 	};
 };
@@ -5308,7 +5441,8 @@ var proxiedMessages = [
 
 ProxyReceiver.setupProxyMessageHandler = function(msgName) {
 	ProxyReceiver.prototype[msgName] = function(data){
-		this.communication.broadcast(msgName.substr(1), data, data.source);
+	  if(data.source)
+		  this.communication.broadcast(msgName.substr(1), data, data.source);
 	}	
 }
 
@@ -5337,7 +5471,7 @@ exports.ServerGameReceiver = function(app, communication) {
   var spawner = HovercraftSpawner.Create(app.scene);
   var scoreKeeper = ScoreKeeper.Create(app.scene);
   var persistenceListener = new PersistenceListener(app.scene);
-  var botFactory = new BotFactory(app.scene, spawner);
+  var botFactory = new BotFactory(communication, app.scene, spawner);
 
   self.removePlayer = function(id) {
     spawner.removePlayer(id);

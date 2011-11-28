@@ -56,5 +56,5 @@ app.resources.onAllAssetsLoaded(function(){
     
     setInterval(function(){    
         game.synchronise();
-    }, 250); 
+    }, 500); 
 });

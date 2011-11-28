@@ -77,7 +77,8 @@ Scene.prototype.doLogic = function() {
 
 Scene.prototype.forEachEntity = function(callback) {
   for(var i in this._entities)
-    callback(this._entities[i]);
+    if(callback(this._entities[i]) === false)
+      return;
 };
 
 Scene.prototype.broadcastEvent = function(source, eventName, data) {

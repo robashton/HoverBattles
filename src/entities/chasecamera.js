@@ -66,6 +66,10 @@ exports.ChaseCamera  = function(scene, playerId) {
   };
 
   var onEntityCancelledTrackingTarget = function(data) {
+    stopTrackingTarget();
+  };
+  
+  var stopTrackingTarget = function() {
     includedTargetId = null;
     vec3.subtract(desiredCameraLocationIncludingTarget, desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting);
   };
@@ -73,7 +77,7 @@ exports.ChaseCamera  = function(scene, playerId) {
   var onPlayerHealthZeroed = function(data) {
     movementDelta = 0.03;
     lookAtDelta = 0.03;
-
+    includedTargetId = null;
     var deathPosition = entity.position;
 
     fixLocationAt([deathPosition[0], deathPosition[1] + 100, deathPosition[1]]);
@@ -104,13 +108,13 @@ exports.ChaseCamera  = function(scene, playerId) {
     if(!includedTargetId) {
        vec3.add(desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting, desiredCameraLocationIncludingTarget);
     } else {
-      var vectorFromTarget = vec3.create([0,0,0]);   
       scene.withEntity(includedTargetId, function(target) {
+        var vectorFromTarget = vec3.create([0,0,0]);   
         vec3.subtract(entity.position, target.position, vectorFromTarget);
         vec3.normalize(vectorFromTarget);
-        vec3.scale(vectorFromTarget, distanceBack);        
-      });
-      vec3.add(entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);
+        vec3.scale(vectorFromTarget, distanceBack); 
+        vec3.add(entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);       
+      });      
     }
   };
 

@@ -13,12 +13,14 @@ var Missile = function() {
 
 	self.setSource = function(sourceid, position) {
 		self.sourceid = sourceid;
-		self.position = vec3.create(position);	
+		self.position = vec3.create(position);
 	};
+	
   self.setTarget = function(targetid) {
     self.targetid = targetid;
     isTrackingTarget = true;
   };
+  
   self.clearTarget = function() {
     self.targetid = null;
     isTrackingTarget = false;
