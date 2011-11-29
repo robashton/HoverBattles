@@ -8,9 +8,9 @@ exports.BotFactory = function(communication, scene, spawner) {
   var playerCount = 0;
   var updatingBots = false;
   
+  var currentBotId = 0;
+  var botsById = {};
   var botCount = 0;
-  var bots = [];
-  var currentBotIndex = 0;
     
   var onPlayerJoined = function() {
     playerCount++;
@@ -49,17 +49,24 @@ exports.BotFactory = function(communication, scene, spawner) {
   
   var addBotToScene = function() {
     botCount++;
-    var botId = 'bot-' + (currentBotIndex + bots.length);
-    bots.push(botId);
+    var botId = 'bot-' + currentBotId++;
+    botsById[botId] = new TrackedBot(botId);
     spawner.createPlayer(botId);
     spawner.namePlayer(botId, botId);
   };
   
   var removeBotFromScene = function() {
     botCount--;
-    var botId = bots[currentBotIndex];
-    delete bots[currentBotIndex++];
-    spawner.removePlayer(botId);
+    for(var i in botsById) {
+      removeBotById(i);
+      return;
+    }
+  };
+  
+  var removeBotById = function(id) {
+    var bot = botsById[id];
+    delete botsById[id];
+    spawner.removePlayer(bot.getId());
   };
   
   var onEntitySpawned = function(data) {
@@ -69,7 +76,34 @@ exports.BotFactory = function(communication, scene, spawner) {
     });
   };
   
+  var onPlayerKilled = function(data) {
+    var bot = botsById[data.sourceid];
+    if(!bot) return;    
+    bot.increaseScore();
+    if(bot.getScore() < 10) return;
+    removeBotById(data.sourceid);    
+  };
+   
+  scene.on('healthZeroed', onPlayerKilled);
   scene.on('playerJoined', onPlayerJoined);
   scene.on('playerLeft', onPlayerLeft);  
   scene.on('entitySpawned', onEntitySpawned);  
+};
+
+
+var TrackedBot = function(id) {
+  var self = this;
+  var score = 0;
+  
+  self.getId = function() {
+    return id;
+  };
+  
+  self.increaseScore = function() {
+    score++;
+  };
+  
+  self.getScore = function() {
+    return score;
+  };    
 };
