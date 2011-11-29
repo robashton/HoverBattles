@@ -1,6 +1,7 @@
 var Missile = require('../entities/missile').Missile;
 var Hovercraft  = require('../entities/hovercraft').Hovercraft;
 var ParticleEmitter = require('../entities/particleemitter').ParticleEmitter;
+var Explosion = require('../entities/explosion').Explosion;
 
 exports.TrailsAndExplosions = function(app) {
   var self = this;
@@ -61,7 +62,31 @@ exports.TrailsAndExplosions = function(app) {
         textureName: '/data/textures/trail.png'
     });
   };
-
+  
+  var onMissileExpired = function() {
+    createExplosionAtLocation(this.position);
+  };
+  
+  var onHovercraftExploded = function() {
+    createExplosionAtLocation(this.position);
+  };
+  
+  var onHovercraftLeftWorld = function() {
+    createExplosionAtLocation(this.position);
+  };
+  
+  var createExplosionAtLocation = function(position) {
+    console.log(position);
+    var explosion = new Explosion(app, {
+      position: position,    
+      initialVelocity: vec3.create([0,0,0])
+      }
+    );
+  };
+ 
+  app.scene.on('leftWorld', onHovercraftLeftWorld);
+  app.scene.on('healthZeroed', onHovercraftExploded);
+  app.scene.on('missileExpired', onMissileExpired);
   app.scene.onEntityAdded(onEntityAdded);
   app.scene.onEntityRemoved(onEntityRemoved);     
 };

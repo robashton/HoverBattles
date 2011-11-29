@@ -100,7 +100,7 @@ Scene.prototype.on = function(eventName, callback) {
   this.eventContainerFor(eventName).add(callback);
 };
 
-Scene.prototype.off = function(eventName, type, callback) {
+Scene.prototype.off = function(eventName, callback) {
   this.eventContainerFor(eventName).remove(callback);
 };
 

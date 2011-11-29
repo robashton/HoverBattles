@@ -14,7 +14,7 @@ exports.EventContainer = function() {
   self.remove = function(handler) {
     var newItems = [];
     for(var i = 0; i < handlers.length; i++)
-        if(handlers[i] !== callback) 
+        if(handlers[i] !== handler) 
           newItems.push(handlers[i]);
     handlers = newItems;
   };

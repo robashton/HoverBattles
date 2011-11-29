@@ -3,26 +3,31 @@ Sphere = require('../core/bounding').Sphere;
 var Missile = function() {
   var self = this;
 
- 	self.target = null;
-	self.source = null;
 	self._velocity = vec3.create([0,0,0]);	
+	
+	var ticksElapsedSinceStoppedTrackingTarget = 0;
 
 	var bounds = new Sphere(1.0, [0,0,0]);
   var isTrackingTarget = false;
 	var distanceFromTarget = vec3.create([99,99,99]);
-
-	self.setSource = function(sourceid, position) {
-		self.sourceid = sourceid;
-		self.position = vec3.create(position);
-	};
+	var sourceid = null;
+	var targetid = null;
 	
-  self.setTarget = function(targetid) {
-    self.targetid = targetid;
-    isTrackingTarget = true;
-  };
-  
+	source = null;
+	target = null;
+	
+	self.go = function(sid, tid) {
+	  sourceid = sid;
+	  targetid = tid;
+	  isTrackingTarget = true;
+	  
+	  source = self._scene.getEntity(sourceid);
+	  target = self._scene.getEntity(targetid);	  
+	  self.position = vec3.create(source.position);	  
+	};
+
   self.clearTarget = function() {
-    self.targetid = null;
+    targetid = null;
     isTrackingTarget = false;
   };
 
@@ -35,35 +40,46 @@ var Missile = function() {
 		  determineIfTargetIsReached();
     } else {
       performPhysics();
-    }		
+      determineIfItIsTimeToExpire();
+    }
+	};
+	
+	var determineIfItIsTimeToExpire = function(){
+	  ticksElapsedSinceStoppedTrackingTarget++;
+	  if(ticksElapsedSinceStoppedTrackingTarget > 600)
+	    destroyMissileOfNaturalCauses();
+	};
+	
+	self.stopTrackingTarget = function() {
+	  if(!isTrackingTarget) return;
+    self.raiseServerEvent('missileLost', { 
+	    targetid: targetid,
+	    sourceid: sourceid,
+      missileid: self.getId()
+    });
 	};
 
   var updateTargetReferences = function() {
-    self.source = getSource();
-    self.target = getTarget();
+    source = getSource();
+    target = getTarget();
 
-    if(!self.source || !self.target) {
-      isTrackingTarget = false;
-			self.raiseServerEvent('missileLost', { 
-				targetid: self.targetid,
-				sourceid: self.sourceid,
-        missileid: self.getId()
-      });
+    if(!source || !target) {
+			self.stopTrackingTarget();
     }
   };
 
   var getSource = function() {
-    return self._scene.getEntity(self.sourceid);
+    return self._scene.getEntity(sourceid);
   };
 
   var getTarget = function() {
-    return self._scene.getEntity(self.targetid);
+    return self._scene.getEntity(targetid);
   };
 	
 	var determineIfTargetIsReached = function() {
 		var myBounds = bounds.translate(self.position);
     
-		var targetSphere = self.target.getSphere();
+		var targetSphere = target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
       notifyTargetOfCollision();  
       notifyOutsideWorldOfCollision();
@@ -72,40 +88,39 @@ var Missile = function() {
 
   var notifyOutsideWorldOfCollision = function(){ 
 	  self.raiseServerEvent('targetHit', { 
-			targetid: self.targetid,
-			sourceid: self.sourceid,
+			targetid: targetid,
+			sourceid: sourceid,
       missileid: self.getId() 
     });		  
   };
 
   var notifyTargetOfCollision = function(){ 
-	  self._scene.withEntity(self.targetid, function(target) {
+	  self._scene.withEntity(targetid, function(target) {
       target.sendMessage('projectileHit', {
-			  targetid: self.targetid,
-			  sourceid: self.sourceid // TODO: Damage amount goes here :-)
+			  targetid: targetid,
+			  sourceid: sourceid
       });
     });
   }; 
 	
 	var performPhysics = function() {
 		vec3.add(self.position, self._velocity);
-
-    if(isTrackingTarget) {
-		  if(!isWithinReachOfTarget())
-			  clipMissileToTerrain();      
-    }
-    else
-		    checkIfMissileHasHitTerrain();
+    checkIfMissileHasHitTerrain();
 	};
 
   var checkIfMissileHasHitTerrain = function() {
     var terrain = self._scene.getEntity("terrain");
     var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
     if(terrainHeight > self.position[1]) {
-		  self.raiseServerEvent('missileExpired', { 
-        missileid: self.getId() 
-      });
+      destroyMissileOfNaturalCauses();
 	  }
+  };
+  
+  var destroyMissileOfNaturalCauses = function() {
+    self.raiseServerEvent('missileExpired', { 
+      missileid: self.getId(),
+      sourceid: sourceid 
+    });
   };
 	
 	var isWithinReachOfTarget = function() {
@@ -126,25 +141,19 @@ var Missile = function() {
     vec3.scale(self._velocity, 0.8);
 	};
 	
-	var clipMissileToTerrain = function(vectorToTarget) {
-		var terrain = self._scene.getEntity("terrain");
-    var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
-		self.position[1] =  Math.max(terrainHeight, self.position[1]);	
-	};
-	
 	var calculateVectorToTarget = function() {	
-    var targetDestination = self.target.position;
+    var targetDestination = target.position;
     var currentPosition = self.position;
 	  var difference = vec3.create([0,0,0]);
 	  vec3.subtract(targetDestination, currentPosition, difference);
 	  return difference;
 	};
-
-  var onTargetLost = function() {
+	
+  var onMissileLost = function() {
     self.clearTarget();
   };
-
-  self.addEventHandler('targetLost', onTargetLost);
+  
+  self.addEventHandler('missileLost', onMissileLost);
 };
 
 exports.Missile = Missile;

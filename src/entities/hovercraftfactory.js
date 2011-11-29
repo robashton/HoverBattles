@@ -7,7 +7,6 @@ var Targeting = require('./aiming').Targeting;
 var NamedItem = require('./nameditem').NamedItem;
 var FiringController = require('./firingcontroller').FiringController;
 var Destructable = require('./destructable').Destructable;
-var Explodable = require('./explodable').Explodable;
 var Smoother = require('./smoother').Smoother;
 
 var HovercraftFactory = function(app){
@@ -20,7 +19,6 @@ HovercraftFactory.prototype.create = function(id) {
   
   entity.setModel(model); 
   if(this._app.isClient) {
-    entity.attach(Explodable);
     entity.attach(Smoother);
   }
   

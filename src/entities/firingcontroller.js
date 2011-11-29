@@ -49,9 +49,9 @@ exports.FiringController = function() {
     var missileid = 'missile-' + self.getId() + missileidCounter++;
     trackedMissileId = missileid;
 	  self.raiseServerEvent('fireMissile', { 
-        missileid: missileid, 
-        sourceid: self.getId(), 
-        targetid: trackedTarget.getId()
+      missileid: missileid, 
+      sourceid: self.getId(), 
+      targetid: trackedTarget.getId()
     });    
   };  
 
