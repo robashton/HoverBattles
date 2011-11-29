@@ -94,8 +94,8 @@ exports.ChaseCamera  = function(scene, playerId) {
   };
 
   var fixLocationAt = function(position) {
-      fixLocation = true;
-      destinationCameraLocation = vec3.create(position);
+    fixLocation = true;
+    destinationCameraLocation = vec3.create(position);
   };
 
   self.doLogic = function() {

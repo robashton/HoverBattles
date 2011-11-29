@@ -3020,7 +3020,7 @@ exports.Bot = function(communication) {
 
 
 }, "entities/botfactory": function(exports, require, module) {var Bot = require('./bot').Bot;
-var DESIRED_PLAYER_COUNT = 0;
+var DESIRED_PLAYER_COUNT = 5;
 
 
 exports.BotFactory = function(communication, scene, spawner) {
@@ -4651,8 +4651,6 @@ var Smoother = function() {
 		vec3.subtract(self.networkposition, self.position, networkpositionDelta);
 		vec3.scale(networkpositionDelta, 0.001);
 		
-		
-			
 		var oldrotationDelta = self.rotationY - self.oldrotationy;	
 		self.networkrotationY += oldrotationDelta;
 			
@@ -4663,14 +4661,11 @@ var Smoother = function() {
     vec3.add(self.position, networkpositionDelta);
     
     // If we nearly fall off the edge of the world and the client thinks we survived
-    // The terrain clipping behaviour will get in the way of smoothing, so let's force it
-    
+    // The terrain clipping behaviour will get in the way of smoothing, so let's force it    
     var differenceBetweenVerticals = self.position[1] - self.networkposition[1];
     
     if(differenceBetweenVerticals > 5 && self.networkposition[1] < -5)
       self.position[1] = self.networkposition[1];
- 
-    console.log(self.networkposition[1]);
 		
 		self.oldposition = self.position;
 		self.oldrotationy = self.rotationY;		
@@ -5164,7 +5159,7 @@ exports.LandLoader = function() {
 
   var chunkWidth = 128;
   var scale = 5;
-  var maxHeight = 125;   
+  var maxHeight = 105;   
   var minX = 0 - (chunkWidth);
   var minZ = 0 - (chunkWidth);
   var maxX = 0 + (chunkWidth);
@@ -5215,8 +5210,10 @@ exports.LandLoader = function() {
         var realX = x + startX;
         var realY = y + startY;
       
-			  var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32)) + 1.0;
-        terrainHeight = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;		
+			  var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
+        terrainHeight = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;	
+        
+        terrainHeight += maxHeight;	
 
         if(realX === minX || realX === maxX || realY === minZ || realY === maxZ)
           terrainHeight -= 10;

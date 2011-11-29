@@ -5,7 +5,7 @@ exports.LandLoader = function() {
 
   var chunkWidth = 128;
   var scale = 5;
-  var maxHeight = 125;   
+  var maxHeight = 105;   
   var minX = 0 - (chunkWidth);
   var minZ = 0 - (chunkWidth);
   var maxX = 0 + (chunkWidth);

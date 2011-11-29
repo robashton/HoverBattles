@@ -9,8 +9,10 @@ exports.LandscapeGeneration = function(minX, minZ, maxX, maxZ, scale, maxHeight)
         var realX = x + startX;
         var realY = y + startY;
       
-			  var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32)) + 1.0;
-        terrainHeight = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;		
+			  var terrainHeight = (Math.sin((x + startX) / 32) + Math.sin((y + startY) / 32));
+        terrainHeight = Math.min(1.0, (terrainHeight + 1.0) / 2) * maxHeight;	
+        
+        terrainHeight += maxHeight;	
 
         if(realX === minX || realX === maxX || realY === minZ || realY === maxZ)
           terrainHeight -= 10;
