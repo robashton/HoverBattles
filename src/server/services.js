@@ -26,6 +26,12 @@ exports.Services = function() {
             next();
         },
         function(next) {
+          if(username.toLowerCase().indexOf('bot') >= 0)
+            writeValidationError(req, res, 'Bot is a reserved name');
+          else 
+            next();
+        },
+        function(next) {
           if(!password)
             writeValidationError(req, res, 'Password is required, it can be whatever though');
           else next();
