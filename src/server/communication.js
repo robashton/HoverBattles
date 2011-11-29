@@ -15,7 +15,11 @@ ServerCommunication = function(app, server){
 
   listener.configure(function(){
       listener.set('log level', 1);
-    });
+      listener.set('transports', [
+          'websocket',
+          'flashsocket'
+        ]);
+      });
   
   this.socket = listener.sockets;
   this.clients = {};

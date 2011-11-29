@@ -293,6 +293,11 @@ ClientCommunication.prototype.hookSocketEvents = function() {
     this.socket.on('connect', function(){        game.onConnected();     });
     this.socket.on('message', function(msg){     game.dispatchMessage(msg);   });
     this.socket.on('disconnect', function(){     game.onDisconnected(); });    
+    this.socket.on('connect_failed', function() { game.onConnectFailed(); });
+};
+
+ClientCommunication.prototype.onConnectFailed = function() {
+   alert('Couldn\'t connect to server, you\'re probably behind some sort of corporate firewall');
 };
 
 ClientCommunication.prototype.onConnected = function() {
@@ -3190,8 +3195,8 @@ exports.ChaseCamera  = function(scene, playerId) {
   };
 
   var fixLocationAt = function(position) {
-      fixLocation = true;
-      destinationCameraLocation = vec3.create(position);
+    fixLocation = true;
+    destinationCameraLocation = vec3.create(position);
   };
 
   self.doLogic = function() {
@@ -4748,7 +4753,11 @@ ServerCommunication = function(app, server){
 
   listener.configure(function(){
       listener.set('log level', 1);
-    });
+      listener.set('transports', [
+          'websocket',
+          'flashsocket'
+        ]);
+      });
   
   this.socket = listener.sockets;
   this.clients = {};
