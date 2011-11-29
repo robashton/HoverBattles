@@ -144,7 +144,6 @@ var Hovercraft = function() {
     if(heightDelta < -10.0) return;
     if(heightDelta < 1.0) {
       bounceCraftOffTerrain();
-      console.log('bounce, bitches');
     }     
     pushCraftFromTerrain();
   };
