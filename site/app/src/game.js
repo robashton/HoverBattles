@@ -1199,7 +1199,7 @@ var Explosion = require('../entities/explosion').Explosion;
 exports.TrailsAndExplosions = function(app) {
   var self = this;
   var trails = {};
-/* 
+
   var onEntityAdded = function(entity) {
     if(entity.is(Hovercraft))
       setupEntityTrail(entity, createHovercraftTrail);
@@ -1281,7 +1281,7 @@ exports.TrailsAndExplosions = function(app) {
   app.scene.on('healthZeroed', onHovercraftExploded);
   app.scene.on('missileExpired', onMissileExpired);
   app.scene.onEntityAdded(onEntityAdded);
-  app.scene.onEntityRemoved(onEntityRemoved);     */
+  app.scene.onEntityRemoved(onEntityRemoved);    
 };
 }, "core/bounding": function(exports, require, module) {vec3 = require('../thirdparty/glmatrix').vec3;
 mat4 = require('../thirdparty/glmatrix').mat4;
@@ -4357,6 +4357,7 @@ exports.MissileFirer = function(app, missileFactory) {
     if(!target) { console.warn('Erk, could not find target of missile firing'); return; };
 
     var missile = missileFactory.create(data.missileid);
+    missile.position = vec3.create(source.position);
     app.scene.addEntity(missile);
     missile.go(data.sourceid, data.targetid);
   }; 

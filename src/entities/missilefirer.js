@@ -16,6 +16,7 @@ exports.MissileFirer = function(app, missileFactory) {
     if(!target) { console.warn('Erk, could not find target of missile firing'); return; };
 
     var missile = missileFactory.create(data.missileid);
+    missile.position = vec3.create(source.position);
     app.scene.addEntity(missile);
     missile.go(data.sourceid, data.targetid);
   }; 

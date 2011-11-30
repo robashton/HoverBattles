@@ -32,11 +32,11 @@
             var backdrop = app.overlay.addItem('loading-backdrop', '/data/textures/splashscreenbackground.jpg');
             var backdropspinner = app.overlay.addItem('loading-spinner', '/data/textures/locked.png');
 
-            backdrop.left(0); backdrop.width(640);
-            backdrop.top(0); backdrop.height(480);  
+            backdrop.left(0); backdrop.width(app.context.currentWidth());
+            backdrop.top(0); backdrop.height(app.context.currentHeight());  
 
-            backdropspinner.left(225); backdropspinner.width(100);
-            backdropspinner.top(190);backdropspinner.height(100);   
+            backdropspinner.left(230); backdropspinner.width(25);
+            backdropspinner.top(118);backdropspinner.height(25);   
 
             var spinnerInterval = setInterval(
               function() {    
