@@ -15,29 +15,27 @@ var Missile = function() {
 	var sourceid = null;
 	var targetid = null;
 	
-	source = null;
-	target = null;
+	var source = null;
+	var target = null;
 	
 	self.go = function(sid, tid) {
 	  sourceid = sid;
 	  targetid = tid;
 	  isTrackingTarget = true;	  
-	  source = self._scene.getEntity(sourceid);
-	  target = self._scene.getEntity(targetid);	  
-	  self.position = vec3.create(source.position);	  
+    updateTargetReferences();
 	  setupInitialVelocity();
 	};
 
-  self.clearTarget = function() {
-    targetid = null;
+  var clearTarget = function() {
     isTrackingTarget = false;
+    target = null;
   };
 
   self.doLogic = function() {
     ticksElapsedSinceFiring++;
-    if(isTrackingTarget) updateTargetReferences();
+    updateTargetReferences();
 
-    if(target) {
+    if(isTrackingTarget) {
 	    updateVelocityTowardsTarget();
 	    if(determineIfTargetIsReached()) return;
 	  }
@@ -65,7 +63,7 @@ var Missile = function() {
 	
 	self.stopTrackingTarget = function() {
 	  if(!isTrackingTarget) return;
-    self.raiseServerEvent('missileLost', { 
+    self.raiseEvent('missileLost', { 
 	    targetid: targetid,
 	    sourceid: sourceid,
       missileid: self.getId()
@@ -205,7 +203,7 @@ var Missile = function() {
 	};
 	
   var onMissileLost = function() {
-    self.clearTarget();
+    clearTarget();
   };
   
   self.updateSync = function(sync) {

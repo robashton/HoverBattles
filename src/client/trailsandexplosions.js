@@ -76,7 +76,6 @@ exports.TrailsAndExplosions = function(app) {
   };
   
   var createExplosionAtLocation = function(position) {
-    console.log(position);
     var explosion = new Explosion(app, {
       position: position,    
       initialVelocity: vec3.create([0,0,0])

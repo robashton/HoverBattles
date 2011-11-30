@@ -52,15 +52,16 @@ exports.ChaseCamera  = function(scene, playerId) {
   var updateDesiredCameraPositionIncludingTarget = function() {
     if(!includedTargetId) {
        vec3.add(desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting, desiredCameraLocationIncludingTarget);
-    } else {
-      scene.withEntity(includedTargetId, function(target) {
-        var vectorFromTarget = vec3.create([0,0,0]);   
-        vec3.subtract(entity.position, target.position, vectorFromTarget);
-        vec3.normalize(vectorFromTarget);
-        vec3.scale(vectorFromTarget, distanceBack); 
-        vec3.add(entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);       
-      });      
+       return;
     }
+    var target = scene.getEntity(includedTargetId);
+    if(!target) return;
+    
+    var vectorFromTarget = vec3.create([0,0,0]);   
+    vec3.subtract(entity.position, target.position, vectorFromTarget);
+    vec3.normalize(vectorFromTarget);
+    vec3.scale(vectorFromTarget, distanceBack); 
+    vec3.add(entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);       
   };
 
   var updateDesiredCameraPositionBehindPlayer = function() {    
@@ -188,6 +189,7 @@ exports.ChaseCamera  = function(scene, playerId) {
   scene.onEntityAdded(onEntityAdded);
 };
 
+exports.ChaseCamera.Type = "ChaseCamera";
 exports.ChaseCamera.Create = function(scene, playerId) {
   var entity = new Entity('chase-camera');
   entity.attach(exports.ChaseCamera, [scene, playerId]);

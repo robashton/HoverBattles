@@ -58,10 +58,11 @@ exports.HovercraftSpawner = function(scene) {
   };
 
   var updateAllPlayerNames = function() {
-    for(var playerId in playerNames)
-      scene.withEntity(playerId, function(entity) {
+    for(var playerId in playerNames) {
+      var entity = scene.getEntity(playerId);
+      if(entity)
         entity.displayName(playerNames[playerId]);
-      });
+    }
     raiseNamesChangedEvent();
   };
   

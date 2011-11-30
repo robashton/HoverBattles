@@ -372,6 +372,7 @@ exports.Hud = function(app) {
   app.scene.onEntityRemoved(onEntityRemoved);
 };
 
+exports.Hud.Type = "Hud";
 exports.Hud.ID = "HUDEntity";
 exports.Hud.create = function(app) {
   var hudEntity = new Entity(exports.Hud.ID);

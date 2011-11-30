@@ -875,6 +875,7 @@ exports.Hud = function(app) {
   app.scene.onEntityRemoved(onEntityRemoved);
 };
 
+exports.Hud.Type = "Hud";
 exports.Hud.ID = "HUDEntity";
 exports.Hud.create = function(app) {
   var hudEntity = new Entity(exports.Hud.ID);
@@ -1269,7 +1270,6 @@ exports.TrailsAndExplosions = function(app) {
   };
   
   var createExplosionAtLocation = function(position) {
-    console.log(position);
     var explosion = new Explosion(app, {
       position: position,    
       initialVelocity: vec3.create([0,0,0])
@@ -3221,15 +3221,16 @@ exports.ChaseCamera  = function(scene, playerId) {
   var updateDesiredCameraPositionIncludingTarget = function() {
     if(!includedTargetId) {
        vec3.add(desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting, desiredCameraLocationIncludingTarget);
-    } else {
-      scene.withEntity(includedTargetId, function(target) {
-        var vectorFromTarget = vec3.create([0,0,0]);   
-        vec3.subtract(entity.position, target.position, vectorFromTarget);
-        vec3.normalize(vectorFromTarget);
-        vec3.scale(vectorFromTarget, distanceBack); 
-        vec3.add(entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);       
-      });      
+       return;
     }
+    var target = scene.getEntity(includedTargetId);
+    if(!target) return;
+    
+    var vectorFromTarget = vec3.create([0,0,0]);   
+    vec3.subtract(entity.position, target.position, vectorFromTarget);
+    vec3.normalize(vectorFromTarget);
+    vec3.scale(vectorFromTarget, distanceBack); 
+    vec3.add(entity.position, vectorFromTarget, desiredCameraLocationIncludingTarget);       
   };
 
   var updateDesiredCameraPositionBehindPlayer = function() {    
@@ -3357,6 +3358,7 @@ exports.ChaseCamera  = function(scene, playerId) {
   scene.onEntityAdded(onEntityAdded);
 };
 
+exports.ChaseCamera.Type = "ChaseCamera";
 exports.ChaseCamera.Create = function(scene, playerId) {
   var entity = new Entity('chase-camera');
   entity.attach(exports.ChaseCamera, [scene, playerId]);
@@ -3808,10 +3810,11 @@ exports.HovercraftSpawner = function(scene) {
   };
 
   var updateAllPlayerNames = function() {
-    for(var playerId in playerNames)
-      scene.withEntity(playerId, function(entity) {
+    for(var playerId in playerNames) {
+      var entity = scene.getEntity(playerId);
+      if(entity)
         entity.displayName(playerNames[playerId]);
-      });
+    }
     raiseNamesChangedEvent();
   };
   
@@ -4117,29 +4120,27 @@ var Missile = function() {
 	var sourceid = null;
 	var targetid = null;
 	
-	source = null;
-	target = null;
+	var source = null;
+	var target = null;
 	
 	self.go = function(sid, tid) {
 	  sourceid = sid;
 	  targetid = tid;
 	  isTrackingTarget = true;	  
-	  source = self._scene.getEntity(sourceid);
-	  target = self._scene.getEntity(targetid);	  
-	  self.position = vec3.create(source.position);	  
+    updateTargetReferences();
 	  setupInitialVelocity();
 	};
 
-  self.clearTarget = function() {
-    targetid = null;
+  var clearTarget = function() {
     isTrackingTarget = false;
+    target = null;
   };
 
   self.doLogic = function() {
     ticksElapsedSinceFiring++;
-    if(isTrackingTarget) updateTargetReferences();
+    updateTargetReferences();
 
-    if(target) {
+    if(isTrackingTarget) {
 	    updateVelocityTowardsTarget();
 	    if(determineIfTargetIsReached()) return;
 	  }
@@ -4167,7 +4168,7 @@ var Missile = function() {
 	
 	self.stopTrackingTarget = function() {
 	  if(!isTrackingTarget) return;
-    self.raiseServerEvent('missileLost', { 
+    self.raiseEvent('missileLost', { 
 	    targetid: targetid,
 	    sourceid: sourceid,
       missileid: self.getId()
@@ -4307,7 +4308,7 @@ var Missile = function() {
 	};
 	
   var onMissileLost = function() {
-    self.clearTarget();
+    clearTarget();
   };
   
   self.updateSync = function(sync) {
