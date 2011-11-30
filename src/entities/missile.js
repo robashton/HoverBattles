@@ -5,8 +5,10 @@ var Missile = function() {
 
 	self._velocity = vec3.create([0,0,0]);	
 	
-	var ticksElapsedSinceStoppedTrackingTarget = 0;
+	var ticksElapsedSinceFiring = 0;
 
+  var maxSpeed = 5.0;
+  var adjuster = 0.8;  
 	var bounds = new Sphere(1.0, [0,0,0]);
   var isTrackingTarget = false;
 	var distanceFromTarget = vec3.create([99,99,99]);
@@ -19,11 +21,11 @@ var Missile = function() {
 	self.go = function(sid, tid) {
 	  sourceid = sid;
 	  targetid = tid;
-	  isTrackingTarget = true;
-	  
+	  isTrackingTarget = true;	  
 	  source = self._scene.getEntity(sourceid);
 	  target = self._scene.getEntity(targetid);	  
 	  self.position = vec3.create(source.position);	  
+	  setupInitialVelocity();
 	};
 
   self.clearTarget = function() {
@@ -32,7 +34,8 @@ var Missile = function() {
   };
 
   self.doLogic = function() {
-   if(isTrackingTarget) updateTargetReferences();
+    ticksElapsedSinceFiring++;
+    if(isTrackingTarget) updateTargetReferences();
 
     if(isTrackingTarget) {   
 		  updateVelocityTowardsTarget();
@@ -44,9 +47,21 @@ var Missile = function() {
     }
 	};
 	
+	var performPhysics = function() {
+		vec3.add(self.position, self._velocity);
+    checkIfMissileHasHitTerrain();
+	};
+
+  var checkIfMissileHasHitTerrain = function() {
+    var terrain = self._scene.getEntity("terrain");
+    var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
+    if(terrainHeight > self.position[1]) {
+      destroyMissileOfNaturalCauses();
+	  }
+  };
+	
 	var determineIfItIsTimeToExpire = function(){
-	  ticksElapsedSinceStoppedTrackingTarget++;
-	  if(ticksElapsedSinceStoppedTrackingTarget > 600)
+	  if(ticksElapsedSinceFiring > 300)
 	    destroyMissileOfNaturalCauses();
 	};
 	
@@ -60,6 +75,10 @@ var Missile = function() {
 	};
 
   var updateTargetReferences = function() {
+    if(ticksElapsedSinceFiring > 200) {
+      self.stopTrackingTarget();
+      return;
+    }    
     source = getSource();
     target = getTarget();
 
@@ -91,7 +110,7 @@ var Missile = function() {
 			targetid: targetid,
 			sourceid: sourceid,
       missileid: self.getId() 
-    });		  
+    });
   };
 
   var notifyTargetOfCollision = function(){ 
@@ -103,18 +122,7 @@ var Missile = function() {
     });
   }; 
 	
-	var performPhysics = function() {
-		vec3.add(self.position, self._velocity);
-    checkIfMissileHasHitTerrain();
-	};
 
-  var checkIfMissileHasHitTerrain = function() {
-    var terrain = self._scene.getEntity("terrain");
-    var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
-    if(terrainHeight > self.position[1]) {
-      destroyMissileOfNaturalCauses();
-	  }
-  };
   
   var destroyMissileOfNaturalCauses = function() {
     self.raiseServerEvent('missileExpired', { 
@@ -130,15 +138,51 @@ var Missile = function() {
 		return distanceToTargetIgnoringHeight < 2;		
 	};
 	
+	
+	var setupInitialVelocity = function() {
+	
+	  // Look a second into the future
+	  var positionInTheFuture = vec3.create([0,0,0]);
+	  var positionGoingToMove = vec3.create([0,0,0]);
+	  vec3.scale(target._velocity, 30, positionGoingToMove);
+	  vec3.add(target.position, positionGoingToMove, positionInTheFuture);
+	  
+	  // Take aim at that location
+	  var difference = vec3.create([0,0,0]);
+	  vec3.subtract(positionInTheFuture, source.position, difference);
+	  vec3.normalize(difference);
+	  
+	  // And fire at max speed
+	  vec3.scale(difference, maxSpeed);	  
+	  self._velocity = difference;    
+	};
+	
 	var updateVelocityTowardsTarget = function() {
 		var difference = calculateVectorToTarget();
 		distanceFromTarget = vec3.length(difference);
-
     vec3.normalize(difference);
-    var speed = 0.8;  
-		vec3.scale(difference, speed);	
+		vec3.scale(difference, getAdjusterBasedOnTime());	
     vec3.add(self._velocity, difference);
-    vec3.scale(self._velocity, 0.8);
+    capSpeedIfNecessary();
+	};
+	
+	var getAdjusterBasedOnTime = function() {
+	  if(ticksElapsedSinceFiring < 15)
+	     return adjuster * 2.0;
+	  if(ticksElapsedSinceFiring < 30)
+	     return adjuster;
+	  if(ticksElapsedSinceFiring < 45)
+	     return adjuster * 0.75;
+	  if(ticksElapsedSinceFiring < 60)
+	     return adjuster * 0.30;
+	  return adjuster * 0.1;
+	};
+	
+	var capSpeedIfNecessary = function() {
+	  var speed = vec3.length(self._velocity);
+	  var scale = maxSpeed / speed;
+	  if(scale < 1.0)
+	    vec3.scale(self._velocity, scale);
 	};
 	
 	var calculateVectorToTarget = function() {	

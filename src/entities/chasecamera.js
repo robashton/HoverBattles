@@ -28,70 +28,15 @@ exports.ChaseCamera  = function(scene, playerId) {
     lookAtDelta = 0.7;
   };
  
-  var onEntityAdded = function(entity) {
-    if(entity.getId() === playerId) {
-      resetDeltas();
-      fixLocation = false;
-      setTrackedEntity(entity);
-    }
-  };
-
-  var onEntityRemoved = function(entity) {
-    if(entity.getId() === playerId)
-      setTrackedEntity(null);
-  };
-
   var setTrackedEntity = function(newEntity) {
-    if(entity)
-      unhookEntityEvents(entity);
     entity = newEntity;
-    if(entity)
-      hookEntityEvents(entity);    
   };
-
-  var hookEntityEvents = function(entity) {
-    entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
-    entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);    
-    entity.addEventHandler('healthZeroed', onPlayerHealthZeroed);
-  };
-
-  var unhookEntityEvents = function(entity) {
-    entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
-    entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-    entity.removeEventHandler('healthZeroed', onPlayerHealthZeroed);
-  };
-
-  var onEntityTrackingTarget = function(data) {
-    includedTargetId = data.target.getId();
-  };
-
-  var onEntityCancelledTrackingTarget = function(data) {
-    stopTrackingTarget();
-  };
-  
+ 
   var stopTrackingTarget = function() {
     includedTargetId = null;
     vec3.subtract(desiredCameraLocationIncludingTarget, desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting);
   };
 
-  var onPlayerHealthZeroed = function(data) {
-    movementDelta = 0.03;
-    lookAtDelta = 0.03;
-    includedTargetId = null;
-    var deathPosition = entity.position;
-
-    fixLocationAt([deathPosition[0], deathPosition[1] + 100, deathPosition[1]]);
-
-    scene.withEntity(data.sourceid, function(source) {
-      setTimeout(function() {
-        setTrackedEntity(source);
-      }, 1500);        
-
-      setTimeout(function() {
-          fixLocationAt([deathPosition[0], deathPosition[1] + 300, deathPosition[1]]);
-      }, 5000);
-    });    
-  };
 
   var fixLocationAt = function(position) {
     fixLocation = true;
@@ -197,7 +142,49 @@ exports.ChaseCamera  = function(scene, playerId) {
     scene.camera.lookAt = vec3.create(cameraLookAt);
     scene.camera.location = vec3.create(cameraLocation);
   };
+  
+  var onEntityTrackingTarget = function(data) {
+    if(this.getId() === playerId)
+      includedTargetId = data.target.getId();
+  };
+  
+  var onEntityCancelledTrackingTarget = function(data) {
+    if(this.getId() === playerId)
+      stopTrackingTarget();
+  };
+  
+  var onEntityAdded = function(entity) {
+    if(entity.getId() === playerId) {
+      resetDeltas();
+      fixLocation = false;
+      setTrackedEntity(entity);
+    }
+  };  
+  
+  var onPlayerHealthZeroed = function(data) {
+   if(this.getId() !== playerId) return;
+   
+    movementDelta = 0.03;
+    lookAtDelta = 0.03;
+    includedTargetId = null;
+    var deathPosition = this.position;
 
+    fixLocationAt([deathPosition[0], deathPosition[1] + 100, deathPosition[1]]);
+
+    scene.withEntity(data.sourceid, function(source) {
+      setTimeout(function() {
+        setTrackedEntity(source);
+      }, 1500);        
+
+      setTimeout(function() {
+          fixLocationAt([deathPosition[0], deathPosition[1] + 300, deathPosition[1]]);
+      }, 5000);
+    });    
+  };
+  
+  scene.on('trackingTarget', onEntityTrackingTarget);
+  scene.on('cancelledTrackingTarget', onEntityCancelledTrackingTarget);    
+  scene.on('healthZeroed', onPlayerHealthZeroed);
   scene.onEntityAdded(onEntityAdded);
 };
 

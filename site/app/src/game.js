@@ -3188,70 +3188,15 @@ exports.ChaseCamera  = function(scene, playerId) {
     lookAtDelta = 0.7;
   };
  
-  var onEntityAdded = function(entity) {
-    if(entity.getId() === playerId) {
-      resetDeltas();
-      fixLocation = false;
-      setTrackedEntity(entity);
-    }
-  };
-
-  var onEntityRemoved = function(entity) {
-    if(entity.getId() === playerId)
-      setTrackedEntity(null);
-  };
-
   var setTrackedEntity = function(newEntity) {
-    if(entity)
-      unhookEntityEvents(entity);
     entity = newEntity;
-    if(entity)
-      hookEntityEvents(entity);    
   };
-
-  var hookEntityEvents = function(entity) {
-    entity.addEventHandler('trackingTarget', onEntityTrackingTarget);
-    entity.addEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);    
-    entity.addEventHandler('healthZeroed', onPlayerHealthZeroed);
-  };
-
-  var unhookEntityEvents = function(entity) {
-    entity.removeEventHandler('trackingTarget', onEntityTrackingTarget);
-    entity.removeEventHandler('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-    entity.removeEventHandler('healthZeroed', onPlayerHealthZeroed);
-  };
-
-  var onEntityTrackingTarget = function(data) {
-    includedTargetId = data.target.getId();
-  };
-
-  var onEntityCancelledTrackingTarget = function(data) {
-    stopTrackingTarget();
-  };
-  
+ 
   var stopTrackingTarget = function() {
     includedTargetId = null;
     vec3.subtract(desiredCameraLocationIncludingTarget, desiredCameraLocationBehindPlayer, offsetBetweenCamerasWhenStoppedTargetting);
   };
 
-  var onPlayerHealthZeroed = function(data) {
-    movementDelta = 0.03;
-    lookAtDelta = 0.03;
-    includedTargetId = null;
-    var deathPosition = entity.position;
-
-    fixLocationAt([deathPosition[0], deathPosition[1] + 100, deathPosition[1]]);
-
-    scene.withEntity(data.sourceid, function(source) {
-      setTimeout(function() {
-        setTrackedEntity(source);
-      }, 1500);        
-
-      setTimeout(function() {
-          fixLocationAt([deathPosition[0], deathPosition[1] + 300, deathPosition[1]]);
-      }, 5000);
-    });    
-  };
 
   var fixLocationAt = function(position) {
     fixLocation = true;
@@ -3357,7 +3302,49 @@ exports.ChaseCamera  = function(scene, playerId) {
     scene.camera.lookAt = vec3.create(cameraLookAt);
     scene.camera.location = vec3.create(cameraLocation);
   };
+  
+  var onEntityTrackingTarget = function(data) {
+    if(this.getId() === playerId)
+      includedTargetId = data.target.getId();
+  };
+  
+  var onEntityCancelledTrackingTarget = function(data) {
+    if(this.getId() === playerId)
+      stopTrackingTarget();
+  };
+  
+  var onEntityAdded = function(entity) {
+    if(entity.getId() === playerId) {
+      resetDeltas();
+      fixLocation = false;
+      setTrackedEntity(entity);
+    }
+  };  
+  
+  var onPlayerHealthZeroed = function(data) {
+   if(this.getId() !== playerId) return;
+   
+    movementDelta = 0.03;
+    lookAtDelta = 0.03;
+    includedTargetId = null;
+    var deathPosition = this.position;
 
+    fixLocationAt([deathPosition[0], deathPosition[1] + 100, deathPosition[1]]);
+
+    scene.withEntity(data.sourceid, function(source) {
+      setTimeout(function() {
+        setTrackedEntity(source);
+      }, 1500);        
+
+      setTimeout(function() {
+          fixLocationAt([deathPosition[0], deathPosition[1] + 300, deathPosition[1]]);
+      }, 5000);
+    });    
+  };
+  
+  scene.on('trackingTarget', onEntityTrackingTarget);
+  scene.on('cancelledTrackingTarget', onEntityCancelledTrackingTarget);    
+  scene.on('healthZeroed', onPlayerHealthZeroed);
   scene.onEntityAdded(onEntityAdded);
 };
 
@@ -4102,8 +4089,10 @@ var Missile = function() {
 
 	self._velocity = vec3.create([0,0,0]);	
 	
-	var ticksElapsedSinceStoppedTrackingTarget = 0;
+	var ticksElapsedSinceFiring = 0;
 
+  var maxSpeed = 5.0;
+  var adjuster = 0.8;  
 	var bounds = new Sphere(1.0, [0,0,0]);
   var isTrackingTarget = false;
 	var distanceFromTarget = vec3.create([99,99,99]);
@@ -4116,11 +4105,11 @@ var Missile = function() {
 	self.go = function(sid, tid) {
 	  sourceid = sid;
 	  targetid = tid;
-	  isTrackingTarget = true;
-	  
+	  isTrackingTarget = true;	  
 	  source = self._scene.getEntity(sourceid);
 	  target = self._scene.getEntity(targetid);	  
 	  self.position = vec3.create(source.position);	  
+	  setupInitialVelocity();
 	};
 
   self.clearTarget = function() {
@@ -4129,7 +4118,8 @@ var Missile = function() {
   };
 
   self.doLogic = function() {
-   if(isTrackingTarget) updateTargetReferences();
+    ticksElapsedSinceFiring++;
+    if(isTrackingTarget) updateTargetReferences();
 
     if(isTrackingTarget) {   
 		  updateVelocityTowardsTarget();
@@ -4141,9 +4131,21 @@ var Missile = function() {
     }
 	};
 	
+	var performPhysics = function() {
+		vec3.add(self.position, self._velocity);
+    checkIfMissileHasHitTerrain();
+	};
+
+  var checkIfMissileHasHitTerrain = function() {
+    var terrain = self._scene.getEntity("terrain");
+    var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
+    if(terrainHeight > self.position[1]) {
+      destroyMissileOfNaturalCauses();
+	  }
+  };
+	
 	var determineIfItIsTimeToExpire = function(){
-	  ticksElapsedSinceStoppedTrackingTarget++;
-	  if(ticksElapsedSinceStoppedTrackingTarget > 600)
+	  if(ticksElapsedSinceFiring > 300)
 	    destroyMissileOfNaturalCauses();
 	};
 	
@@ -4157,6 +4159,10 @@ var Missile = function() {
 	};
 
   var updateTargetReferences = function() {
+    if(ticksElapsedSinceFiring > 200) {
+      self.stopTrackingTarget();
+      return;
+    }    
     source = getSource();
     target = getTarget();
 
@@ -4188,7 +4194,7 @@ var Missile = function() {
 			targetid: targetid,
 			sourceid: sourceid,
       missileid: self.getId() 
-    });		  
+    });
   };
 
   var notifyTargetOfCollision = function(){ 
@@ -4200,18 +4206,7 @@ var Missile = function() {
     });
   }; 
 	
-	var performPhysics = function() {
-		vec3.add(self.position, self._velocity);
-    checkIfMissileHasHitTerrain();
-	};
 
-  var checkIfMissileHasHitTerrain = function() {
-    var terrain = self._scene.getEntity("terrain");
-    var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
-    if(terrainHeight > self.position[1]) {
-      destroyMissileOfNaturalCauses();
-	  }
-  };
   
   var destroyMissileOfNaturalCauses = function() {
     self.raiseServerEvent('missileExpired', { 
@@ -4227,15 +4222,51 @@ var Missile = function() {
 		return distanceToTargetIgnoringHeight < 2;		
 	};
 	
+	
+	var setupInitialVelocity = function() {
+	
+	  // Look a second into the future
+	  var positionInTheFuture = vec3.create([0,0,0]);
+	  var positionGoingToMove = vec3.create([0,0,0]);
+	  vec3.scale(target._velocity, 30, positionGoingToMove);
+	  vec3.add(target.position, positionGoingToMove, positionInTheFuture);
+	  
+	  // Take aim at that location
+	  var difference = vec3.create([0,0,0]);
+	  vec3.subtract(positionInTheFuture, source.position, difference);
+	  vec3.normalize(difference);
+	  
+	  // And fire at max speed
+	  vec3.scale(difference, maxSpeed);	  
+	  self._velocity = difference;    
+	};
+	
 	var updateVelocityTowardsTarget = function() {
 		var difference = calculateVectorToTarget();
 		distanceFromTarget = vec3.length(difference);
-
     vec3.normalize(difference);
-    var speed = 0.8;  
-		vec3.scale(difference, speed);	
+		vec3.scale(difference, getAdjusterBasedOnTime());	
     vec3.add(self._velocity, difference);
-    vec3.scale(self._velocity, 0.8);
+    capSpeedIfNecessary();
+	};
+	
+	var getAdjusterBasedOnTime = function() {
+	  if(ticksElapsedSinceFiring < 15)
+	     return adjuster * 2.0;
+	  if(ticksElapsedSinceFiring < 30)
+	     return adjuster;
+	  if(ticksElapsedSinceFiring < 45)
+	     return adjuster * 0.75;
+	  if(ticksElapsedSinceFiring < 60)
+	     return adjuster * 0.30;
+	  return adjuster * 0.1;
+	};
+	
+	var capSpeedIfNecessary = function() {
+	  var speed = vec3.length(self._velocity);
+	  var scale = maxSpeed / speed;
+	  if(scale < 1.0)
+	    vec3.scale(self._velocity, scale);
 	};
 	
 	var calculateVectorToTarget = function() {	
@@ -4283,38 +4314,16 @@ exports.MissileFirer = function(app, missileFactory) {
     if(!source) { console.warn('Erk, could not find source of missile firing'); return; };
     if(!target) { console.warn('Erk, could not find target of missile firing'); return; };
 
-    // This is far from ideal, I guess this is where a DoD approach would have been a better fit
-    // Perhaps not in terms of performance as it would make little difference, but from a management/design PoV
     var missile = missileFactory.create(data.missileid);
     app.scene.addEntity(missile);
     missile.go(data.sourceid, data.targetid);
-    registerMissile(data.sourceid, data.missileid);
   }; 
-  
-  var registerMissile = function(sourceid, missileid) {
-    if(!registeredMissiles[sourceid])
-      registeredMissiles[sourceid] = new EntityMissileCollection(app.scene, sourceid);
-    registeredMissiles[sourceid].add(missileid);   
-  };
-  
-  var unregisterMissile = function(sourceid, missileid) {
-     registeredMissiles[sourceid].remove(missileid);
-     if(!registeredMissiles[sourceid].hasAnyMissiles())
-        delete registeredMissiles[sourceid];
-  };
-  
-  var notifyAllMissilesOfEntityConfusion = function(sourceid) {
-    if(registeredMissiles[sourceid])
-      registeredMissiles[sourceid].notifyStopTrackingTarget();
-  }; 
- 
+
   var onTargetHit = function(data) {
-    unregisterMissile(data.sourceid, data.missileid);
     removeMissileFromScene(data.missileid);
   };
 
   var onMissileExpired = function(data) {
-    unregisterMissile(data.sourceid, data.missileid);
     removeMissileFromScene(data.missileid);
   };
 
@@ -4322,48 +4331,13 @@ exports.MissileFirer = function(app, missileFactory) {
     app.scene.withEntity(id, function(missile) {
 	    app.scene.removeEntity(missile);
     });	
-  };
-  
-  var onEntityCancelledTrackingTarget = function() {
-    notifyAllMissilesOfEntityConfusion(this.getId());
   };  
   
-  app.scene.on('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
+
   app.scene.on('fireMissile', onEntityFiredMissile);
   app.scene.on('targetHit',  onTargetHit);
   app.scene.on('missileExpired', onMissileExpired);
 };
-
-
-var EntityMissileCollection = function(scene, entityId) {
-  var self = this;
-  var count = 0;
-  var missiles = {};
-  
-  self.add = function(missileid) {
-    missiles[missileid] = {};
-    count++;
-  };
-  
-  self.remove = function(missileid) {
-    delete missiles[missileid];
-    count--;
-  };
-  
-  self.notifyStopTrackingTarget = function() {  
-    for(var missileid in missiles) {
-      var missile = scene.getEntity(missileid);
-      if(missile)
-        missile.stopTrackingTarget();
-    }
-  };
-  
-  self.hasAnyMissiles = function() {
-    return count > 0;
-  };
-
-};
-
 }, "entities/nameditem": function(exports, require, module) {exports.NamedItem = function() {
   var self = this;
   var displayName = null;
