@@ -4,17 +4,22 @@ var Smoother = function() {
   var self = this;
   self.hasInitialState = false;
 	
-	self.doLogic = function() {
-		if(!self.hasInitialState) return;
-		
-		var oldpositionDelta = vec3.create([0,0,0]);
+	var oldpositionDelta = vec3.create([0,0,0]);
+	var networkpositionDelta = vec3.create([0,0,0]);
+	
+	var smoothPositionOfEntity = function() {
+	  
 		vec3.subtract(self.position, self.oldposition, oldpositionDelta);
 		vec3.add(self.networkposition, oldpositionDelta);
-	
-		var networkpositionDelta = vec3.create([0,0,0]);
+		
 		vec3.subtract(self.networkposition, self.position, networkpositionDelta);
 		vec3.scale(networkpositionDelta, 0.001);
-		
+	  vec3.add(self.position, networkpositionDelta);
+	};
+	
+	var smoothRotationOfEntity = function() {
+	  if(self.networkrotationY === undefined) return;
+	  
 		var oldrotationDelta = self.rotationY - self.oldrotationy;	
 		self.networkrotationY += oldrotationDelta;
 			
@@ -22,8 +27,14 @@ var Smoother = function() {
 		networkrotationDelta *= 0.025;
 		
 		self.rotationY += networkrotationDelta;
-    vec3.add(self.position, networkpositionDelta);
-    
+	};
+	
+	self.doLogic = function() {
+		if(!self.hasInitialState) return;
+		
+    smoothPositionOfEntity();
+		smoothRotationOfEntity();
+		        
     // If we nearly fall off the edge of the world and the client thinks we survived
     // The terrain clipping behaviour will get in the way of smoothing, so let's force it    
     var differenceBetweenVerticals = self.position[1] - self.networkposition[1];
@@ -50,5 +61,5 @@ var Smoother = function() {
 
 	};
 };
-
+Smoother.Type = "Smoother";
 exports.Smoother = Smoother;

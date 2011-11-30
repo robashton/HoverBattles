@@ -19,8 +19,8 @@ var Hovercraft = function() {
   
   self.reset();
   
-  self.getSphere = function() {
-      return self._model.boundingSphere.translate(self.position);
+  self.getSphere = function(preallocatedCentre) {
+      return self._model.boundingSphere.translate(self.position, preallocatedCentre);
   };
   
   self.startForward = function() {
@@ -63,18 +63,18 @@ var Hovercraft = function() {
       self._jump = false;
   };
   
+  var acceleration = vec3.create([0,0,0]);
   self.impulseForward = function() {
       var amount = 0.05;
-      var accelerationZ = (-amount) * Math.cos(self.rotationY);
-      var accelerationX = (-amount) * Math.sin(self.rotationY);
-      var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
+      
+      acceleration[0] = (-amount) * Math.sin(self.rotationY);
+      acceleration[2] = (-amount) * Math.cos(self.rotationY);
       vec3.add(self._velocity, acceleration);
   };
   self.impulseBackward = function() {
       var amount = 0.03;
-      var accelerationZ = (amount) * Math.cos(self.rotationY);
-      var accelerationX = (amount) * Math.sin(self.rotationY);
-      var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
+      acceleration[0] = (amount) * Math.sin(self.rotationY);
+      acceleration[2] = (amount) * Math.cos(self.rotationY);
       vec3.add(self._velocity, acceleration);
   };
   self.impulseLeft = function() {
@@ -174,7 +174,8 @@ var Hovercraft = function() {
     self.raiseServerEvent('leftWorld');
   };
 }
-         
+
+Hovercraft.Type = "Hovercraft";         
 exports.Hovercraft = Hovercraft;
          
 

@@ -37,14 +37,12 @@ var Missile = function() {
     ticksElapsedSinceFiring++;
     if(isTrackingTarget) updateTargetReferences();
 
-    if(isTrackingTarget) {   
-		  updateVelocityTowardsTarget();
-		  performPhysics();
-		  determineIfTargetIsReached();
-    } else {
-      performPhysics();
-      determineIfItIsTimeToExpire();
-    }
+    if(target) {
+	    updateVelocityTowardsTarget();
+	    if(determineIfTargetIsReached()) return;
+	  }
+	  performPhysics();
+    determineIfItIsTimeToExpire();
 	};
 	
 	var performPhysics = function() {
@@ -95,13 +93,16 @@ var Missile = function() {
     return self._scene.getEntity(targetid);
   };
 	
+	var translatedBoundsCentre = vec3.create([0,0,0]);
 	var determineIfTargetIsReached = function() {
-		var myBounds = bounds.translate(self.position);
+	  if(!target) return;
+		var myBounds = bounds.translate(self.position, translatedBoundsCentre);
     
 		var targetSphere = target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
       notifyTargetOfCollision();  
       notifyOutsideWorldOfCollision();
+      return true;
     }
 	};
 
@@ -157,25 +158,36 @@ var Missile = function() {
 	  self._velocity = difference;    
 	};
 	
-	var updateVelocityTowardsTarget = function() {
-		var difference = calculateVectorToTarget();
-		distanceFromTarget = vec3.length(difference);
-    vec3.normalize(difference);
-		vec3.scale(difference, getAdjusterBasedOnTime());	
-    vec3.add(self._velocity, difference);
-    capSpeedIfNecessary();
+  var current = vec3.create([0,0,0]);
+  var desired = vec3.create([0,0,0]);
+	var updateVelocityTowardsTarget = function() { 
+	
+    calculateVectorToTarget(desired);
+		distanceFromTarget = vec3.length(desired);
+		
+    vec3.normalize(desired);
+    vec3.normalize(self._velocity, current);
+    
+    var adjuster = getAdjusterBasedOnTime();
+    
+    vec3.scale(desired, adjuster);
+    vec3.scale(current, 1.0 - adjuster);
+    vec3.add(desired, current);
+    vec3.scale(desired, maxSpeed);		
+		
+    self._velocity = desired;
 	};
 	
 	var getAdjusterBasedOnTime = function() {
-	  if(ticksElapsedSinceFiring < 15)
-	     return adjuster * 2.0;
 	  if(ticksElapsedSinceFiring < 30)
-	     return adjuster;
+	     return 0.3;
 	  if(ticksElapsedSinceFiring < 45)
-	     return adjuster * 0.75;
+	     return 0.2;
 	  if(ticksElapsedSinceFiring < 60)
-	     return adjuster * 0.30;
-	  return adjuster * 0.1;
+	     return 0.1;
+	  if(ticksElapsedSinceFiring < 90)
+	     return 0.05;
+	  return  0.01;
 	};
 	
 	var capSpeedIfNecessary = function() {
@@ -185,10 +197,9 @@ var Missile = function() {
 	    vec3.scale(self._velocity, scale);
 	};
 	
-	var calculateVectorToTarget = function() {	
+	var calculateVectorToTarget = function(difference) {	
     var targetDestination = target.position;
     var currentPosition = self.position;
-	  var difference = vec3.create([0,0,0]);
 	  vec3.subtract(targetDestination, currentPosition, difference);
 	  return difference;
 	};
@@ -197,7 +208,12 @@ var Missile = function() {
     self.clearTarget();
   };
   
+  self.updateSync = function(sync) {
+    sync.position = self.position;
+  };
+  
   self.addEventHandler('missileLost', onMissileLost);
 };
 
+Missile.Type = "Missile";
 exports.Missile = Missile;

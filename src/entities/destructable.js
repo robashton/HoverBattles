@@ -16,3 +16,5 @@ exports.Destructable = function() {
   self.addEventHandler('healthZeroed', onNoHealthLeft);
   self.addEventHandler('leftWorld', onLeftWorld);
 };
+
+exports.Destructable.Type = "Destructable";

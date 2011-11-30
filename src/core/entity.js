@@ -82,7 +82,10 @@ var Entity = function(id){
   };  
 
   self.attach = function(component, args) {
-    self.components.push(component);
+    if(!component.Type)
+      console.warn("Component does not have a type: " + component);
+      
+    self.components[component.Type] = component;
 
     var oldProperties = {};
     for(var i in this) {
@@ -157,11 +160,10 @@ var Entity = function(id){
   };
 
   self.is = function(component) {
-    for(var x = 0; x < self.components.length; x++) {
-      // Hack: To get around stitch and its dodgy caching
-      if(self.components[x].toString() === component.toString()) return true;
-    }
-    return false;
+    // In an ideal world I wouldn't even need the 'is' function
+    // In an ideal world I'd also be able to reference check rather than
+    // Going into the whole "Type" thing. Thanks requirejs.
+    return !!self.components[component.Type];
   };
 
   self.updateSync = function(sync) {

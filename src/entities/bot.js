@@ -206,6 +206,8 @@ exports.Bot = function(communication) {
 };
 
 
+exports.Bot.Type = "Bot";
+
 
 
 

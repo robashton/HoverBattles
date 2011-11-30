@@ -84,6 +84,8 @@ ParticleEmitter = function(id, capacity, app, config) {
     this.track();
 };
 
+ParticleEmitter.Type = "ParticleEmitter";
+
 ParticleEmitter.prototype.start = function() {
   this.active = true;
 };

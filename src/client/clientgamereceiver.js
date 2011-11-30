@@ -43,7 +43,7 @@ exports.ClientGameReceiver = function(app, server) {
   }; 
   
   var createGameComponents = function() {
-    missileFirer = new MissileFirer(app, new MissileFactory());
+    missileFirer = new MissileFirer(app, new MissileFactory(app));
     trailsAndExplosions = new TrailsAndExplosions(app);
     floor = Floor.Create(app);
     chaseCamera = ChaseCamera.Create(app.scene, playerId);

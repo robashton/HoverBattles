@@ -22,3 +22,4 @@ var Clipping = function() {
 };
 
 exports.Clipping = Clipping;
+exports.Clipping.Type = "Clipping";

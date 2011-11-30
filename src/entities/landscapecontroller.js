@@ -23,6 +23,8 @@ exports.LandscapeController = function(app, test) {
   terrain.setScene(app.scene);
 };
 
+exports.LandscapeController.Type = "LandscapeController";
+
 
 exports.LandscapeController.Create = function(app) {
   var landscape = new Entity("terrain");

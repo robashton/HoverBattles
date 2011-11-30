@@ -59,3 +59,5 @@ exports.FiringController = function() {
   self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
   self.addEventHandler('fireRequest', onFireRequest);
 };
+
+exports.FiringController.Type = "FiringController"; 

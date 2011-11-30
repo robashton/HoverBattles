@@ -119,6 +119,7 @@ exports.HovercraftSpawner = function(scene) {
   self.addEventHandler('entitySpawned', onEntitySpawned);
 };
 
+exports.HovercraftSpawner.Type = "HovercraftSpawner";
 exports.HovercraftSpawner.Create = function(scene) {
   var entity = new Entity('hovercraft-spawner');
   entity.attach(exports.HovercraftSpawner, [scene]);

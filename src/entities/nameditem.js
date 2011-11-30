@@ -11,3 +11,5 @@ exports.NamedItem = function() {
     return displayName;
   }; 
 };
+
+exports.NamedItem.Type = "NamedItem";

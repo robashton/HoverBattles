@@ -93,10 +93,10 @@ exports.ScoreKeeper = function(scene) {
   scene.on('leftWorld', onLeftWorld);
 };
 
+exports.ScoreKeeper.Type = "ScoreKeeper";
 exports.ScoreKeeper.GetFrom = function(scene) {
   return scene.getEntity('score-keeper');
 };
-
 exports.ScoreKeeper.Create = function(scene) {
   var entity = new Entity('score-keeper');
   entity.attach(exports.ScoreKeeper, [scene]);

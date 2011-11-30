@@ -6,7 +6,7 @@ var Explosion = require('../entities/explosion').Explosion;
 exports.TrailsAndExplosions = function(app) {
   var self = this;
   var trails = {};
-
+/* 
   var onEntityAdded = function(entity) {
     if(entity.is(Hovercraft))
       setupEntityTrail(entity, createHovercraftTrail);
@@ -88,5 +88,5 @@ exports.TrailsAndExplosions = function(app) {
   app.scene.on('healthZeroed', onHovercraftExploded);
   app.scene.on('missileExpired', onMissileExpired);
   app.scene.onEntityAdded(onEntityAdded);
-  app.scene.onEntityRemoved(onEntityRemoved);     
+  app.scene.onEntityRemoved(onEntityRemoved);     */
 };

@@ -184,7 +184,7 @@ exports.ClientGameReceiver = function(app, server) {
   }; 
   
   var createGameComponents = function() {
-    missileFirer = new MissileFirer(app, new MissileFactory());
+    missileFirer = new MissileFirer(app, new MissileFactory(app));
     trailsAndExplosions = new TrailsAndExplosions(app);
     floor = Floor.Create(app);
     chaseCamera = ChaseCamera.Create(app.scene, playerId);
@@ -1199,7 +1199,7 @@ var Explosion = require('../entities/explosion').Explosion;
 exports.TrailsAndExplosions = function(app) {
   var self = this;
   var trails = {};
-
+/* 
   var onEntityAdded = function(entity) {
     if(entity.is(Hovercraft))
       setupEntityTrail(entity, createHovercraftTrail);
@@ -1281,7 +1281,7 @@ exports.TrailsAndExplosions = function(app) {
   app.scene.on('healthZeroed', onHovercraftExploded);
   app.scene.on('missileExpired', onMissileExpired);
   app.scene.onEntityAdded(onEntityAdded);
-  app.scene.onEntityRemoved(onEntityRemoved);     
+  app.scene.onEntityRemoved(onEntityRemoved);     */
 };
 }, "core/bounding": function(exports, require, module) {vec3 = require('../thirdparty/glmatrix').vec3;
 mat4 = require('../thirdparty/glmatrix').mat4;
@@ -1321,10 +1321,9 @@ Sphere.Create = function(vertices, box) {
   return new Sphere(Math.sqrt(radiusSquared), centre);    
 };
 
-
-Sphere.prototype.intersectSphere = function(other) {
+Sphere.prototype.intersectSphere = function(other, outDirection) {
+    var difference = outDirection || vec3.create([0,0,0]);    
     var totalRadius = other.radius + this.radius;
-    var difference = vec3.create([0,0,0]);    
     vec3.subtract(other.centre, this.centre, difference);    
     var distanceBetweenSpheres = vec3.length(difference);
                             
@@ -1334,8 +1333,8 @@ Sphere.prototype.intersectSphere = function(other) {
     };
 };
 
-Sphere.prototype.translate = function(vector) {
-   var newCentre = vec3.create([0,0,0]);
+Sphere.prototype.translate = function(vector, centre) {
+   var newCentre = centre || vec3.create([0,0,0]);
    newCentre[0] = this.centre[0] + vector[0];
    newCentre[1] = this.centre[1] + vector[1];
    newCentre[2] = this.centre[2] + vector[2];   
@@ -1437,35 +1436,36 @@ Camera.prototype.transformSphereToScreen = function(sphere) {
 exports.Camera = Camera;
 }, "core/collisionmanager": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 
-CollisionManager = function(){
-    
-};
 
-CollisionManager.prototype.processPair = function(entityOne, entityTwo) {
-  if(entityOne._velocity == null || entityTwo._velocity == null) { return; }
-  if(entityOne.position == null || entityTwo.position == null) { return; }
-  if(!entityOne.getSphere || !entityTwo.getSphere) return;
-
-  var sphereOne = entityOne.getSphere();
-  var sphereTwo = entityTwo.getSphere();
+exports.CollisionManager = function() {
+  var self = this;
   
-  var results = sphereOne.intersectSphere(sphereTwo);
-  
-  if(results.distance > 0) return;
-
   var distanceToMoveEntityOne = vec3.create([0,0,0]);
   var distanceToMoveEntityTwo = vec3.create([0,0,0]);
+  var transformedSphereCentre = vec3.create([0,0,0]);
   
-  vec3.scale(results.direction, (results.distance / 2.0), distanceToMoveEntityOne);
-  vec3.scale(results.direction, -(results.distance / 2.0), distanceToMoveEntityTwo);
+  var transformedEntityOneSphereCentre = vec3.create([0,0,0]);
+  var transformedEntityTwoSphereCentre = vec3.create([0,0,0]);
     
-  vec3.add(entityOne.position, distanceToMoveEntityOne);
-  vec3.add(entityTwo.position, distanceToMoveEntityTwo);
+  self.processPair = function(entityOne, entityTwo) {
+    if(entityOne._velocity == null || entityTwo._velocity == null) { return; }
+    if(entityOne.position == null || entityTwo.position == null) { return; }
+    if(!entityOne.getSphere || !entityTwo.getSphere) return;
 
+    var sphereOne = entityOne.getSphere(transformedEntityOneSphereCentre);
+    var sphereTwo = entityTwo.getSphere(transformedEntityTwoSphereCentre);
+    
+    var results = sphereOne.intersectSphere(sphereTwo, transformedSphereCentre);
+    
+    if(results.distance > 0) return;
+   
+    vec3.scale(results.direction, (results.distance / 2.0), distanceToMoveEntityOne);
+    vec3.scale(results.direction, -(results.distance / 2.0), distanceToMoveEntityTwo);
+      
+    vec3.add(entityOne.position, distanceToMoveEntityOne);
+    vec3.add(entityTwo.position, distanceToMoveEntityTwo);
+  };
 };
-
-
-exports.CollisionManager = CollisionManager;
 }, "core/controller": function(exports, require, module) {var Controller = function(scene) {
   this.scene = scene;
   this._timeAtLastFrame = new Date().getTime();
@@ -1618,7 +1618,10 @@ var Entity = function(id){
   };  
 
   self.attach = function(component, args) {
-    self.components.push(component);
+    if(!component.Type)
+      console.warn("Component does not have a type: " + component);
+      
+    self.components[component.Type] = component;
 
     var oldProperties = {};
     for(var i in this) {
@@ -1693,11 +1696,10 @@ var Entity = function(id){
   };
 
   self.is = function(component) {
-    for(var x = 0; x < self.components.length; x++) {
-      // Hack: To get around stitch and its dodgy caching
-      if(self.components[x].toString() === component.toString()) return true;
-    }
-    return false;
+    // In an ideal world I wouldn't even need the 'is' function
+    // In an ideal world I'd also be able to reference check rather than
+    // Going into the whole "Type" thing. Thanks requirejs.
+    return !!self.components[component.Type];
   };
 
   self.updateSync = function(sync) {
@@ -2718,21 +2720,22 @@ exports.Tracking = function() {
    self.lookForCraftInVision(0.75, 250,  self.notifyAimingAt,  self.notifyNotAimingAt);
 	};
 	
+	var vectorToOtherEntity = vec3.create([0,0,0]);
+	var vectorOfAim = [0,0,0,1];
 	self.lookForCraftInVision = function(fieldOfVision, allowedDistance, canSeeCraft, cannotSeeCraft) {
+	  
 	  self._scene.forEachEntity(function(entity) {
 	    if(entity === this) return;
       if(!entity.is(Hovercraft)) return;
 
       // Get a vector to the other entity
-      var vectorToOtherEntity = vec3.create([0,0,0]);
       vec3.subtract(entity.position, self.position, vectorToOtherEntity);
       var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
       vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
 
       // Get the direction we're aiming in
-      var x = 0 - Math.sin(self.rotationY);
-      var z = 0 - Math.cos(self.rotationY);         
-      var vectorOfAim = [x,0,z,1];
+      vectorOfAim[0] = 0 - Math.sin(self.rotationY);
+      vectorOfAim[2] = 0 - Math.cos(self.rotationY);         
       
       var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
       if(quotient > fieldOfVision && distanceToOtherEntity < allowedDistance)
@@ -2786,6 +2789,8 @@ exports.Tracking = function() {
 
 };
 
+exports.Tracking.Type = "Tracking";
+
 exports.Targeting = function(){
   var self = this;
 
@@ -2833,6 +2838,8 @@ exports.Targeting = function(){
 		}	
 	};
 };
+
+exports.Targeting.Type = "Targeting";
 }, "entities/bot": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 
 exports.Bot = function(communication) {
@@ -3041,6 +3048,8 @@ exports.Bot = function(communication) {
 };
 
 
+exports.Bot.Type = "Bot";
+
 
 
 
@@ -3050,7 +3059,7 @@ exports.Bot = function(communication) {
 
 
 }, "entities/botfactory": function(exports, require, module) {var Bot = require('./bot').Bot;
-var DESIRED_PLAYER_COUNT = 5;
+var DESIRED_PLAYER_COUNT = 30;
 
 
 exports.BotFactory = function(communication, scene, spawner) {
@@ -3378,6 +3387,7 @@ exports.ChaseCamera.Create = function(scene, playerId) {
 };
 
 exports.Clipping = Clipping;
+exports.Clipping.Type = "Clipping";
 }, "entities/destructable": function(exports, require, module) {exports.Destructable = function() {
   var self = this;
 
@@ -3396,6 +3406,8 @@ exports.Clipping = Clipping;
   self.addEventHandler('healthZeroed', onNoHealthLeft);
   self.addEventHandler('leftWorld', onLeftWorld);
 };
+
+exports.Destructable.Type = "Destructable";
 }, "entities/explosion": function(exports, require, module) {var ParticleEmitter = require('./particleemitter').ParticleEmitter;
 
 exports.Explosion = function(app, details) {
@@ -3515,6 +3527,8 @@ exports.Explosion = function(app, details) {
   self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
   self.addEventHandler('fireRequest', onFireRequest);
 };
+
+exports.FiringController.Type = "FiringController"; 
 }, "entities/hovercraft": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 var mat4 = require('../thirdparty/glmatrix').mat4;
 
@@ -3536,8 +3550,8 @@ var Hovercraft = function() {
   
   self.reset();
   
-  self.getSphere = function() {
-      return self._model.boundingSphere.translate(self.position);
+  self.getSphere = function(preallocatedCentre) {
+      return self._model.boundingSphere.translate(self.position, preallocatedCentre);
   };
   
   self.startForward = function() {
@@ -3580,18 +3594,18 @@ var Hovercraft = function() {
       self._jump = false;
   };
   
+  var acceleration = vec3.create([0,0,0]);
   self.impulseForward = function() {
       var amount = 0.05;
-      var accelerationZ = (-amount) * Math.cos(self.rotationY);
-      var accelerationX = (-amount) * Math.sin(self.rotationY);
-      var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
+      
+      acceleration[0] = (-amount) * Math.sin(self.rotationY);
+      acceleration[2] = (-amount) * Math.cos(self.rotationY);
       vec3.add(self._velocity, acceleration);
   };
   self.impulseBackward = function() {
       var amount = 0.03;
-      var accelerationZ = (amount) * Math.cos(self.rotationY);
-      var accelerationX = (amount) * Math.sin(self.rotationY);
-      var acceleration = vec3.create([accelerationX, 0, accelerationZ]);
+      acceleration[0] = (amount) * Math.sin(self.rotationY);
+      acceleration[2] = (amount) * Math.cos(self.rotationY);
       vec3.add(self._velocity, acceleration);
   };
   self.impulseLeft = function() {
@@ -3691,7 +3705,8 @@ var Hovercraft = function() {
     self.raiseServerEvent('leftWorld');
   };
 }
-         
+
+Hovercraft.Type = "Hovercraft";         
 exports.Hovercraft = Hovercraft;
          
 
@@ -3854,6 +3869,7 @@ exports.HovercraftSpawner = function(scene) {
   self.addEventHandler('entitySpawned', onEntitySpawned);
 };
 
+exports.HovercraftSpawner.Type = "HovercraftSpawner";
 exports.HovercraftSpawner.Create = function(scene) {
   var entity = new Entity('hovercraft-spawner');
   entity.attach(exports.HovercraftSpawner, [scene]);
@@ -4076,6 +4092,8 @@ exports.LandscapeController = function(app, test) {
   terrain.setScene(app.scene);
 };
 
+exports.LandscapeController.Type = "LandscapeController";
+
 
 exports.LandscapeController.Create = function(app) {
   var landscape = new Entity("terrain");
@@ -4121,14 +4139,12 @@ var Missile = function() {
     ticksElapsedSinceFiring++;
     if(isTrackingTarget) updateTargetReferences();
 
-    if(isTrackingTarget) {   
-		  updateVelocityTowardsTarget();
-		  performPhysics();
-		  determineIfTargetIsReached();
-    } else {
-      performPhysics();
-      determineIfItIsTimeToExpire();
-    }
+    if(target) {
+	    updateVelocityTowardsTarget();
+	    if(determineIfTargetIsReached()) return;
+	  }
+	  performPhysics();
+    determineIfItIsTimeToExpire();
 	};
 	
 	var performPhysics = function() {
@@ -4179,13 +4195,16 @@ var Missile = function() {
     return self._scene.getEntity(targetid);
   };
 	
+	var translatedBoundsCentre = vec3.create([0,0,0]);
 	var determineIfTargetIsReached = function() {
-		var myBounds = bounds.translate(self.position);
+	  if(!target) return;
+		var myBounds = bounds.translate(self.position, translatedBoundsCentre);
     
 		var targetSphere = target.getSphere();
 		if(targetSphere.intersectSphere(myBounds).distance < 0){
       notifyTargetOfCollision();  
       notifyOutsideWorldOfCollision();
+      return true;
     }
 	};
 
@@ -4241,25 +4260,36 @@ var Missile = function() {
 	  self._velocity = difference;    
 	};
 	
-	var updateVelocityTowardsTarget = function() {
-		var difference = calculateVectorToTarget();
-		distanceFromTarget = vec3.length(difference);
-    vec3.normalize(difference);
-		vec3.scale(difference, getAdjusterBasedOnTime());	
-    vec3.add(self._velocity, difference);
-    capSpeedIfNecessary();
+  var current = vec3.create([0,0,0]);
+  var desired = vec3.create([0,0,0]);
+	var updateVelocityTowardsTarget = function() { 
+	
+    calculateVectorToTarget(desired);
+		distanceFromTarget = vec3.length(desired);
+		
+    vec3.normalize(desired);
+    vec3.normalize(self._velocity, current);
+    
+    var adjuster = getAdjusterBasedOnTime();
+    
+    vec3.scale(desired, adjuster);
+    vec3.scale(current, 1.0 - adjuster);
+    vec3.add(desired, current);
+    vec3.scale(desired, maxSpeed);		
+		
+    self._velocity = desired;
 	};
 	
 	var getAdjusterBasedOnTime = function() {
-	  if(ticksElapsedSinceFiring < 15)
-	     return adjuster * 2.0;
 	  if(ticksElapsedSinceFiring < 30)
-	     return adjuster;
+	     return 0.3;
 	  if(ticksElapsedSinceFiring < 45)
-	     return adjuster * 0.75;
+	     return 0.2;
 	  if(ticksElapsedSinceFiring < 60)
-	     return adjuster * 0.30;
-	  return adjuster * 0.1;
+	     return 0.1;
+	  if(ticksElapsedSinceFiring < 90)
+	     return 0.05;
+	  return  0.01;
 	};
 	
 	var capSpeedIfNecessary = function() {
@@ -4269,10 +4299,9 @@ var Missile = function() {
 	    vec3.scale(self._velocity, scale);
 	};
 	
-	var calculateVectorToTarget = function() {	
+	var calculateVectorToTarget = function(difference) {	
     var targetDestination = target.position;
     var currentPosition = self.position;
-	  var difference = vec3.create([0,0,0]);
 	  vec3.subtract(targetDestination, currentPosition, difference);
 	  return difference;
 	};
@@ -4281,18 +4310,31 @@ var Missile = function() {
     self.clearTarget();
   };
   
+  self.updateSync = function(sync) {
+    sync.position = self.position;
+  };
+  
   self.addEventHandler('missileLost', onMissileLost);
 };
 
+Missile.Type = "Missile";
 exports.Missile = Missile;
 }, "entities/missilefactory": function(exports, require, module) {Entity = require('../core/entity').Entity;
 Missile = require('./missile').Missile;
+Smoother = require('./smoother').Smoother;
 
-var MissileFactory = function() {};
+var MissileFactory = function(app) {
+  this.app = app;
+};
 
 MissileFactory.prototype.create = function(missileid) {
   var entity = new Entity(missileid); 
   entity.attach(Missile);
+  
+  if(this.app.isClient) {
+    entity.attach(Smoother);
+  }
+  
   return entity;
 };
 
@@ -4338,6 +4380,8 @@ exports.MissileFirer = function(app, missileFactory) {
   app.scene.on('targetHit',  onTargetHit);
   app.scene.on('missileExpired', onMissileExpired);
 };
+
+exports.MissileFirer.Type = "MissileFirer";
 }, "entities/nameditem": function(exports, require, module) {exports.NamedItem = function() {
   var self = this;
   var displayName = null;
@@ -4351,6 +4395,8 @@ exports.MissileFirer = function(app, missileFactory) {
     return displayName;
   }; 
 };
+
+exports.NamedItem.Type = "NamedItem";
 }, "entities/particleemitter": function(exports, require, module) {var randoms = new Array(randomsCount);
 var randomsCount = 100000;
 
@@ -4436,6 +4482,8 @@ ParticleEmitter = function(id, capacity, app, config) {
     this.createBuffers();
     this.track();
 };
+
+ParticleEmitter.Type = "ParticleEmitter";
 
 ParticleEmitter.prototype.start = function() {
   this.active = true;
@@ -4702,10 +4750,10 @@ exports.ScoreKeeper = function(scene) {
   scene.on('leftWorld', onLeftWorld);
 };
 
+exports.ScoreKeeper.Type = "ScoreKeeper";
 exports.ScoreKeeper.GetFrom = function(scene) {
   return scene.getEntity('score-keeper');
 };
-
 exports.ScoreKeeper.Create = function(scene) {
   var entity = new Entity('score-keeper');
   entity.attach(exports.ScoreKeeper, [scene]);
@@ -4718,17 +4766,22 @@ var Smoother = function() {
   var self = this;
   self.hasInitialState = false;
 	
-	self.doLogic = function() {
-		if(!self.hasInitialState) return;
-		
-		var oldpositionDelta = vec3.create([0,0,0]);
+	var oldpositionDelta = vec3.create([0,0,0]);
+	var networkpositionDelta = vec3.create([0,0,0]);
+	
+	var smoothPositionOfEntity = function() {
+	  
 		vec3.subtract(self.position, self.oldposition, oldpositionDelta);
 		vec3.add(self.networkposition, oldpositionDelta);
-	
-		var networkpositionDelta = vec3.create([0,0,0]);
+		
 		vec3.subtract(self.networkposition, self.position, networkpositionDelta);
 		vec3.scale(networkpositionDelta, 0.001);
-		
+	  vec3.add(self.position, networkpositionDelta);
+	};
+	
+	var smoothRotationOfEntity = function() {
+	  if(self.networkrotationY === undefined) return;
+	  
 		var oldrotationDelta = self.rotationY - self.oldrotationy;	
 		self.networkrotationY += oldrotationDelta;
 			
@@ -4736,8 +4789,14 @@ var Smoother = function() {
 		networkrotationDelta *= 0.025;
 		
 		self.rotationY += networkrotationDelta;
-    vec3.add(self.position, networkpositionDelta);
-    
+	};
+	
+	self.doLogic = function() {
+		if(!self.hasInitialState) return;
+		
+    smoothPositionOfEntity();
+		smoothRotationOfEntity();
+		        
     // If we nearly fall off the edge of the world and the client thinks we survived
     // The terrain clipping behaviour will get in the way of smoothing, so let's force it    
     var differenceBetweenVerticals = self.position[1] - self.networkposition[1];
@@ -4764,7 +4823,7 @@ var Smoother = function() {
 
 	};
 };
-
+Smoother.Type = "Smoother";
 exports.Smoother = Smoother;
 }, "server/application": function(exports, require, module) {var ResourceManager = require('../core/resources').ResourceManager;
 var Scene = require('../core/scene').Scene;
@@ -5555,7 +5614,7 @@ Identity = require('./identity').Identity;
 exports.ServerGameReceiver = function(app, communication) {
   var self = this;
   var guestCount = 0;
-  var missileFirer = new MissileFirer(app, new MissileFactory());
+  var missileFirer = new MissileFirer(app, new MissileFactory(app));
   var spawner = HovercraftSpawner.Create(app.scene);
   var scoreKeeper = ScoreKeeper.Create(app.scene);
   var persistenceListener = new PersistenceListener(app.scene);

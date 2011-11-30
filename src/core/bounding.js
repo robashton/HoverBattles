@@ -36,10 +36,9 @@ Sphere.Create = function(vertices, box) {
   return new Sphere(Math.sqrt(radiusSquared), centre);    
 };
 
-
-Sphere.prototype.intersectSphere = function(other) {
+Sphere.prototype.intersectSphere = function(other, outDirection) {
+    var difference = outDirection || vec3.create([0,0,0]);    
     var totalRadius = other.radius + this.radius;
-    var difference = vec3.create([0,0,0]);    
     vec3.subtract(other.centre, this.centre, difference);    
     var distanceBetweenSpheres = vec3.length(difference);
                             
@@ -49,8 +48,8 @@ Sphere.prototype.intersectSphere = function(other) {
     };
 };
 
-Sphere.prototype.translate = function(vector) {
-   var newCentre = vec3.create([0,0,0]);
+Sphere.prototype.translate = function(vector, centre) {
+   var newCentre = centre || vec3.create([0,0,0]);
    newCentre[0] = this.centre[0] + vector[0];
    newCentre[1] = this.centre[1] + vector[1];
    newCentre[2] = this.centre[2] + vector[2];   

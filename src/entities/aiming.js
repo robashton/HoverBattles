@@ -14,21 +14,22 @@ exports.Tracking = function() {
    self.lookForCraftInVision(0.75, 250,  self.notifyAimingAt,  self.notifyNotAimingAt);
 	};
 	
+	var vectorToOtherEntity = vec3.create([0,0,0]);
+	var vectorOfAim = [0,0,0,1];
 	self.lookForCraftInVision = function(fieldOfVision, allowedDistance, canSeeCraft, cannotSeeCraft) {
+	  
 	  self._scene.forEachEntity(function(entity) {
 	    if(entity === this) return;
       if(!entity.is(Hovercraft)) return;
 
       // Get a vector to the other entity
-      var vectorToOtherEntity = vec3.create([0,0,0]);
       vec3.subtract(entity.position, self.position, vectorToOtherEntity);
       var distanceToOtherEntity = vec3.length(vectorToOtherEntity);            
       vec3.scale(vectorToOtherEntity, 1 / distanceToOtherEntity);
 
       // Get the direction we're aiming in
-      var x = 0 - Math.sin(self.rotationY);
-      var z = 0 - Math.cos(self.rotationY);         
-      var vectorOfAim = [x,0,z,1];
+      vectorOfAim[0] = 0 - Math.sin(self.rotationY);
+      vectorOfAim[2] = 0 - Math.cos(self.rotationY);         
       
       var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
       if(quotient > fieldOfVision && distanceToOtherEntity < allowedDistance)
@@ -82,6 +83,8 @@ exports.Tracking = function() {
 
 };
 
+exports.Tracking.Type = "Tracking";
+
 exports.Targeting = function(){
   var self = this;
 
@@ -129,3 +132,5 @@ exports.Targeting = function(){
 		}	
 	};
 };
+
+exports.Targeting.Type = "Targeting";

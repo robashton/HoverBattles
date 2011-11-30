@@ -39,3 +39,5 @@ exports.MissileFirer = function(app, missileFactory) {
   app.scene.on('targetHit',  onTargetHit);
   app.scene.on('missileExpired', onMissileExpired);
 };
+
+exports.MissileFirer.Type = "MissileFirer";
