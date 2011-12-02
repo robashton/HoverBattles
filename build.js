@@ -16,7 +16,7 @@ var stitch  = require('stitch');
 var fs = require('fs');
 var ShaderGeneration = require('./src/server/shadergeneration').ShaderGeneration;
 var data = require('./src/server/data').Data;
-var views = require('./relax').Views;
+var views = require('./relax').Docs;
 
 var pkg = stitch.createPackage({
   paths: ['./src']
@@ -30,8 +30,9 @@ pkg.compile(function (err, source){
 });
 
 // Update the database
-for(var i in views)
+for(var i in views) {
   data.save(views[i]);
+}
 
 // Generate landscape geometry from inputs
 

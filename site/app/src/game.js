@@ -3059,7 +3059,7 @@ exports.Bot.Type = "Bot";
 
 
 }, "entities/botfactory": function(exports, require, module) {var Bot = require('./bot').Bot;
-var DESIRED_PLAYER_COUNT = 30;
+var DESIRED_PLAYER_COUNT = 5;
 
 
 exports.BotFactory = function(communication, scene, spawner) {
@@ -4283,11 +4283,11 @@ var Missile = function() {
 	
 	var getAdjusterBasedOnTime = function() {
 	  if(ticksElapsedSinceFiring < 30)
-	     return 0.3;
-	  if(ticksElapsedSinceFiring < 45)
 	     return 0.2;
-	  if(ticksElapsedSinceFiring < 60)
+	  if(ticksElapsedSinceFiring < 45)
 	     return 0.1;
+	  if(ticksElapsedSinceFiring < 60)
+	     return 0.08;
 	  if(ticksElapsedSinceFiring < 90)
 	     return 0.05;
 	  return  0.01;
