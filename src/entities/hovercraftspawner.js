@@ -15,6 +15,12 @@ exports.HovercraftSpawner = function(scene) {
     });
   };
 
+  self.removePlayer = function(id) {
+    self.raiseServerEvent('playerLeft', {
+      id: id
+    });
+  };
+
   self.spawnHovercraft = function(id) {
     var position = vec3.create([
       Math.random() * 400 - 200,
@@ -28,13 +34,6 @@ exports.HovercraftSpawner = function(scene) {
     });
   };
 
-  self.removePlayer = function(id) {
-    var craft = scene.getEntity(id);
-    if(!craft) return;
-    self.raiseServerEvent('playerLeft', {
-      id: id
-    });
-  };
 
   self.namePlayer = function(id, name) {
     self.raiseServerEvent('playerNamed', {
@@ -88,9 +87,10 @@ exports.HovercraftSpawner = function(scene) {
   };  
 
   var onPlayerLeft = function(data) {
-    scene.withEntity(data.id, function(entity) {
-        scene.removeEntity(entity);    
-    });
+    var craft = scene.getEntity(data.id);
+    if(craft)
+      scene.removeEntity(craft);   
+
     delete playerNames[data.id];
     raiseNamesChangedEvent();
   };
