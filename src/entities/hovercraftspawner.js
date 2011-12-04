@@ -6,6 +6,7 @@ exports.HovercraftSpawner = function(scene) {
   var self = this;  
   var hovercraftFactory = new HovercraftFactory(scene.app);
   var playerNames = {};
+  var respawnTimeouts = {};
 
   scene.addEntity(self);
 
@@ -73,7 +74,7 @@ exports.HovercraftSpawner = function(scene) {
     var id = this.getId();
     scene.removeEntity(this);
 
-    setTimeout(function() {
+    respawnTimeouts[id] = setTimeout(function() {
       raiseEntityRevived(id);
     }, 10000);
   };
@@ -87,12 +88,28 @@ exports.HovercraftSpawner = function(scene) {
   };  
 
   var onPlayerLeft = function(data) {
-    var craft = scene.getEntity(data.id);
-    if(craft)
-      scene.removeEntity(craft);   
+    removePlayerFromScene(data.id);
+    clearPlayerInfo(data.id);
+    clearPlayerRespawn(data.id); 
 
-    delete playerNames[data.id];
+  };
+
+  var clearPlayerRespawn = function(id) {
+    if(respawnTimeouts[id]) {
+      clearTimeout(respawnTimeouts[id]);
+      delete respawnTimeouts[id];
+    }
+  };
+
+  var clearPlayerInfo = function(id) {
+    delete playerNames[id];
     raiseNamesChangedEvent();
+  };
+
+  var removePlayerFromScene = function(id) {
+    var craft = scene.getEntity(id);
+    if(craft)
+      scene.removeEntity(craft);  
   };
 
   var onEntitySpawned = function(data) {
