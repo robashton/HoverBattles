@@ -44,20 +44,10 @@ exports.Bot = function(communication) {
       updateInputTowardsCurrentTarget();
     },
     followingtarget: function() {
-      tryAndFire();
       adjustAimedTarget();
       updateInputTowardsCurrentTarget();
     }
   };    
-
-  var tryAndFire = function() {
-    if(!waitingToFire) return;
-    waitingToFireCount -= 1.0;
-    if(waitingToFireCount < 0) {
-      waitingToFire = false;
-      fireMissileAtTarget();
-    }
-  };
   
   var adjustAimedTarget = function() {
     self._scene.withEntity(currentTargetId, function(target) {

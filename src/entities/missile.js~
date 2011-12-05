@@ -180,7 +180,7 @@ var Missile = function() {
 	     return 0.01
     if(ticksElapsedSinceFiring < 60)
 	     return 0.01; */
-	  return  0;
+	  return  0.001;
 	};
 	
 	var capSpeedIfNecessary = function() {

@@ -1,0 +1,15 @@
+{
+    "name": "HoverBattles",
+    "version": "1.0.0",
+    "dependencies": {
+      "socket.io": "",
+	    "paperboy": "",
+	    "stitch": "",
+	    "gzip": "",
+      "cookies": "",
+      "keygrip": "",
+      "couch-client": "",
+      "bcrypt": "",
+      "underscore": ""
+    }
+}

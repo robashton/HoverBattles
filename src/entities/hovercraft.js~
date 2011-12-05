@@ -130,7 +130,7 @@ var Hovercraft = function() {
     heightDelta = self.position[1] - terrainHeight;
   };
   
-
+  var maxLength = 0;
   self.doLogic = function() {
     
     adjustPositionByVelocity();
@@ -141,6 +141,11 @@ var Hovercraft = function() {
     self._velocity[1] -= 0.025;              
     vec3.scale(self._velocity, self._decay);
     
+    var length = vec3.length(self._velocity);
+    if(length > maxLength) {
+      maxLength = length;
+    }
+
     if(self.position[1] < -90)
       raiseLeftWorldEvent();
   };

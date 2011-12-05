@@ -12,12 +12,12 @@ ServerApp = function(){
   this.resources.addModelLoader(new ServerLandChunkModelLoader(this.resources));
 };
 
-ServerApp.prototype.start = function(){
+ServerApp.start = function(){
     var controller = this.controller;
     this.intervalId = setInterval(function() {  controller.tick(); }, 1000 / 30);
 };
 
-ServerApp.prototype.stop = function(){
+ServerApp.stop = function(){
     clearInterval(this.intervalId);
 };
 

@@ -49,10 +49,8 @@ var game = new ServerCommunication(app, server);
 var landscape = new LandscapeController.Create(app);
 
 app.resources.onAllAssetsLoaded(function(){
-
-    app.start();
           
     setInterval(function(){    
         game.synchronise();
-    }, 1000); 
+    }, 500); 
 });

@@ -1479,7 +1479,7 @@ Controller.prototype.tick = function(){
     var timeSinceLastDoLogic = (timeAtThisFrame - this._timeAtLastFrame) + this._leftover;
 	var catchUpFrameCount = Math.floor(timeSinceLastDoLogic / this._idealTimePerFrame);
 	
-    if(this._first) { catchUpFrameCount = 1; timeSinceLastDoLogic = this._idealTimePerFrame; this._first = false; }
+  if(this._first) { catchUpFrameCount = 1; timeSinceLastDoLogic = this._idealTimePerFrame; this._first = false; }
 	for(var i = 0 ; i < catchUpFrameCount; i++){
 		this.scene.doLogic();
 	}
@@ -1488,7 +1488,8 @@ Controller.prototype.tick = function(){
 	this._timeAtLastFrame = timeAtThisFrame;  
 };
 
-exports.Controller = Controller;}, "core/debug": function(exports, require, module) {exports = {
+exports.Controller = Controller;
+}, "core/debug": function(exports, require, module) {exports = {
     
     
 };}, "core/defaultmodelloader": function(exports, require, module) {var Model = require('./model').Model;
@@ -2850,6 +2851,9 @@ exports.Bot = function(communication) {
   var currentTarget = vec3.create([0,0,0]);
   
   var inputStates = {};
+  var waitingToFire = true;
+  var waitingToFireCount = 0;
+  
   
   self.doLogic = function() {
     determineState();
@@ -2883,10 +2887,20 @@ exports.Bot = function(communication) {
       updateInputTowardsCurrentTarget();
     },
     followingtarget: function() {
+      tryAndFire();
       adjustAimedTarget();
       updateInputTowardsCurrentTarget();
     }
   };    
+
+  var tryAndFire = function() {
+    if(!waitingToFire) return;
+    waitingToFireCount -= 1.0;
+    if(waitingToFireCount < 0) {
+      waitingToFire = false;
+      fireMissileAtTarget();
+    }
+  };
   
   var adjustAimedTarget = function() {
     self._scene.withEntity(currentTargetId, function(target) {
@@ -3030,7 +3044,8 @@ exports.Bot = function(communication) {
   };
   
   var onMissileLock = function(data) {
-    fireMissileAtTarget();
+    waitingToFire = true;
+    waitingToFireCount = Math.random() * 30;
   };
   
   var startFollowingTarget = function(targetid) {
@@ -3595,7 +3610,8 @@ var Hovercraft = function() {
   self.cancelUp = function() {
       self._jump = false;
   };
-  
+ 
+  var count = 0; 
   var acceleration = vec3.create([0,0,0]);
   self.impulseForward = function() {
       var amount = 0.05;
@@ -3618,6 +3634,8 @@ var Hovercraft = function() {
       var amount = 0.07;
       self.rotationY -= amount;
   };
+
+  var count = 0;
   self.impulseUp = function() {
       var amount = 0.25;
       var terrain = self._scene.getEntity("terrain");
@@ -3660,15 +3678,17 @@ var Hovercraft = function() {
     heightDelta = self.position[1] - terrainHeight;
   };
   
+
   self.doLogic = function() {
+    
     adjustPositionByVelocity();
     updateTerrainVariables();
     processInput();
     interactWithTerrain();
 
-     self._velocity[1] -= 0.025;              
-     vec3.scale(self._velocity, self._decay);
-
+    self._velocity[1] -= 0.025;              
+    vec3.scale(self._velocity, self._decay);
+    
     if(self.position[1] < -90)
       raiseLeftWorldEvent();
   };
@@ -3732,10 +3752,6 @@ HovercraftFactory.prototype.create = function(id) {
   var entity = new Entity(id);
   
   entity.setModel(model); 
-  if(this._app.isClient) {
-    entity.attach(Smoother);
-  }
-  
   entity.attach(Destructable);
   entity.attach(Hovercraft);
   entity.attach(Tracking);
@@ -3743,6 +3759,9 @@ HovercraftFactory.prototype.create = function(id) {
   entity.attach(NamedItem);
   entity.attach(FiringController);
 
+  if(this._app.isClient) {
+    entity.attach(Smoother);
+  }
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
@@ -3758,11 +3777,18 @@ exports.HovercraftSpawner = function(scene) {
   var self = this;  
   var hovercraftFactory = new HovercraftFactory(scene.app);
   var playerNames = {};
+  var respawnTimeouts = {};
 
   scene.addEntity(self);
 
   self.createPlayer = function(id) {
     self.raiseServerEvent('playerJoined', {
+      id: id
+    });
+  };
+
+  self.removePlayer = function(id) {
+    self.raiseServerEvent('playerLeft', {
       id: id
     });
   };
@@ -3780,13 +3806,6 @@ exports.HovercraftSpawner = function(scene) {
     });
   };
 
-  self.removePlayer = function(id) {
-    var craft = scene.getEntity(id);
-    if(!craft) return;
-    self.raiseServerEvent('playerLeft', {
-      id: id
-    });
-  };
 
   self.namePlayer = function(id, name) {
     self.raiseServerEvent('playerNamed', {
@@ -3826,7 +3845,7 @@ exports.HovercraftSpawner = function(scene) {
     var id = this.getId();
     scene.removeEntity(this);
 
-    setTimeout(function() {
+    respawnTimeouts[id] = setTimeout(function() {
       raiseEntityRevived(id);
     }, 10000);
   };
@@ -3840,11 +3859,28 @@ exports.HovercraftSpawner = function(scene) {
   };  
 
   var onPlayerLeft = function(data) {
-    scene.withEntity(data.id, function(entity) {
-        scene.removeEntity(entity);    
-    });
-    delete playerNames[data.id];
+    removePlayerFromScene(data.id);
+    clearPlayerInfo(data.id);
+    clearPlayerRespawn(data.id); 
+
+  };
+
+  var clearPlayerRespawn = function(id) {
+    if(respawnTimeouts[id]) {
+      clearTimeout(respawnTimeouts[id]);
+      delete respawnTimeouts[id];
+    }
+  };
+
+  var clearPlayerInfo = function(id) {
+    delete playerNames[id];
     raiseNamesChangedEvent();
+  };
+
+  var removePlayerFromScene = function(id) {
+    var craft = scene.getEntity(id);
+    if(craft)
+      scene.removeEntity(craft);  
   };
 
   var onEntitySpawned = function(data) {
@@ -4114,7 +4150,7 @@ var Missile = function() {
 
   var maxSpeed = 5.0;
   var adjuster = 0.8;  
-	var bounds = new Sphere(1.0, [0,0,0]);
+  var bounds = new Sphere(1.0, [0,0,0]);
   var isTrackingTarget = false;
 	var distanceFromTarget = vec3.create([99,99,99]);
 	var sourceid = null;
@@ -4245,12 +4281,12 @@ var Missile = function() {
 	
 	var setupInitialVelocity = function() {
 	
-	  // Look a second into the future
+	  // Look half a second into the future
 	  var positionInTheFuture = vec3.create([0,0,0]);
 	  var positionGoingToMove = vec3.create([0,0,0]);
-	  vec3.scale(target._velocity, 30, positionGoingToMove);
+	  vec3.scale(target._velocity, 1, positionGoingToMove);
 	  vec3.add(target.position, positionGoingToMove, positionInTheFuture);
-	  
+
 	  // Take aim at that location
 	  var difference = vec3.create([0,0,0]);
 	  vec3.subtract(positionInTheFuture, source.position, difference);
@@ -4267,30 +4303,25 @@ var Missile = function() {
 	
     calculateVectorToTarget(desired);
 		distanceFromTarget = vec3.length(desired);
-		
+
     vec3.normalize(desired);
-    vec3.normalize(self._velocity, current);
-    
+    vec3.scale(desired, maxSpeed);  
     var adjuster = getAdjusterBasedOnTime();
     
-    vec3.scale(desired, adjuster);
-    vec3.scale(current, 1.0 - adjuster);
-    vec3.add(desired, current);
-    vec3.scale(desired, maxSpeed);		
-		
-    self._velocity = desired;
+    vec3.lerp(self._velocity, desired, adjuster);
+
 	};
 	
 	var getAdjusterBasedOnTime = function() {
 	  if(ticksElapsedSinceFiring < 30)
-	     return 0.2;
+	     return 1.0;
+	/*  if(ticksElapsedSinceFiring < 20)
+	     return 0.5;
 	  if(ticksElapsedSinceFiring < 45)
-	     return 0.1;
-	  if(ticksElapsedSinceFiring < 60)
-	     return 0.08;
-	  if(ticksElapsedSinceFiring < 90)
-	     return 0.05;
-	  return  0.01;
+	     return 0.01
+    if(ticksElapsedSinceFiring < 60)
+	     return 0.01; */
+	  return  0;
 	};
 	
 	var capSpeedIfNecessary = function() {
@@ -4774,11 +4805,8 @@ var Smoother = function() {
 	var smoothPositionOfEntity = function() {
 	  
 		vec3.subtract(self.position, self.oldposition, oldpositionDelta);
-		vec3.add(self.networkposition, oldpositionDelta);
-		
-		vec3.subtract(self.networkposition, self.position, networkpositionDelta);
-		vec3.scale(networkpositionDelta, 0.001);
-	  vec3.add(self.position, networkpositionDelta);
+  	vec3.add(self.networkposition, oldpositionDelta);
+    vec3.lerp(self.position, self.networkposition, 0.007);
 	};
 	
 	var smoothRotationOfEntity = function() {
@@ -4795,9 +4823,12 @@ var Smoother = function() {
 	
 	self.doLogic = function() {
 		if(!self.hasInitialState) return;
-		
+
     smoothPositionOfEntity();
 		smoothRotationOfEntity();
+
+    vec3.set(self.position, self.oldposition);
+		self.oldrotationy = self.rotationY;		
 		        
     // If we nearly fall off the edge of the world and the client thinks we survived
     // The terrain clipping behaviour will get in the way of smoothing, so let's force it    
@@ -4806,23 +4837,20 @@ var Smoother = function() {
     if(differenceBetweenVerticals > 5 && self.networkposition[1] < -5)
       self.position[1] = self.networkposition[1];
 		
-		self.oldposition = self.position;
-		self.oldrotationy = self.rotationY;		
+
 	};
 
 	self.setSync = function(sync) {
     if(!self.hasInitialState || sync.force) {
 	  		self.position = sync.position;
 	  		self.rotationY = sync.rotationY;
-	  	  self.oldposition = self.position;
+	  	  self.oldposition = vec3.create(self.position);
 	      self.oldrotationy = self.rotationY; 
 			  self.hasInitialState = true;
 		}
 
 	  self.networkposition = sync.position;
-	  self.networkrotationY = sync.rotationY; 
-
-
+	  self.networkrotationY = sync.rotationY;
 	};
 };
 Smoother.Type = "Smoother";
@@ -4841,12 +4869,12 @@ ServerApp = function(){
   this.resources.addModelLoader(new ServerLandChunkModelLoader(this.resources));
 };
 
-ServerApp.start = function(){
+ServerApp.prototype.start = function(){
     var controller = this.controller;
     this.intervalId = setInterval(function() {  controller.tick(); }, 1000 / 30);
 };
 
-ServerApp.stop = function(){
+ServerApp.prototype.stop = function(){
     clearInterval(this.intervalId);
 };
 

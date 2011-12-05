@@ -18,6 +18,10 @@ HovercraftFactory.prototype.create = function(id) {
   var entity = new Entity(id);
   
   entity.setModel(model); 
+  if(this._app.isClient) {
+    entity.attach(Smoother);
+  }
+  
   entity.attach(Destructable);
   entity.attach(Hovercraft);
   entity.attach(Tracking);
@@ -25,9 +29,6 @@ HovercraftFactory.prototype.create = function(id) {
   entity.attach(NamedItem);
   entity.attach(FiringController);
 
-  if(this._app.isClient) {
-    entity.attach(Smoother);
-  }
   
  // entity.attach(Clipping);
 //  entity.setBounds([-1000,-1000, -1000], [1000,1000,1000]);
