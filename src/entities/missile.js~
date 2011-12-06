@@ -8,8 +8,7 @@ var Missile = function() {
 	var ticksElapsedSinceFiring = 0;
 
   var maxSpeed = 5.0;
-  var adjuster = 0.8;  
-  var bounds = new Sphere(1.0, [0,0,0]);
+  var bounds = new Sphere(5.0, [0,0,0]);
   var isTrackingTarget = false;
 	var distanceFromTarget = vec3.create([99,99,99]);
 	var sourceid = null;
@@ -52,6 +51,7 @@ var Missile = function() {
     var terrain = self._scene.getEntity("terrain");
     var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
     if(terrainHeight > self.position[1]) {
+      self.position[1] = terrainHeight;
       destroyMissileOfNaturalCauses();
 	  }
   };
@@ -139,16 +139,10 @@ var Missile = function() {
 	
 	
 	var setupInitialVelocity = function() {
-	
-	  // Look half a second into the future
-	  var positionInTheFuture = vec3.create([0,0,0]);
-	  var positionGoingToMove = vec3.create([0,0,0]);
-	  vec3.scale(target._velocity, 1, positionGoingToMove);
-	  vec3.add(target.position, positionGoingToMove, positionInTheFuture);
 
-	  // Take aim at that location
+	  // Take aim at the enemy
 	  var difference = vec3.create([0,0,0]);
-	  vec3.subtract(positionInTheFuture, source.position, difference);
+	  vec3.subtract(target.position, source.position, difference);
 	  vec3.normalize(difference);
 	  
 	  // And fire at max speed
@@ -172,15 +166,16 @@ var Missile = function() {
 	};
 	
 	var getAdjusterBasedOnTime = function() {
-	  if(ticksElapsedSinceFiring < 30)
+	  if(ticksElapsedSinceFiring < 20)
 	     return 1.0;
-	/*  if(ticksElapsedSinceFiring < 20)
-	     return 0.5;
+	 if(ticksElapsedSinceFiring < 30)
+	     return 0.7;
+    /* 
 	  if(ticksElapsedSinceFiring < 45)
 	     return 0.01
     if(ticksElapsedSinceFiring < 60)
 	     return 0.01; */
-	  return  0.001;
+	  return  0;
 	};
 	
 	var capSpeedIfNecessary = function() {

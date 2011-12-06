@@ -11,7 +11,7 @@ MissileFactory.prototype.create = function(missileid) {
   entity.attach(Missile);
   
   if(this.app.isClient) {
-    entity.attach(Smoother);
+   // entity.attach(Smoother);
   }
   
   return entity;
