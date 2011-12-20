@@ -1,8 +1,10 @@
-var config = require('./config');
-
+/*var config = require('./config');
+/
 var url = config(DB_CONFIG_FILE)
 var CouchClient = require('couch-client');
-var db = new CouchClient(url);
+var db = new CouchClient(url); */
+
+var db = {};
 
 var bcrypt = require('bcrypt');  
 var salt = bcrypt.gen_salt_sync(4);  

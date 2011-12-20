@@ -2,7 +2,13 @@ var Cookies = require('cookies');
 var Keygrip = require('keygrip');
 var config = require('./config');
 
-var keys = config(KEYS_CONFIG_FILE);
+var keys = null;
+
+if(process.env.COOKIE_KEYS) {
+  keys = JSON.parse(process.env.COOKIE_KEYS);
+} else {
+  keys = config(KEYS_CONFIG_FILE);
+}
 
 exports.Identity = {
   verifyUsername: function(username, sign) {
