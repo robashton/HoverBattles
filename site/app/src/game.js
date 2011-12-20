@@ -1197,7 +1197,7 @@ var Hovercraft  = require('../entities/hovercraft').Hovercraft;
 var ParticleEmitter = require('../entities/particleemitter').ParticleEmitter;
 var Explosion = require('../entities/explosion').Explosion;
 
-exports.TrailsAndExplosions = function(app) { /*
+exports.TrailsAndExplosions = function(app) { 
   var self = this;
   var trails = {};
 
@@ -1281,7 +1281,7 @@ exports.TrailsAndExplosions = function(app) { /*
   app.scene.on('healthZeroed', onHovercraftExploded);
   app.scene.on('missileExpired', onMissileExpired);
   app.scene.onEntityAdded(onEntityAdded);
-  app.scene.onEntityRemoved(onEntityRemoved);     */
+  app.scene.onEntityRemoved(onEntityRemoved);     
 };
 }, "core/bounding": function(exports, require, module) {vec3 = require('../thirdparty/glmatrix').vec3;
 mat4 = require('../thirdparty/glmatrix').mat4;
@@ -3075,7 +3075,7 @@ exports.Bot.Type = "Bot";
 
 
 }, "entities/botfactory": function(exports, require, module) {var Bot = require('./bot').Bot;
-var DESIRED_PLAYER_COUNT = 50;
+var DESIRED_PLAYER_COUNT = 6;
 
 
 exports.BotFactory = function(communication, scene, spawner) {
@@ -5100,10 +5100,10 @@ var Data = function() {
   };
 
   self.updatePlayerStats = function(username) {
-    var updater = new PlayerStatsUpdater(self, username);
+/*    var updater = new PlayerStatsUpdater(self, username);
     getPlayerScore(username, updater.notifyPlayerScore);
     getPlayerKills(username, updater.notifyPlayerKills);
-    getPlayerDeaths(username, updater.notifyPlayerDeaths);
+    getPlayerDeaths(username, updater.notifyPlayerDeaths); */
   };
 
   var getPlayerScore = function(username, callback) {
@@ -5139,7 +5139,7 @@ var Data = function() {
     });
   };
   
-  self.storeEvent = function(eventName, data) {
+  self.storeEvent = function(eventName, data) { /*
     db.save({
       type:"event",
       eventType: eventName,
@@ -5147,11 +5147,11 @@ var Data = function() {
     },
     function(err, data) {
       if(err) console.trace(err);
-    });
+    }); */
   };
   
   self.save = function(doc) {
-    db.save(doc);
+   // db.save(doc);
   };
 };
 
@@ -5814,23 +5814,16 @@ exports.Services = function() {
   });
 
   self.route('POST', '/services/login', function(req, res) {
-      var username = req.body.username;
-      var password = req.body.password;
+    var username = req.body.username;
 
-      data.validateCredentials(username, password, function(valid) {
-        if(!valid) 
-          writeValidationError(req, res, "That didn't work, try again");
-        else {
-          // Set the cookie so we can get gaming
-          setCookieForUser(req, res, username);      
+    // Set the cookie so we can get gaming
+    setCookieForUser(req, res, username);      
 
-		      res.writeHead(200, "Content-Type: application/json");
-		      res.write(JSON.stringify({
-            success: true
-          }));
-		      res.end();
-        }
-      });
+    res.writeHead(200, "Content-Type: application/json");
+    res.write(JSON.stringify({
+      success: true
+    }));
+    res.end();
   });
 
   self.route('GET', '/services/highscorers', function(req, res) {

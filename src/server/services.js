@@ -65,23 +65,16 @@ exports.Services = function() {
   });
 
   self.route('POST', '/services/login', function(req, res) {
-      var username = req.body.username;
-      var password = req.body.password;
+    var username = req.body.username;
 
-      data.validateCredentials(username, password, function(valid) {
-        if(!valid) 
-          writeValidationError(req, res, "That didn't work, try again");
-        else {
-          // Set the cookie so we can get gaming
-          setCookieForUser(req, res, username);      
+    // Set the cookie so we can get gaming
+    setCookieForUser(req, res, username);      
 
-		      res.writeHead(200, "Content-Type: application/json");
-		      res.write(JSON.stringify({
-            success: true
-          }));
-		      res.end();
-        }
-      });
+    res.writeHead(200, "Content-Type: application/json");
+    res.write(JSON.stringify({
+      success: true
+    }));
+    res.end();
   });
 
   self.route('GET', '/services/highscorers', function(req, res) {

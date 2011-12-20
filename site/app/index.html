@@ -15,25 +15,9 @@
               $('#user-feedback > p').text(feedback);
               $('#user-feedback').show();
             };          
-        
-            $('#btnregister').click(function() {    
-              $.post('/services/register', {
-                username: $('#register-username').val(),
-                password: $('#register-password').val(),
-                email: $('#register-email').val()
-              }, function(data) {
-                var result = JSON.parse(data);
-                if(result.success)
-                  redirectToGame();
-                else
-                  showFeedback(result.feedback);
-              });         
-            });
-
             $('#btnlogin').click(function() {
               $.post('/services/login', {
-                username: $('#login-username').val(),
-                password: $('#login-password').val()
+                username: $('#login-username').val()
               }, function(data) {
                 var result = JSON.parse(data);
                 if(result.success)
@@ -48,31 +32,15 @@
 	<body>		
     <div id="header">
 		  <div id="header-title"><h1>Hoverbattles</h1></div>
-		  <div id="header-instructions"><p>If you want your score on the <a href="scores.html">high score table</a>, then you can register, e-mail is optional.</p>
-       <p class="guest"><a href="game.html">No way! Just sign in as a guest already</a></p></div>
     </div>
 
     <div id="user-feedback">
       <p>Agh, error</p>
     </div>
-    <div id="identification-container">
-      <div id="register">
-        <h2>Register</h2>
-        <label for="register-username">Username: </label><input type="text" name="register-username" id="register-username" /><div class="break"></div>
-        <label for="register-password">Password: </label><input type="password" name="register-password" id="register-password" /><div class="break"></div>
-        <label for="register-email">E-mail: </label><input type="text" name="register-email" id="register-email" /><div class="break"></div>
-        <input type="button" name="btnregister" id="btnregister" value="Register" /><div class="break"></div>
-      </div>
-      <div id="login">
-        <h2>Login</h2>
-        <label for="login-username">Username: </label><input type="text" name="login-username" id="login-username" /><div class="break"></div>
-        <label for="login-password">Password: </label><input type="password" name="login-password" id="login-password" /><div class="break"></div>
-        <input type="button" name="btnlogin" id="btnlogin" value="Login"/><div class="break"></div>
-      </div>
-    </div> 
-    <div id="email-disclaimer">
-      <p>I'll not give your e-mail address to anybody, I'll not use it to send advertisements or spam, it's entirely optional and may be used for password reset stuff if it is ever implemented.</p>
-      <p>Because i'm not a complete and utter idiot, I don't store your password in any sort of retrievable format and I as haven't written the forgotten password functionality don't lose it.</p>
-    </div>      
+    <div id="login">
+      <h2>Choose a display name</h2>
+      <input type="text" name="login-username" id="login-username" /><div class="break"></div>
+      <input type="button" name="btnlogin" id="btnlogin" value="Play"/><div class="break"></div>
+    </div>
     </body>
 </html>

@@ -27,6 +27,7 @@
        line.addClass('chat-line-me');     
        
      contentContainer.append(line);
+      contentContainer.animate({ scrollTop: contentContainer.attr("scrollHeight") }, 1000);
     };
     
     self.addEvent = function(message) {
@@ -34,6 +35,7 @@
                   .append(
                       $('<span/>').addClass('chat-event').text(message));         
       contentContainer.append(line);
+      contentContainer.animate({ scrollTop: contentContainer.attr("scrollHeight") }, 1000);
     };
     
     self.onMessage = function(callback) {

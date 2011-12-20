@@ -35,8 +35,8 @@ server = http.createServer(function(req, res){
 	});
 });
 
-server.listen(1222);
-console.log("Listening on port 1222");
+server.listen(80);
+console.log("Listening on port 80");
 
 var Controller = require('./src/core/controller').Controller;
 var ServerApp = require('./src/server/application').ServerApp;
