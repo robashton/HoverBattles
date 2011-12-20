@@ -79,25 +79,30 @@ var Hovercraft = function() {
       vec3.add(self._velocity, acceleration);
   };
   self.impulseLeft = function() {
-      var amount = 0.07;
+      var amount = 0.1;
       self.rotationY += amount;
   };
   self.impulseRight = function() {
-      var amount = 0.07;
+      var amount = 0.11;
       self.rotationY -= amount;
   };
 
   var count = 0;
   self.impulseUp = function() {
       var amount = 0.25;
+      var forward = 0.05;   
       var terrain = self._scene.getEntity("terrain");
       
       var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
       var heightDelta = self.position[1] - terrainHeight;
       
-      if(heightDelta < 20.0 && heightDelta > -5.0) {
-          self._velocity[1] += amount;
-      }
+      if(heightDelta < 20.0 && heightDelta > -5.0) {      
+          acceleration[0] = (-forward) * Math.sin(self.rotationY);
+          acceleration[1] = amount;
+          acceleration[2] = (-forward) * Math.cos(self.rotationY);
+          vec3.add(self._velocity, acceleration); 
+          acceleration[1] = 0;
+       }
   };
   
   var processInput = function() {

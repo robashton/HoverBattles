@@ -3046,7 +3046,7 @@ exports.Bot = function(communication) {
   
   var onMissileLock = function(data) {
     waitingToFire = true;
-    waitingToFireCount = Math.random() * 30;
+    waitingToFireCount = Math.random() * 60;
   };
   
   var startFollowingTarget = function(targetid) {
@@ -3628,25 +3628,30 @@ var Hovercraft = function() {
       vec3.add(self._velocity, acceleration);
   };
   self.impulseLeft = function() {
-      var amount = 0.07;
+      var amount = 0.1;
       self.rotationY += amount;
   };
   self.impulseRight = function() {
-      var amount = 0.07;
+      var amount = 0.11;
       self.rotationY -= amount;
   };
 
   var count = 0;
   self.impulseUp = function() {
       var amount = 0.25;
+      var forward = 0.05;   
       var terrain = self._scene.getEntity("terrain");
       
       var terrainHeight = terrain.getHeightAt(self.position[0], self.position[2]);
       var heightDelta = self.position[1] - terrainHeight;
       
-      if(heightDelta < 20.0 && heightDelta > -5.0) {
-          self._velocity[1] += amount;
-      }
+      if(heightDelta < 20.0 && heightDelta > -5.0) {      
+          acceleration[0] = (-forward) * Math.sin(self.rotationY);
+          acceleration[1] = amount;
+          acceleration[2] = (-forward) * Math.cos(self.rotationY);
+          vec3.add(self._velocity, acceleration); 
+          acceleration[1] = 0;
+       }
   };
   
   var processInput = function() {
@@ -5024,11 +5029,13 @@ exports.ServerCommunication = ServerCommunication;
     return JSON.parse(fs.readFileSync(file_name, 'utf8'))[ENV];
   };
 }).call(this);
-}, "server/data": function(exports, require, module) {var config = require('./config');
-
+}, "server/data": function(exports, require, module) {/*var config = require('./config');
+/
 var url = config(DB_CONFIG_FILE)
 var CouchClient = require('couch-client');
-var db = new CouchClient(url);
+var db = new CouchClient(url); */
+
+var db = {};
 
 var bcrypt = require('bcrypt');  
 var salt = bcrypt.gen_salt_sync(4);  
@@ -5290,7 +5297,13 @@ exports.Handler = function() {
 var Keygrip = require('keygrip');
 var config = require('./config');
 
-var keys = config(KEYS_CONFIG_FILE);
+var keys = null;
+
+if(process.env.COOKIE_KEYS) {
+  keys = JSON.parse(process.env.COOKIE_KEYS);
+} else {
+  keys = config(KEYS_CONFIG_FILE);
+}
 
 exports.Identity = {
   verifyUsername: function(username, sign) {

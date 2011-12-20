@@ -202,7 +202,7 @@ exports.Bot = function(communication) {
   
   var onMissileLock = function(data) {
     waitingToFire = true;
-    waitingToFireCount = Math.random() * 30;
+    waitingToFireCount = Math.random() * 60;
   };
   
   var startFollowingTarget = function(targetid) {

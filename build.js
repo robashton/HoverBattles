@@ -9,9 +9,6 @@ paperboy = require('paperboy');
 Services = require('./src/server/services').Services;
 LandscapeHandler = require('./src/server/landscapehandler').LandscapeHandler;
 
-startup.check_config_exists(DB_CONFIG_FILE);
-startup.check_config_exists(KEYS_CONFIG_FILE);
-
 var stitch  = require('stitch');
 var fs = require('fs');
 var ShaderGeneration = require('./src/server/shadergeneration').ShaderGeneration;
