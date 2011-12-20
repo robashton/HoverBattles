@@ -17,6 +17,7 @@ ServerCommunication = function(app, server){
       listener.set('log level', 1);
       listener.set('transports', [
           'websocket',
+          'flashsocket'
         ]);
       });
   
