@@ -327,7 +327,7 @@ exports.Hud = function(app) {
     clearIndicators(sourceid);
     clearPlayerTargetIfNecessary(sourceid);
 
-    for(i in trackedCraft)
+    for(var i in trackedCraft)
       if(trackedCraft[i].targetid() === sourceid) 
         clearTrackedHovercraft(i);    
   };

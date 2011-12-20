@@ -830,7 +830,7 @@ exports.Hud = function(app) {
     clearIndicators(sourceid);
     clearPlayerTargetIfNecessary(sourceid);
 
-    for(i in trackedCraft)
+    for(var i in trackedCraft)
       if(trackedCraft[i].targetid() === sourceid) 
         clearTrackedHovercraft(i);    
   };
@@ -1197,7 +1197,7 @@ var Hovercraft  = require('../entities/hovercraft').Hovercraft;
 var ParticleEmitter = require('../entities/particleemitter').ParticleEmitter;
 var Explosion = require('../entities/explosion').Explosion;
 
-exports.TrailsAndExplosions = function(app) {
+exports.TrailsAndExplosions = function(app) { /*
   var self = this;
   var trails = {};
 
@@ -1281,7 +1281,7 @@ exports.TrailsAndExplosions = function(app) {
   app.scene.on('healthZeroed', onHovercraftExploded);
   app.scene.on('missileExpired', onMissileExpired);
   app.scene.onEntityAdded(onEntityAdded);
-  app.scene.onEntityRemoved(onEntityRemoved);    
+  app.scene.onEntityRemoved(onEntityRemoved);     */
 };
 }, "core/bounding": function(exports, require, module) {vec3 = require('../thirdparty/glmatrix').vec3;
 mat4 = require('../thirdparty/glmatrix').mat4;
@@ -1912,7 +1912,7 @@ Frustum.prototype.extractPlanes = function() {
     this.planes.far[2] = transformedMatrix[11] - transformedMatrix[10];
     this.planes.far[3] = transformedMatrix[15] - transformedMatrix[14];
     
-    for(i in this.planes){
+    for(var i in this.planes){
         var plane = this.planes[i];
         var length = vec3.length(plane);
         plane[0] /= length;
@@ -1923,7 +1923,7 @@ Frustum.prototype.extractPlanes = function() {
 };
 
 Frustum.prototype.intersectSphere = function(sphere) {
-    for(i in this.planes){
+    for(var i in this.planes){
         var plane = this.planes[i];        
         var distance =  plane[0] * sphere.centre[0] +
                         plane[1] * sphere.centre[1] + 
@@ -2526,7 +2526,7 @@ ResourceManager.prototype.registerForActivation = function(resource) {
 ResourceManager.prototype.getModel = function(path) {
     if(this._models[path]) return this._models[path];
     var resources = this;
-    for(i in this._modelLoaders){
+    for(var i in this._modelLoaders){
         var loader = this._modelLoaders[i];
         if(loader.handles(path)){
             resources._pendingModelCount++;
@@ -2540,7 +2540,8 @@ ResourceManager.prototype.getModel = function(path) {
     }
 };
 
-exports.ResourceManager = ResourceManager;}, "core/scene": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
+exports.ResourceManager = ResourceManager;
+}, "core/scene": function(exports, require, module) {var vec3 = require('../thirdparty/glmatrix').vec3;
 var mat4 = require('../thirdparty/glmatrix').mat4;
 
 var Camera = require('./camera').Camera;
@@ -2603,8 +2604,8 @@ Scene.prototype.doLogic = function() {
       this._entities[i].doLogic();
     }
     
-    for(i in this._entities){ 
-      for(j in this._entities){ 
+    for(var i in this._entities){ 
+      for(var j in this._entities){ 
         if(i === j) continue;
         
         // Note: I know this is sub-optimal
@@ -2785,7 +2786,7 @@ exports.Tracking = function() {
 			}		
 		}
 		if(oldest === null) return null;
-		return oldest['entity'];
+		return oldest.entity;
 	};
 
 };
@@ -3074,7 +3075,7 @@ exports.Bot.Type = "Bot";
 
 
 }, "entities/botfactory": function(exports, require, module) {var Bot = require('./bot').Bot;
-var DESIRED_PLAYER_COUNT = 5;
+var DESIRED_PLAYER_COUNT = 50;
 
 
 exports.BotFactory = function(communication, scene, spawner) {
@@ -4374,7 +4375,6 @@ var Hovercraft = require('./hovercraft').Hovercraft;
 
 exports.MissileFirer = function(app, missileFactory) {
   var self = this;
-  var registeredMissiles = {};
 
   var onEntityFiredMissile = function(data) {
     var source = app.scene.getEntity(data.sourceid);
@@ -4938,7 +4938,7 @@ ServerCommunication.prototype.onConnection = function(socket) {
 
 ServerCommunication.prototype.synchronise = function(){
   var sceneData = this.game.getSceneState();
-   for(i in this.clients){
+   for(var i in this.clients){
     this.sendMessageToClient(this.clients[i], 'syncscene', sceneData);
    }
 };
@@ -4992,7 +4992,7 @@ ServerCommunication.prototype.sendMessageToClient = function(socket, command, da
 };
 
 ServerCommunication.prototype.broadcast = function(command, data, from) {
-  for(i in this.clients){
+  for(var i in this.clients){
       if(from && this.clients[i].id === from) continue;
       this.sendMessageToClient(this.clients[i], command, data);   
   }
@@ -5028,7 +5028,7 @@ exports.ServerCommunication = ServerCommunication;
 
 var url = config(DB_CONFIG_FILE)
 var CouchClient = require('couch-client');
-var db = CouchClient(url);
+var db = new CouchClient(url);
 
 var bcrypt = require('bcrypt');  
 var salt = bcrypt.gen_salt_sync(4);  
@@ -5496,6 +5496,7 @@ exports.LandscapeHandler = function() {
       if(err)
 	      next(req, res, success);    
       else {
+        console.log('writing to cache');
         cache[req.url] = data;
         success(data);
       }
@@ -5511,6 +5512,7 @@ exports.LandscapeHandler = function() {
 
     convertRawDataIntoString(req, land, function(data) {
        writeToFile(req.url, data);
+       cache[req.url] = data;
        success(data);
     });
   };  

@@ -6,7 +6,6 @@ var Hovercraft = require('./hovercraft').Hovercraft;
 
 exports.MissileFirer = function(app, missileFactory) {
   var self = this;
-  var registeredMissiles = {};
 
   var onEntityFiredMissile = function(data) {
     var source = app.scene.getEntity(data.sourceid);

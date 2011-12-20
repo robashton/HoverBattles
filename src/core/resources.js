@@ -58,7 +58,7 @@ ResourceManager.prototype.registerForActivation = function(resource) {
 ResourceManager.prototype.getModel = function(path) {
     if(this._models[path]) return this._models[path];
     var resources = this;
-    for(i in this._modelLoaders){
+    for(var i in this._modelLoaders){
         var loader = this._modelLoaders[i];
         if(loader.handles(path)){
             resources._pendingModelCount++;

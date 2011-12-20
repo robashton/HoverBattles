@@ -69,7 +69,7 @@ Frustum.prototype.extractPlanes = function() {
     this.planes.far[2] = transformedMatrix[11] - transformedMatrix[10];
     this.planes.far[3] = transformedMatrix[15] - transformedMatrix[14];
     
-    for(i in this.planes){
+    for(var i in this.planes){
         var plane = this.planes[i];
         var length = vec3.length(plane);
         plane[0] /= length;
@@ -80,7 +80,7 @@ Frustum.prototype.extractPlanes = function() {
 };
 
 Frustum.prototype.intersectSphere = function(sphere) {
-    for(i in this.planes){
+    for(var i in this.planes){
         var plane = this.planes[i];        
         var distance =  plane[0] * sphere.centre[0] +
                         plane[1] * sphere.centre[1] + 

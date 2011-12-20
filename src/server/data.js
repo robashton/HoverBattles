@@ -2,7 +2,7 @@ var config = require('./config');
 
 var url = config(DB_CONFIG_FILE)
 var CouchClient = require('couch-client');
-var db = CouchClient(url);
+var db = new CouchClient(url);
 
 var bcrypt = require('bcrypt');  
 var salt = bcrypt.gen_salt_sync(4);  
@@ -74,10 +74,10 @@ var Data = function() {
   };
 
   self.updatePlayerStats = function(username) {
-    var updater = new PlayerStatsUpdater(self, username);
+/*    var updater = new PlayerStatsUpdater(self, username);
     getPlayerScore(username, updater.notifyPlayerScore);
     getPlayerKills(username, updater.notifyPlayerKills);
-    getPlayerDeaths(username, updater.notifyPlayerDeaths);
+    getPlayerDeaths(username, updater.notifyPlayerDeaths); */
   };
 
   var getPlayerScore = function(username, callback) {
@@ -113,7 +113,7 @@ var Data = function() {
     });
   };
   
-  self.storeEvent = function(eventName, data) {
+  self.storeEvent = function(eventName, data) { /*
     db.save({
       type:"event",
       eventType: eventName,
@@ -121,11 +121,11 @@ var Data = function() {
     },
     function(err, data) {
       if(err) console.trace(err);
-    });
+    }); */
   };
   
   self.save = function(doc) {
-    db.save(doc);
+   // db.save(doc);
   };
 };
 

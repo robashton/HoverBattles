@@ -61,8 +61,8 @@ Scene.prototype.doLogic = function() {
       this._entities[i].doLogic();
     }
     
-    for(i in this._entities){ 
-      for(j in this._entities){ 
+    for(var i in this._entities){ 
+      for(var j in this._entities){ 
         if(i === j) continue;
         
         // Note: I know this is sub-optimal

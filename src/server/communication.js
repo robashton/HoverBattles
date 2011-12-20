@@ -43,7 +43,7 @@ ServerCommunication.prototype.onConnection = function(socket) {
 
 ServerCommunication.prototype.synchronise = function(){
   var sceneData = this.game.getSceneState();
-   for(i in this.clients){
+   for(var i in this.clients){
     this.sendMessageToClient(this.clients[i], 'syncscene', sceneData);
    }
 };
@@ -97,7 +97,7 @@ ServerCommunication.prototype.sendMessageToClient = function(socket, command, da
 };
 
 ServerCommunication.prototype.broadcast = function(command, data, from) {
-  for(i in this.clients){
+  for(var i in this.clients){
       if(from && this.clients[i].id === from) continue;
       this.sendMessageToClient(this.clients[i], command, data);   
   }

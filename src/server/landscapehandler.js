@@ -39,6 +39,7 @@ exports.LandscapeHandler = function() {
       if(err)
 	      next(req, res, success);    
       else {
+        console.log('writing to cache');
         cache[req.url] = data;
         success(data);
       }
@@ -54,6 +55,7 @@ exports.LandscapeHandler = function() {
 
     convertRawDataIntoString(req, land, function(data) {
        writeToFile(req.url, data);
+       cache[req.url] = data;
        success(data);
     });
   };  

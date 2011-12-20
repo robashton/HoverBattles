@@ -78,7 +78,7 @@ exports.Tracking = function() {
 			}		
 		}
 		if(oldest === null) return null;
-		return oldest['entity'];
+		return oldest.entity;
 	};
 
 };

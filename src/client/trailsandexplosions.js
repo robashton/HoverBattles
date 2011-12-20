@@ -3,7 +3,7 @@ var Hovercraft  = require('../entities/hovercraft').Hovercraft;
 var ParticleEmitter = require('../entities/particleemitter').ParticleEmitter;
 var Explosion = require('../entities/explosion').Explosion;
 
-exports.TrailsAndExplosions = function(app) {
+exports.TrailsAndExplosions = function(app) { 
   var self = this;
   var trails = {};
 
@@ -87,5 +87,5 @@ exports.TrailsAndExplosions = function(app) {
   app.scene.on('healthZeroed', onHovercraftExploded);
   app.scene.on('missileExpired', onMissileExpired);
   app.scene.onEntityAdded(onEntityAdded);
-  app.scene.onEntityRemoved(onEntityRemoved);    
+  app.scene.onEntityRemoved(onEntityRemoved);     
 };
