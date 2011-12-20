@@ -32,7 +32,7 @@ server = http.createServer(function(req, res){
 	});
 });
 
-server.listen(process.env.PORT || 1220 );
+server.listen(process.env.PORT || 1222 );
 
 var Controller = require('./src/core/controller').Controller;
 var ServerApp = require('./src/server/application').ServerApp;
