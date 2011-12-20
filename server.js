@@ -14,8 +14,6 @@ paperboy = require('paperboy');
 Services = require('./src/server/services').Services;
 LandscapeHandler = require('./src/server/landscapehandler').LandscapeHandler;
 
-startup.check_config_exists(KEYS_CONFIG_FILE);
-
 var serviceHandler = new Services();
 var landscapeHandler = new LandscapeHandler();
 
