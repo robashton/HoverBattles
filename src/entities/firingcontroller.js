@@ -4,23 +4,19 @@ exports.FiringController = function() {
   var missileidCounter = 0;
   var trackingStartTime = null;
   var trackedTarget = null;
-  var status = "null";
-	var trackedMissileId  = null;
-  var fired = false;
+  var firing = false;
 
   var onTrackingTarget = function(ev) {
 	  trackingStartTime = new Date();
 	  trackedTarget = ev.target;
-    status = "tracking";
   };
 	
   var onCancelledTrackingTarget = function(ev) {
-    if(status !== "fired") 
-      self.resetFiringState();
+    self.resetFiringState();
   };
 	
   self.doLogic = function() {
-	  if(!trackedTarget || fired) return;
+/*	  if(!trackedTarget || fired) return;
 	  var currentTime = new Date();
 	  var timeElapsedSinceStartedTracking = currentTime - trackingStartTime;
 	  if(timeElapsedSinceStartedTracking > 1500 && status === "tracking") {
@@ -29,23 +25,35 @@ exports.FiringController = function() {
         sourceid: self.getId(),
         targetid: trackedTarget.getId()
       });
-    }
+    } */
   };
 
-  var onFireRequest = function() {
-    self.tryFireMissile();
+  var onStartedFiringMissile = function() {
+    firing = true;
+  };
+  
+  var onFinishedFiringMissile = function() {
+    if(firing) {
+      self.tryFireMissile();
+      firing = false;
+    }
+  };
+  
+  self.startFiringMissile = function() {
+    self.raiseServerEvent('startedFiring');
+  };
+  
+  self.finishFiringMissile = function() {
+    self.raiseServerEvent('finishedFiring');
   };
 
   self.resetFiringState = function() {
     trackingStartTime = null;
     trackedTarget = null;
-    status = "null";
-    trackedMissileId = null;
   };
 
   self.tryFireMissile = function() {
-    if(status !== "locked") return;
-    status = "fired";
+    if(!trackedTarget) return;
     var missileid = 'missile-' + self.getId() + missileidCounter++;
     trackedMissileId = missileid;
 	  self.raiseServerEvent('fireMissile', { 
@@ -53,11 +61,12 @@ exports.FiringController = function() {
       sourceid: self.getId(), 
       targetid: trackedTarget.getId()
     });    
-  };  
+  };
 
   self.addEventHandler('trackingTarget', onTrackingTarget);
   self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
-  self.addEventHandler('fireRequest', onFireRequest);
+  self.addEventHandler('startedFiring', onStartedFiringMissile);
+  self.addEventHandler('finishedFiring', onFinishedFiringMissile);
 };
 
 exports.FiringController.Type = "FiringController"; 

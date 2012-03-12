@@ -42,7 +42,7 @@ HovercraftController.prototype.registerKeyboardMappings = function() {
   this.registerKeyboardMapping(KeyCodes.LEFT, 'startLeft', 'cancelLeft');
   this.registerKeyboardMapping(KeyCodes.RIGHT, 'startRight', 'cancelRight');
   this.registerKeyboardMapping(KeyCodes.Space, 'startUp', 'cancelUp');
-  this.registerKeyboardMapping(KeyCodes.X, 'fireRequest', null);
+  this.registerKeyboardMapping(KeyCodes.X, 'startFiring', 'finishFiring');
 };
 
 HovercraftController.prototype.registerKeyboardMapping = function(code, onKeyboardDown, onKeyboardUp){

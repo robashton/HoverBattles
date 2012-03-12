@@ -1,5 +1,7 @@
 var ForwardedEvents = [
   'missileLock',
+  'startedFiring',
+  'finishedFiring',
   'fireMissile',
   'missileLost',
   'targetHit',

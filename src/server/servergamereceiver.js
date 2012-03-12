@@ -65,9 +65,14 @@ exports.ServerGameReceiver = function(app, communication) {
 	  communication.syncPlayerFull(data.source);
   };
 
-  self._fireRequest = function(data) {
+  self._startFiring = function(data) {
     app.scene.withEntity(data.id, function(entity) {
-      entity.tryFireMissile();
+      entity.startFiringMissile();
     });
-  };
+  },
+  self._finishFiring = function(data) {
+    app.scene.withEntity(data.id, function(entity) {
+      entity.finishFiringMissile();
+    });
+  }
 };
