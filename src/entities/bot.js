@@ -211,7 +211,7 @@ exports.Bot = function(communication) {
   };
   
   var fireMissileAtTarget = function() {
-    self.tryFireMissile();
+    self.fireMissile();
   };        
   
   self.addEventHandler('missileLock', onMissileLock);

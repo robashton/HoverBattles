@@ -3055,7 +3055,7 @@ exports.Bot = function(communication) {
   };
   
   var fireMissileAtTarget = function() {
-    self.tryFireMissile();
+    self.fireMissile();
   };        
   
   self.addEventHandler('missileLock', onMissileLock);
@@ -3488,12 +3488,12 @@ exports.Explosion = function(app, details) {
 	var self = this;
 
   var missileidCounter = 0;
-  var trackingStartTime = null;
   var trackedTarget = null;
   var firing = false;
+  var maxAccuracy = 30;
+  var accuracy = maxAccuracy;
 
   var onTrackingTarget = function(ev) {
-	  trackingStartTime = new Date();
 	  trackedTarget = ev.target;
   };
 	
@@ -3502,34 +3502,29 @@ exports.Explosion = function(app, details) {
   };
 	
   self.doLogic = function() {
-/*	  if(!trackedTarget || fired) return;
-	  var currentTime = new Date();
-	  var timeElapsedSinceStartedTracking = currentTime - trackingStartTime;
-	  if(timeElapsedSinceStartedTracking > 1500 && status === "tracking") {
-		  status = "locked";
-      self.raiseServerEvent('missileLock', {
-        sourceid: self.getId(),
-        targetid: trackedTarget.getId()
-      });
-    } */
+    if(!firing) return;
+    accuracy -= 1;
   };
 
   var onStartedFiringMissile = function() {
     firing = true;
+    accuracy = maxAccuracy;
   };
   
   var onFinishedFiringMissile = function() {
     if(firing) {
-      self.tryFireMissile();
+      self.fireMissile();
       firing = false;
     }
   };
   
   self.startFiringMissile = function() {
+    if(!trackedTarget) return;
     self.raiseServerEvent('startedFiring');
   };
   
   self.finishFiringMissile = function() {
+    if(!trackedTarget) return;
     self.raiseServerEvent('finishedFiring');
   };
 
@@ -3538,14 +3533,13 @@ exports.Explosion = function(app, details) {
     trackedTarget = null;
   };
 
-  self.tryFireMissile = function() {
-    if(!trackedTarget) return;
+  self.fireMissile = function() {
     var missileid = 'missile-' + self.getId() + missileidCounter++;
-    trackedMissileId = missileid;
 	  self.raiseServerEvent('fireMissile', { 
       missileid: missileid, 
       sourceid: self.getId(), 
-      targetid: trackedTarget.getId()
+      targetid: trackedTarget.getId(),
+      accuracy: accuracy
     });    
   };
 
