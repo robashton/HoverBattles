@@ -3553,7 +3553,7 @@ exports.Explosion = function(app, details) {
 	
   self.doLogic = function() {
     if(!firing) return;
-    antiAccuracy -= 1;
+    antiAccuracy -= 0.5;
     self.raiseEvent('accuracyChanged', Math.abs(antiAccuracy) / maxAccuracy);
   };
 
