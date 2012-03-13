@@ -5,7 +5,7 @@ exports.FiringController = function() {
   var trackedTarget = null;
   var firing = false;
   var maxAccuracy = 30;
-  var accuracy = maxAccuracy;
+  var antiAccuracy = maxAccuracy;
 
   var onTrackingTarget = function(ev) {
 	  trackedTarget = ev.target;
@@ -17,12 +17,12 @@ exports.FiringController = function() {
 	
   self.doLogic = function() {
     if(!firing) return;
-    accuracy -= 1;
+    antiAccuracy -= 1;
   };
 
   var onStartedFiringMissile = function() {
     firing = true;
-    accuracy = maxAccuracy;
+    antiAccuracy = maxAccuracy;
   };
   
   var onFinishedFiringMissile = function() {
@@ -53,7 +53,7 @@ exports.FiringController = function() {
       missileid: missileid, 
       sourceid: self.getId(), 
       targetid: trackedTarget.getId(),
-      accuracy: accuracy
+      antiAccuracy: Math.abs(antiAccuracy) / 30.0
     });    
   };
 

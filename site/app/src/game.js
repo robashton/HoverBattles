@@ -3491,7 +3491,7 @@ exports.Explosion = function(app, details) {
   var trackedTarget = null;
   var firing = false;
   var maxAccuracy = 30;
-  var accuracy = maxAccuracy;
+  var antiAccuracy = maxAccuracy;
 
   var onTrackingTarget = function(ev) {
 	  trackedTarget = ev.target;
@@ -3503,12 +3503,12 @@ exports.Explosion = function(app, details) {
 	
   self.doLogic = function() {
     if(!firing) return;
-    accuracy -= 1;
+    antiAccuracy -= 1;
   };
 
   var onStartedFiringMissile = function() {
     firing = true;
-    accuracy = maxAccuracy;
+    antiAccuracy = maxAccuracy;
   };
   
   var onFinishedFiringMissile = function() {
@@ -3539,7 +3539,7 @@ exports.Explosion = function(app, details) {
       missileid: missileid, 
       sourceid: self.getId(), 
       targetid: trackedTarget.getId(),
-      accuracy: accuracy
+      antiAccuracy: Math.abs(antiAccuracy) / 30.0
     });    
   };
 
@@ -4159,6 +4159,7 @@ var Missile = function() {
 
   var maxSpeed = 6.0;
   var bounds = new Sphere(5.0, [0,0,0]);
+  var antiAccuracy = 0.0;
   var isTrackingTarget = false;
 	var distanceFromTarget = vec3.create([99,99,99]);
 	var sourceid = null;
@@ -4167,9 +4168,10 @@ var Missile = function() {
 	var source = null;
 	var target = null;
 	
-	self.go = function(sid, tid) {
+	self.go = function(sid, tid, aa) {
 	  sourceid = sid;
 	  targetid = tid;
+	  antiAccuracy = aa
 	  isTrackingTarget = true;	  
     updateTargetReferences();
 	  setupInitialVelocity();
@@ -4317,9 +4319,9 @@ var Missile = function() {
 	
 	var getAdjusterBasedOnTime = function() {
 	  if(ticksElapsedSinceFiring < 20)
-	     return 1.0;
+	     return 0.1 / (antiAccuracy === 0 ? 0.01 : antiAccuracy);
 	 if(ticksElapsedSinceFiring < 30)
-	     return 0.7;
+	     return 0.02 / (antiAccuracy === 0 ? 0.01 : antiAccuracy);
     /* 
 	  if(ticksElapsedSinceFiring < 45)
 	     return 0.01
@@ -4394,7 +4396,7 @@ exports.MissileFirer = function(app, missileFactory) {
     var missile = missileFactory.create(data.missileid);
     missile.position = vec3.create(source.position);
     app.scene.addEntity(missile);
-    missile.go(data.sourceid, data.targetid);
+    missile.go(data.sourceid, data.targetid, data.antiAccuracy);
   }; 
 
   var onTargetHit = function(data) {

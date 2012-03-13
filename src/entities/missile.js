@@ -9,6 +9,7 @@ var Missile = function() {
 
   var maxSpeed = 6.0;
   var bounds = new Sphere(5.0, [0,0,0]);
+  var antiAccuracy = 0.0;
   var isTrackingTarget = false;
 	var distanceFromTarget = vec3.create([99,99,99]);
 	var sourceid = null;
@@ -17,9 +18,10 @@ var Missile = function() {
 	var source = null;
 	var target = null;
 	
-	self.go = function(sid, tid) {
+	self.go = function(sid, tid, aa) {
 	  sourceid = sid;
 	  targetid = tid;
+	  antiAccuracy = aa
 	  isTrackingTarget = true;	  
     updateTargetReferences();
 	  setupInitialVelocity();
@@ -167,9 +169,9 @@ var Missile = function() {
 	
 	var getAdjusterBasedOnTime = function() {
 	  if(ticksElapsedSinceFiring < 20)
-	     return 1.0;
+	     return 0.1 / (antiAccuracy === 0 ? 0.01 : antiAccuracy);
 	 if(ticksElapsedSinceFiring < 30)
-	     return 0.7;
+	     return 0.02 / (antiAccuracy === 0 ? 0.01 : antiAccuracy);
     /* 
 	  if(ticksElapsedSinceFiring < 45)
 	     return 0.01

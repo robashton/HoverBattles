@@ -17,7 +17,7 @@ exports.MissileFirer = function(app, missileFactory) {
     var missile = missileFactory.create(data.missileid);
     missile.position = vec3.create(source.position);
     app.scene.addEntity(missile);
-    missile.go(data.sourceid, data.targetid);
+    missile.go(data.sourceid, data.targetid, data.antiAccuracy);
   }; 
 
   var onTargetHit = function(data) {
