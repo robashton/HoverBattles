@@ -117,6 +117,8 @@ var TargettingEntity = function(app, sourceid, targetid) {
   var targetid = targetid;
   var firedMissileId = null;
   var hudItem = null;
+  var lockingItem = null;
+  var lockingItemScale = 1.0;
   var textItem = null;
   var rotation = 0;
   var isPlayer = isPlayer;
@@ -126,18 +128,23 @@ var TargettingEntity = function(app, sourceid, targetid) {
   };
   
   self.notifyStartedFiring = function() {
-    app.overlay.removeItem(hudItem);
-    hudItem = app.overlay.addItem('lock-' + sourceid, '/data/textures/locked.png');
+    lockingItem = app.overlay.addItem('lock-' + sourceid, '/data/textures/locked.png');
     self.tick();
   };
   
   self.notifyFinishedFiring = function() {
-  
+    if(lockingItem) {
+      app.overlay.removeItem(lockingItem);
+      lockingItem = null;
+    }
+    self.tick();
   };
   
-  self.notifyAccuracyChanged = function() {
-
+  self.notifyAccuracyChanged = function(accuracy) {
+    lockingItemScale = accuracy * 10.0;
+    self.tick();
   };
+  
   self.targetid = function() {
     return targetid;
   };
@@ -147,6 +154,19 @@ var TargettingEntity = function(app, sourceid, targetid) {
        app.overlay.removeItem(hudItem);
     if(textItem)
        app.overlay.removeItem(textItem);
+    if(lockingItem)
+       app.overlay.removeItem(lockingItem);
+  };
+  
+  var scaleHudItem = function(item, radius, centre) {
+    var min = [centre[0] - radius, centre[1] - radius];
+    var max = [centre[0] + radius, centre[1] + radius];
+
+    item.left(min[0]);
+    item.top(min[1]);
+    item.width(max[0] - min[0]);
+    item.height(max[1] - min[1]);   
+    item.rotation(rotation += 0.03);
   };
 
   self.tick = function() {
@@ -155,19 +175,17 @@ var TargettingEntity = function(app, sourceid, targetid) {
 
       var worldSphere = entity.getSphere();
       var transformedSphere = camera.transformSphereToScreen(worldSphere);
-
-      var radius = transformedSphere.radius;
-      var centre = transformedSphere.centre;
-    
+      
+      scaleHudItem(hudItem, transformedSphere.radius, transformedSphere.centre);
+      
+      if(lockingItem)
+        scaleHudItem(lockingItem, transformedSphere.radius * lockingItemScale, transformedSphere.centre);
+        
+      var centre = transformedSphere.centre,
+          radius = transformedSphere.radius;
+        
       var min = [centre[0] - radius, centre[1] - radius];
       var max = [centre[0] + radius, centre[1] + radius];
-
-      hudItem.left(min[0]);
-      hudItem.top(min[1]);
-      hudItem.width(max[0] - min[0]);
-      hudItem.height(max[1] - min[1]);   
-      hudItem.rotation(rotation += 0.03);
-
       var textLeft = min[0] + (max[0] - min[0]) + 5.0;
       var textTop = min[1] - 48;
 
