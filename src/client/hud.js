@@ -8,8 +8,20 @@ var WarningEntity = function(app, controller, sourceid, targetid) {
   var index = 0;
   var target = null;
     
-  self.notifyHasFired = function(missileid) {
+  self.notifyFiredMissile = function(missileid) {
     firedMissileId = missileid;
+  };
+  
+  self.notifyStartedFiring = function() {
+  
+  };
+  
+  self.notifyFinishedFiring = function() {
+  
+  };
+  
+  self.notifyAccuracyChanged = function() {
+
   };
   
   self.notifyIsLocked = function() {
@@ -104,23 +116,28 @@ var TargettingEntity = function(app, sourceid, targetid) {
   var sourceid = sourceid;
   var targetid = targetid;
   var firedMissileId = null;
-  var isLocked = false;
   var hudItem = null;
   var textItem = null;
   var rotation = 0;
   var isPlayer = isPlayer;
-
-  self.notifyHasFired = function(missileid) {
+  
+  self.notifyFiredMissile = function(missileid) {
     firedMissileId = missileid;
   };
   
-  self.notifyIsLocked = function() {
-    isLocked = true;
+  self.notifyStartedFiring = function() {
     app.overlay.removeItem(hudItem);
     hudItem = app.overlay.addItem('lock-' + sourceid, '/data/textures/locked.png');
     self.tick();
   };
+  
+  self.notifyFinishedFiring = function() {
+  
+  };
+  
+  self.notifyAccuracyChanged = function() {
 
+  };
   self.targetid = function() {
     return targetid;
   };
@@ -161,7 +178,8 @@ var TargettingEntity = function(app, sourceid, targetid) {
     });
   };
 
-  app.scene.withEntity(targetid, function(entity) {    
+  app.scene.withEntity(targetid, function(entity) {
+    console.log('Adding targetting hud item');
     hudItem = app.overlay.addItem('track-' + sourceid, '/data/textures/targeting.png');
     textItem = app.overlay.addTextItem('text-' + sourceid, entity.displayName(), 128, 128, 'red', 'bold 14px verdana');
   });
@@ -272,21 +290,33 @@ exports.Hud = function(app) {
     clearTrackedHovercraft(this.getId());
   };
 
-  var onEntityMissileLock = function(data) {
+  var onEntityStartedFiring = function(data) {
     withTrackedEntity(this.getId(), function(trackedEntity) {
-      trackedEntity.notifyIsLocked();
+      trackedEntity.notifyStartedFiring();
     });
   };
 
-  var onEntityFireMissile = function(data) {
+  var onEntityFinishedFiring = function(data) {
     withTrackedEntity(this.getId(), function(trackedEntity) {
-      trackedEntity.notifyHasFired(data.missileid);
+      trackedEntity.notifyFinishedFiring();
+    });
+  };
+  
+  var onEntityAccuracyChanged = function(accuracy) {
+    withTrackedEntity(this.getId(), function(trackedEntity) {
+      trackedEntity.notifyAccuracyChanged(accuracy);
     });
   };
 
   var onEntityHealthZeroed = function(data) {
     withTrackedEntity(this.getId(), function(trackedEntity) {       
       clearTrackedHovercraft(data.sourceid);
+    });
+  };
+  
+  var onEntityMissileFired = function(data) {
+    withTrackedEntity(this.getId(), function(trackedEntity) {       
+      trackedEntity.notifyFiredMissile(data.missileid);
     });
   };
 
@@ -365,8 +395,10 @@ exports.Hud = function(app) {
 
   app.scene.on('trackingTarget', onEntityTrackingTarget);
   app.scene.on('cancelledTrackingTarget', onEntityCancelledTrackingTarget);
-  app.scene.on('missileLock', onEntityMissileLock);
-  app.scene.on('fireMissile', onEntityFireMissile);
+  app.scene.on('startedFiring', onEntityStartedFiring);
+  app.scene.on('finishedFiring', onEntityFinishedFiring);
+  app.scene.on('accuracyChanged', onEntityAccuracyChanged);
+  app.scene.on('fireMissile', onEntityMissileFired);
   app.scene.on('healthZeroed', onEntityHealthZeroed);
   app.scene.onEntityAdded(onEntityAdded);
   app.scene.onEntityRemoved(onEntityRemoved);

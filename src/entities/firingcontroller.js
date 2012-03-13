@@ -18,6 +18,7 @@ exports.FiringController = function() {
   self.doLogic = function() {
     if(!firing) return;
     antiAccuracy -= 1;
+    self.raiseEvent('accuracyChanged', antiAccuracy);
   };
 
   var onStartedFiringMissile = function() {
@@ -48,6 +49,7 @@ exports.FiringController = function() {
   };
 
   self.fireMissile = function() {
+    if(!trackedTarget) return;
     var missileid = 'missile-' + self.getId() + missileidCounter++;
 	  self.raiseServerEvent('fireMissile', { 
       missileid: missileid, 
