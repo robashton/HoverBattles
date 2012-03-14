@@ -679,10 +679,10 @@ var TargettingEntity = function(app, sourceid, targetid) {
       var worldSphere = entity.getSphere();
       var transformedSphere = camera.transformSphereToScreen(worldSphere);
       
-      scaleHudItem(hudItem, transformedSphere.radius, transformedSphere.centre);
+      scaleHudItem(hudItem, 10.0, transformedSphere.centre);
       
       if(lockingItem)
-        scaleHudItem(lockingItem, transformedSphere.radius * lockingItemScale, transformedSphere.centre);
+        scaleHudItem(lockingItem, 10 + 5.0 * lockingItemScale, transformedSphere.centre);
         
       var centre = transformedSphere.centre,
           radius = transformedSphere.radius;
@@ -2910,9 +2910,8 @@ exports.Bot = function(communication) {
   var currentTarget = vec3.create([0,0,0]);
   
   var inputStates = {};
-  var waitingToFire = true;
-  var waitingToFireCount = 0;
-  
+  var ticksToWaitBeforeFiring = 30;
+  var ticksWaitedBeforeFiring = 0;
   
   self.doLogic = function() {
     determineState();
@@ -2936,6 +2935,12 @@ exports.Bot = function(communication) {
     state = 'followingtarget';
   }; 
   
+  var switchToFiringState = function() {
+    ticksToWaitBeforeFiring = Math.floor(Math.random() * 30 + 40);
+    ticksWaitedBeforeFiring = 0;
+    state = "firing";
+  };
+  
   var createRandomTargetWithinWorld = function() {
     return vec3.create([Math.random() * 1280.0 - 640.0, 0, Math.random() * 1280.0 - 640.0]);
   };
@@ -2949,15 +2954,24 @@ exports.Bot = function(communication) {
       tryAndFire();
       adjustAimedTarget();
       updateInputTowardsCurrentTarget();
+    },
+    firing: function() {
+      tryAndReleaseFire();
+      adjustAimedTarget();
+      updateInputTowardsCurrentTarget();
     }
   };    
 
   var tryAndFire = function() {
-    if(!waitingToFire) return;
-    waitingToFireCount -= 1.0;
-    if(waitingToFireCount < 0) {
-      waitingToFire = false;
-      fireMissileAtTarget();
+    self.startFiringMissile();
+    switchToFiringState();
+  };
+  
+  var tryAndReleaseFire = function() {
+    ticksWaitedBeforeFiring++;
+    if(ticksWaitedBeforeFiring >= ticksToWaitBeforeFiring) {
+      self.finishFiringMissile();
+      switchToAimlessState();
     }
   };
   
@@ -3102,21 +3116,12 @@ exports.Bot = function(communication) {
     switchToAimlessState();
   };
   
-  var onMissileLock = function(data) {
-    waitingToFire = true;
-    waitingToFireCount = Math.random() * 60;
-  };
-  
   var startFollowingTarget = function(targetid) {
     currentTargetId = targetid;
     switchToFollowingTargetState();
   };
+      
   
-  var fireMissileAtTarget = function() {
-    self.fireMissile();
-  };        
-  
-  self.addEventHandler('missileLock', onMissileLock);
   self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
   self.addEventHandler('trackingTarget', onTrackingTarget);  
 };
@@ -4217,7 +4222,7 @@ var Missile = function() {
 	
 	var ticksElapsedSinceFiring = 0;
 
-  var maxSpeed = 12.0;
+  var maxSpeed = 6.0;
   var currentSpeed = maxSpeed;
   var bounds = new Sphere(5.0, [0,0,0]);
   var antiAccuracy = 0.0;
@@ -4236,6 +4241,7 @@ var Missile = function() {
 	  isTrackingTarget = true;	  
     updateTargetReferences();
 	  setupInitialVelocity();
+	  console.log(aa);
 	};
 
   var clearTarget = function() {

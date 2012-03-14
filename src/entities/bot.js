@@ -8,9 +8,8 @@ exports.Bot = function(communication) {
   var currentTarget = vec3.create([0,0,0]);
   
   var inputStates = {};
-  var waitingToFire = true;
-  var waitingToFireCount = 0;
-  
+  var ticksToWaitBeforeFiring = 30;
+  var ticksWaitedBeforeFiring = 0;
   
   self.doLogic = function() {
     determineState();
@@ -34,6 +33,12 @@ exports.Bot = function(communication) {
     state = 'followingtarget';
   }; 
   
+  var switchToFiringState = function() {
+    ticksToWaitBeforeFiring = Math.floor(Math.random() * 35 + 45);
+    ticksWaitedBeforeFiring = 0;
+    state = "firing";
+  };
+  
   var createRandomTargetWithinWorld = function() {
     return vec3.create([Math.random() * 1280.0 - 640.0, 0, Math.random() * 1280.0 - 640.0]);
   };
@@ -47,15 +52,24 @@ exports.Bot = function(communication) {
       tryAndFire();
       adjustAimedTarget();
       updateInputTowardsCurrentTarget();
+    },
+    firing: function() {
+      tryAndReleaseFire();
+      adjustAimedTarget();
+      updateInputTowardsCurrentTarget();
     }
   };    
 
   var tryAndFire = function() {
-    if(!waitingToFire) return;
-    waitingToFireCount -= 1.0;
-    if(waitingToFireCount < 0) {
-      waitingToFire = false;
-      fireMissileAtTarget();
+    self.startFiringMissile();
+    switchToFiringState();
+  };
+  
+  var tryAndReleaseFire = function() {
+    ticksWaitedBeforeFiring++;
+    if(ticksWaitedBeforeFiring >= ticksToWaitBeforeFiring) {
+      self.finishFiringMissile();
+      switchToAimlessState();
     }
   };
   
@@ -200,21 +214,12 @@ exports.Bot = function(communication) {
     switchToAimlessState();
   };
   
-  var onMissileLock = function(data) {
-    waitingToFire = true;
-    waitingToFireCount = Math.random() * 60;
-  };
-  
   var startFollowingTarget = function(targetid) {
     currentTargetId = targetid;
     switchToFollowingTargetState();
   };
+      
   
-  var fireMissileAtTarget = function() {
-    self.fireMissile();
-  };        
-  
-  self.addEventHandler('missileLock', onMissileLock);
   self.addEventHandler('cancelledTrackingTarget', onCancelledTrackingTarget);
   self.addEventHandler('trackingTarget', onTrackingTarget);  
 };

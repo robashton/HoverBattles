@@ -176,10 +176,10 @@ var TargettingEntity = function(app, sourceid, targetid) {
       var worldSphere = entity.getSphere();
       var transformedSphere = camera.transformSphereToScreen(worldSphere);
       
-      scaleHudItem(hudItem, transformedSphere.radius, transformedSphere.centre);
+      scaleHudItem(hudItem, 10.0, transformedSphere.centre);
       
       if(lockingItem)
-        scaleHudItem(lockingItem, transformedSphere.radius * lockingItemScale, transformedSphere.centre);
+        scaleHudItem(lockingItem, 10 + 5.0 * lockingItemScale, transformedSphere.centre);
         
       var centre = transformedSphere.centre,
           radius = transformedSphere.radius;
