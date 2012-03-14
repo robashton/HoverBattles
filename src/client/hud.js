@@ -141,7 +141,7 @@ var TargettingEntity = function(app, sourceid, targetid) {
   };
   
   self.notifyAccuracyChanged = function(accuracy) {
-    lockingItemScale = accuracy * 10.0;
+    lockingItemScale = accuracy * 5.0;
     self.tick();
   };
   

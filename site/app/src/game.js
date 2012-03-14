@@ -644,7 +644,7 @@ var TargettingEntity = function(app, sourceid, targetid) {
   };
   
   self.notifyAccuracyChanged = function(accuracy) {
-    lockingItemScale = accuracy * 10.0;
+    lockingItemScale = accuracy * 5.0;
     self.tick();
   };
   
@@ -2791,9 +2791,9 @@ exports.Tracking = function() {
       
       var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
       if(quotient > fieldOfVision && distanceToOtherEntity < allowedDistance)
-        return canSeeCraft(entity);
+        return canSeeCraft(entity.getId());
       else
-        return cannotSeeCraft(entity);   
+        return cannotSeeCraft(entity.getId());   
 	  });
 	};
 
@@ -2801,29 +2801,33 @@ exports.Tracking = function() {
     for(var i in self.targetsInSight) {
       var entity = self._scene.getEntity(i);
       if(!entity) {
-        self.notifyNotAimingAt(self.targetsInSight[i].entity);
+        self.notifyNotAimingAt(self.targetsInSight[i].id);
         delete self.targetsInSight[i];
-        if(this._currentTarget && this._currentTarget.getId() === i)
+        if(this._currentTarget === i)
           this._currentTarget = null;
       }
     }
   };
 	
-	self.notifyAimingAt = function(entity) {
-    var id = entity.getId();
-    if(self.targetsInSight[id]) return;
-    self.targetsInSight[id] = {
-	    entity: entity,
-	    time: new Date()
-	  };
-	  self.raiseEvent('targetGained', { target: entity});
+	self.notifyAimingAt = function(entityId) {
+	  self.raiseServerEvent('targetGained', { target: entityId});
   };
 
-  self.notifyNotAimingAt = function(entity)  {
-    var id = entity.getId();
-    if(!self.targetsInSight[id]) return;			
-    delete self.targetsInSight[id];
-    self.raiseEvent('targetLost', { target: entity});
+  self.notifyNotAimingAt = function(entityId)  {
+    self.raiseServerEvent('targetLost', { target: entityId});
+  };
+  
+  var onAimingAt = function(data) {
+    if(self.targetsInSight[data.target]) return;
+    self.targetsInSight[data.target] = {
+	    id: data.target,
+	    time: new Date()
+	  };
+  };
+  
+  var onNotAimingAt = function(data) {
+    if(!self.targetsInSight[data.target]) return;			
+    delete self.targetsInSight[data.target];  
   };
 	
 	self.getOldestTrackedObject = function() {
@@ -2836,8 +2840,11 @@ exports.Tracking = function() {
 			}		
 		}
 		if(oldest === null) return null;
-		return oldest.entity;
+		return self._scene.getEntity(oldest.id);
 	};
+	
+	self.addEventHandler('targetGained', onAimingAt);
+	self.addEventHandler('targetLost', onNotAimingAt);
 
 };
 
@@ -2849,7 +2856,8 @@ exports.Targeting = function(){
 	self._currentTarget = null;
 
 	self.onTargetLost = function(data) {
-		if(self._currentTarget === data.target)
+	  if(!self._currentTarget) return;
+		if(self._currentTarget.getId() === data.target)
 			self.deassignTarget();
 	};
 
@@ -3553,7 +3561,7 @@ exports.Explosion = function(app, details) {
 	
   self.doLogic = function() {
     if(!firing) return;
-    antiAccuracy -= 1;
+    antiAccuracy -= 0.5;
     self.raiseEvent('accuracyChanged', Math.abs(antiAccuracy) / maxAccuracy);
   };
 
@@ -4209,7 +4217,8 @@ var Missile = function() {
 	
 	var ticksElapsedSinceFiring = 0;
 
-  var maxSpeed = 6.0;
+  var maxSpeed = 12.0;
+  var currentSpeed = maxSpeed;
   var bounds = new Sphere(5.0, [0,0,0]);
   var antiAccuracy = 0.0;
   var isTrackingTarget = false;
@@ -4348,9 +4357,11 @@ var Missile = function() {
 	  var difference = vec3.create([0,0,0]);
 	  vec3.subtract(target.position, source.position, difference);
 	  vec3.normalize(difference);
+
+    currentSpeed = (maxSpeed / 10.0) / (antiAccuracy <= 0.1 ? 0.1 : antiAccuracy);
 	  
-	  // And fire at max speed
-	  vec3.scale(difference, maxSpeed);	  
+	  // And fire at the chosen speed
+	  vec3.scale(difference, currentSpeed);	  
 	  self._velocity = difference;    
 	};
 	
@@ -4362,7 +4373,7 @@ var Missile = function() {
 		distanceFromTarget = vec3.length(desired);
 
     vec3.normalize(desired);
-    vec3.scale(desired, maxSpeed);  
+    vec3.scale(desired, currentSpeed);  
     var adjuster = getAdjusterBasedOnTime();
     
     vec3.lerp(self._velocity, desired, adjuster);
@@ -4371,9 +4382,9 @@ var Missile = function() {
 	
 	var getAdjusterBasedOnTime = function() {
 	  if(ticksElapsedSinceFiring < 20)
-	     return 0.1 / (antiAccuracy === 0 ? 0.01 : antiAccuracy);
+	     return 0.1 / (antiAccuracy <= 0.1 ? 0.1 : antiAccuracy);
 	 if(ticksElapsedSinceFiring < 30)
-	     return 0.02 / (antiAccuracy === 0 ? 0.01 : antiAccuracy);
+	     return 0.02 / (antiAccuracy <= 0.1 ? 0.1 : antiAccuracy);
     /* 
 	  if(ticksElapsedSinceFiring < 45)
 	     return 0.01
@@ -5268,6 +5279,8 @@ exports.Data = new Data();
   'finishedFiring',
   'fireMissile',
   'missileLost',
+  'targetGained',
+  'targetLost',
   'targetHit',
   'missileExpired',
   'entityDestroyed',

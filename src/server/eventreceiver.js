@@ -4,6 +4,8 @@ var ForwardedEvents = [
   'finishedFiring',
   'fireMissile',
   'missileLost',
+  'targetGained',
+  'targetLost',
   'targetHit',
   'missileExpired',
   'entityDestroyed',

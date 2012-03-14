@@ -8,6 +8,7 @@ var Missile = function() {
 	var ticksElapsedSinceFiring = 0;
 
   var maxSpeed = 6.0;
+  var currentSpeed = maxSpeed;
   var bounds = new Sphere(5.0, [0,0,0]);
   var antiAccuracy = 0.0;
   var isTrackingTarget = false;
@@ -146,9 +147,11 @@ var Missile = function() {
 	  var difference = vec3.create([0,0,0]);
 	  vec3.subtract(target.position, source.position, difference);
 	  vec3.normalize(difference);
+
+    currentSpeed = (maxSpeed / 10.0) / (antiAccuracy <= 0.1 ? 0.1 : antiAccuracy);
 	  
-	  // And fire at max speed
-	  vec3.scale(difference, maxSpeed);	  
+	  // And fire at the chosen speed
+	  vec3.scale(difference, currentSpeed);	  
 	  self._velocity = difference;    
 	};
 	
@@ -160,7 +163,7 @@ var Missile = function() {
 		distanceFromTarget = vec3.length(desired);
 
     vec3.normalize(desired);
-    vec3.scale(desired, maxSpeed);  
+    vec3.scale(desired, currentSpeed);  
     var adjuster = getAdjusterBasedOnTime();
     
     vec3.lerp(self._velocity, desired, adjuster);
@@ -169,9 +172,9 @@ var Missile = function() {
 	
 	var getAdjusterBasedOnTime = function() {
 	  if(ticksElapsedSinceFiring < 20)
-	     return 0.1 / (antiAccuracy === 0 ? 0.01 : antiAccuracy);
+	     return 0.1 / (antiAccuracy <= 0.1 ? 0.1 : antiAccuracy);
 	 if(ticksElapsedSinceFiring < 30)
-	     return 0.02 / (antiAccuracy === 0 ? 0.01 : antiAccuracy);
+	     return 0.02 / (antiAccuracy <= 0.1 ? 0.1 : antiAccuracy);
     /* 
 	  if(ticksElapsedSinceFiring < 45)
 	     return 0.01

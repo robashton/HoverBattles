@@ -33,9 +33,9 @@ exports.Tracking = function() {
       
       var quotient = vec3.dot(vectorOfAim, vectorToOtherEntity);            
       if(quotient > fieldOfVision && distanceToOtherEntity < allowedDistance)
-        return canSeeCraft(entity);
+        return canSeeCraft(entity.getId());
       else
-        return cannotSeeCraft(entity);   
+        return cannotSeeCraft(entity.getId());   
 	  });
 	};
 
@@ -43,29 +43,33 @@ exports.Tracking = function() {
     for(var i in self.targetsInSight) {
       var entity = self._scene.getEntity(i);
       if(!entity) {
-        self.notifyNotAimingAt(self.targetsInSight[i].entity);
+        self.notifyNotAimingAt(self.targetsInSight[i].id);
         delete self.targetsInSight[i];
-        if(this._currentTarget && this._currentTarget.getId() === i)
+        if(this._currentTarget === i)
           this._currentTarget = null;
       }
     }
   };
 	
-	self.notifyAimingAt = function(entity) {
-    var id = entity.getId();
-    if(self.targetsInSight[id]) return;
-    self.targetsInSight[id] = {
-	    entity: entity,
-	    time: new Date()
-	  };
-	  self.raiseEvent('targetGained', { target: entity});
+	self.notifyAimingAt = function(entityId) {
+	  self.raiseServerEvent('targetGained', { target: entityId});
   };
 
-  self.notifyNotAimingAt = function(entity)  {
-    var id = entity.getId();
-    if(!self.targetsInSight[id]) return;			
-    delete self.targetsInSight[id];
-    self.raiseEvent('targetLost', { target: entity});
+  self.notifyNotAimingAt = function(entityId)  {
+    self.raiseServerEvent('targetLost', { target: entityId});
+  };
+  
+  var onAimingAt = function(data) {
+    if(self.targetsInSight[data.target]) return;
+    self.targetsInSight[data.target] = {
+	    id: data.target,
+	    time: new Date()
+	  };
+  };
+  
+  var onNotAimingAt = function(data) {
+    if(!self.targetsInSight[data.target]) return;			
+    delete self.targetsInSight[data.target];  
   };
 	
 	self.getOldestTrackedObject = function() {
@@ -78,8 +82,11 @@ exports.Tracking = function() {
 			}		
 		}
 		if(oldest === null) return null;
-		return oldest.entity;
+		return self._scene.getEntity(oldest.id);
 	};
+	
+	self.addEventHandler('targetGained', onAimingAt);
+	self.addEventHandler('targetLost', onNotAimingAt);
 
 };
 
@@ -91,7 +98,8 @@ exports.Targeting = function(){
 	self._currentTarget = null;
 
 	self.onTargetLost = function(data) {
-		if(self._currentTarget === data.target)
+	  if(!self._currentTarget) return;
+		if(self._currentTarget.getId() === data.target)
 			self.deassignTarget();
 	};
 
