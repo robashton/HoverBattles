@@ -7,7 +7,7 @@ var Missile = function() {
 	
 	var ticksElapsedSinceFiring = 0;
 
-  var maxSpeed = 6.0;
+  var maxSpeed = 9.0;
   var currentSpeed = maxSpeed;
   var bounds = new Sphere(5.0, [0,0,0]);
   var antiAccuracy = 0.0;

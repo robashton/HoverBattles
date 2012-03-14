@@ -34,7 +34,7 @@ exports.Bot = function(communication) {
   }; 
   
   var switchToFiringState = function() {
-    ticksToWaitBeforeFiring = Math.floor(Math.random() * 60 + 60);
+    ticksToWaitBeforeFiring = Math.floor(Math.random() * 90 + 60);
     ticksWaitedBeforeFiring = 0;
     state = "firing";
   };
