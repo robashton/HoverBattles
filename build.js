@@ -36,6 +36,10 @@ for(var i in views) {
 // TODO: The below
 
 // Deploy any model assets
+deployModels()
+  .from('./models/')
+  .to('/models.json');
+
 
 // Deploy any texture assets
 
