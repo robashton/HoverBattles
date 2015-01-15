@@ -6,8 +6,8 @@ var db = new CouchClient(url); */
 
 var db = {};
 
-var bcrypt = require('bcrypt');  
-var salt = bcrypt.gen_salt_sync(4);  
+var bcrypt = require('bcrypt');
+var salt = bcrypt.genSaltSync(4);
 
 var Data = function() {
   var self = this;
@@ -15,10 +15,10 @@ var Data = function() {
   self.createUser = function(username, password, email, callback) {
      bcrypt.encrypt(password, salt, function(err, hash){
      db.save({
-        type:"user", 
+        type:"user",
         username: username,
         password: hash,
-        email: email             
+        email: email
       },
       callback);
     });
@@ -35,13 +35,13 @@ var Data = function() {
 
   self.getUserByName = function(username, callback) {
    db.view('/hoverbattles/_design/users/_view/by_username', { key: username }, function(err, doc) {
-      if(!doc.rows || doc.rows.length === 0) 
+      if(!doc.rows || doc.rows.length === 0)
         callback(null);
-      else 
+      else
         callback(doc.rows[0].value);
     });
   };
-  
+
   self.getHighScorers = function(callback) {
    db.view('/hoverbattles/_design/users/_view/by_totalscore', function(err, doc) {
       var returnValues = [];
@@ -53,7 +53,7 @@ var Data = function() {
 
   self.emailExists = function(email, callback) {
    db.view('/hoverbattles/_design/users/_view/by_email', { key: email }, function(err, doc) {
-      if(!doc.rows || doc.rows.length === 0)   
+      if(!doc.rows || doc.rows.length === 0)
         callback(false);
       else
        callback(true);
@@ -65,12 +65,13 @@ var Data = function() {
    password = password || "";
 
    db.view('/hoverbattles/_design/users/_view/by_username', { key: username }, function(err, doc) {
-      if(!doc.rows || doc.rows.length == 0) 
+      if(!doc.rows || doc.rows.length == 0)
         callback(false);
       else {
         var user = doc.rows[0].value;
-        var result = bcrypt.compare_sync(password, user.password); 
-        callback(result);
+        bcrypt.compare(password, user.password, function(err, result) {
+          callback(result);
+        });
       }
     });
   };
@@ -84,29 +85,29 @@ var Data = function() {
 
   var getPlayerScore = function(username, callback) {
    db.view('/hoverbattles/_design/stats/_view/score', { key: username, group: true  }, function(err, doc) {
-      if(!doc.rows || doc.rows.length == 0) 
+      if(!doc.rows || doc.rows.length == 0)
         callback(0);
       else {
         var score = doc.rows[0].value;
-        callback(score);     
-      }  
+        callback(score);
+      }
     });
   };
 
   var getPlayerKills = function(username, callback) {
    db.view('/hoverbattles/_design/stats/_view/kills', { key: username, group: true  }, function(err, doc) {
-      if(!doc.rows || doc.rows.length == 0) 
+      if(!doc.rows || doc.rows.length == 0)
         callback(0);
       else {
         var kills = doc.rows[0].value;
         callback(kills);
-      }     
+      }
     });
   };
 
   var getPlayerDeaths = function(username, callback) {
    db.view('/hoverbattles/_design/stats/_view/deaths', { key: username, group: true  }, function(err, doc) {
-      if(!doc.rows || doc.rows.length == 0) 
+      if(!doc.rows || doc.rows.length == 0)
         callback(0);
       else {
         var deaths = doc.rows[0].value;
@@ -114,18 +115,18 @@ var Data = function() {
       }
     });
   };
-  
+
   self.storeEvent = function(eventName, data) { /*
     db.save({
       type:"event",
       eventType: eventName,
-      data: data           
+      data: data
     },
     function(err, data) {
       if(err) console.trace(err);
     }); */
   };
-  
+
   self.save = function(doc) {
    // db.save(doc);
   };
@@ -142,7 +143,7 @@ var PlayerStatsUpdater = function(api, username) {
   self.notifyPlayerScore = function(data) {
     score = data;
     tryUpdateDocument();
-  };    
+  };
 
   self.notifyPlayerKills = function(data) {
     kills = data;
@@ -157,7 +158,7 @@ var PlayerStatsUpdater = function(api, username) {
   var tryUpdateDocument = function() {
     if(score !== null && kills !== null && deaths !== null)
       actuallyUpdateDocument();
-  };  
+  };
 
   var actuallyUpdateDocument = function() {
     api.getUserByName(username, updateUserDocument);

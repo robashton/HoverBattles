@@ -11,16 +11,18 @@ ServerCommunication = function(app, server){
   var self = this;
   this.server = server;
   this.app = app;
-  var listener = io.listen(server);
+  var listener = io.listen(server, {
+      'transports': [ 'websocket', 'flashsocket' ]
+  });
 
-  listener.configure(function(){
-      listener.set('log level', 1);
-      listener.set('transports', [
-          'websocket',
-          'flashsocket'
-        ]);
-      });
-  
+//  listener.configure(function(){
+//      listener.set('log level', 1);
+//      listener.set('transports', [
+//          'websocket',
+//          'flashsocket'
+//        ]);
+//      });
+//
   this.socket = listener.sockets;
   this.clients = {};
 
@@ -30,9 +32,9 @@ ServerCommunication = function(app, server){
   this.dispatcher.addReceiver(new EntityReceiver(this.app));
   this.dispatcher.addReceiver(new ProxyReceiver(this.app, this));
   this.dispatcher.addReceiver(new ChatReceiver(this.app, this));
-  
+
   this.game = new ServerGameReceiver(this.app, this);
-  this.dispatcher.addReceiver(this.game); 
+  this.dispatcher.addReceiver(this.game);
   this.socket.on('connection', function(socket) { self.onConnection(socket); });
 };
 
@@ -50,14 +52,14 @@ ServerCommunication.prototype.synchronise = function(){
 
 ServerCommunication.prototype.rejectClient = function(id) {
   var socket = this.clients[id];
-  delete this.clients[id];  
+  delete this.clients[id];
   this.sendMessageToClient(socket, 'noauth');
 };
 
 ServerCommunication.prototype.hookClient = function(socket) {
     var server = this;
 	  this.initializeClient(socket);
-    socket.on('message', function(msg) { server.dispatchMessage(socket, msg); });    
+    socket.on('message', function(msg) { server.dispatchMessage(socket, msg); });
     socket.on('disconnect', function() {server.unhookClient(socket);});
 };
 
@@ -66,8 +68,8 @@ ServerCommunication.prototype.initializeClient = function(socket) {
 };
 
 ServerCommunication.prototype.unhookClient = function(socket) {
-    delete this.clients[socket.id];  
-    this.game.removePlayer(socket.id);    
+    delete this.clients[socket.id];
+    this.game.removePlayer(socket.id);
 };
 
 ServerCommunication.prototype.dispatchMessage = function(socket, msg) {
@@ -99,7 +101,7 @@ ServerCommunication.prototype.sendMessageToClient = function(socket, command, da
 ServerCommunication.prototype.broadcast = function(command, data, from) {
   for(var i in this.clients){
       if(from && this.clients[i].id === from) continue;
-      this.sendMessageToClient(this.clients[i], command, data);   
+      this.sendMessageToClient(this.clients[i], command, data);
   }
 };
 

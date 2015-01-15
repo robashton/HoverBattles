@@ -10,11 +10,13 @@ var ClientGameReceiver = require('./clientgamereceiver').ClientGameReceiver;
 ClientCommunication = function(app){
     this.app = app;
     this.started = false;
-    this.socket = io.connect();
+    this.socket = io.connect({
+      'transports': [ 'websocket', 'flashsocket' ]
+    });
     this.hookSocketEvents();
-    
+
     this.dispatcher = new MessageDispatcher();
-    this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this)); 
+    this.dispatcher.addReceiver(new ClientGameReceiver(this.app, this));
     this.dispatcher.addReceiver(new EntityReceiver(this.app));
     this.dispatcher.addReceiver(new EventReceiver(this.app.scene));
 };
@@ -23,7 +25,7 @@ ClientCommunication.prototype.hookSocketEvents = function() {
     var game = this;
     this.socket.on('connect', function(){        game.onConnected();     });
     this.socket.on('message', function(msg){     game.dispatchMessage(msg);   });
-    this.socket.on('disconnect', function(){     game.onDisconnected(); });    
+    this.socket.on('disconnect', function(){     game.onDisconnected(); });
     this.socket.on('connect_failed', function() { game.onConnectFailed(); });
 };
 
@@ -45,10 +47,10 @@ ClientCommunication.prototype.dispatchMessage = function(msg) {
 
 ClientCommunication.prototype.sendMessage = function(command, data){
   var msg = { command: command, data: data };
-  
+
   // To ourselves
   this.dispatchMessage(msg);
-  
+
   // To the server
   this.socket.json.send(msg);
 };

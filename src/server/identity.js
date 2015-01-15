@@ -28,7 +28,7 @@ exports.Identity = {
     return self.verifyUsername(username, sign);
   },
   keys: function() {
-    return new Keygrip(keys);
+    return new Keygrip(["one", "two", "three"]);
   },
   cookies: function(req, res) {
     return new Cookies(req, res);

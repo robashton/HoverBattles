@@ -15,7 +15,7 @@ exports.LandscapeHandler = function() {
   self.route('GET', '/Landscape', function(req, res) {
     searchForLandscape(req, res, function(data) {
       res.setHeader("Content-Type", "text/javascript");
-      res.setHeader("Content-Encoding", "gzip");
+    //  res.setHeader("Content-Encoding", "gzip");
 	    res.writeHead(200);
       res.write(data);
 	    res.end();
@@ -27,7 +27,7 @@ exports.LandscapeHandler = function() {
   };
 
   var tryReadFromCache = function(req, res, success, next) {
-    if(cache[req.url]) { 
+    if(cache[req.url]) {
       success(cache[req.url]);
     } else {
       next(req, res, success, generateFromQueryString);
@@ -37,7 +37,7 @@ exports.LandscapeHandler = function() {
   var tryReadFromFile = function(req, res, success, next) {
     fs.readFile('./cache/' + req.url, function(err, data) {
       if(err)
-	      next(req, res, success);    
+	      next(req, res, success);
       else {
         console.log('writing to cache');
         cache[req.url] = data;
@@ -58,13 +58,14 @@ exports.LandscapeHandler = function() {
        cache[req.url] = data;
        success(data);
     });
-  };  
-  
+  };
+
   var convertRawDataIntoString = function(req, rawData, callback) {
 		var model = JSON.stringify(rawData);
-		gzip(model, function(err, zippeddata) {
-			callback(zippeddata);    
-		});
+    callback(model)
+//		gzip(model, function(err, zippeddata) {
+//			callback(zippeddata);
+//		});
   };
 
   var writeToFile = function(filename, data) {
